@@ -1,0 +1,9 @@
+[project]
+name = "lang_agent" 
+version = "0.1"   
+dependencies = [
+    "langchain"
+]
+
+[tool.setuptools.packages.find]
+include = ["lang_agent"]
