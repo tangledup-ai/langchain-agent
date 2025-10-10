@@ -10,8 +10,8 @@ from langchain.chat_models import init_chat_model
 from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import MemorySaver
         
-
 from lang_agent.config import InstantiateConfig
+from lang_agent.rag.simple import SimpleRagConfig, SimpleRag
 
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
@@ -40,7 +40,7 @@ class PipelineConfig(InstantiateConfig):
     """what is my port"""
 
     # NOTE: For reference
-    # strat: BothConfig = field(default_factory=BothConfig)
+    rag_config: SimpleRagConfig = field(default_factory=SimpleRagConfig)
 
 
 class Pipeline:
@@ -56,6 +56,7 @@ class Pipeline:
                                    base_url=self.config.base_url)
         
         # NOTE: placeholder for now, add graph later
+        self.rag:SimpleRag = self.config.rag_config.setup()
         memory = MemorySaver()
         tools = []
         self.agent = create_react_agent(self.llm, tools, checkpointer=memory)
