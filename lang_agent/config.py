@@ -16,7 +16,8 @@ class PrintableConfig:
         for key, val in vars(self).items():
 
             if key.endswith("_secret") or ("key" in key):
-                val = "****"
+                val = str(val)
+                val = val[:3] + "*"*(len(val) - 3)
                 
             if isinstance(val, Tuple):
                 flattened_val = "["
@@ -26,6 +27,14 @@ class PrintableConfig:
                 val = flattened_val + "]"
             lines += f"{key}: {str(val)}".split("\n")
         return "\n"  + "\n    ".join(lines)
+    
+    def is_secrete(self, inp:str):
+        sec_list = ["secret", "api_key"]
+        for sec in sec_list:
+            if sec in inp:
+                return True
+        
+        return False
 
 
 # Base instantiate configs
