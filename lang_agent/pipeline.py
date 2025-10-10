@@ -7,6 +7,9 @@ from websockets.asyncio.server import ServerConnection
 from loguru import logger
 
 from langchain.chat_models import init_chat_model
+from langgraph.prebuilt import create_react_agent
+from langgraph.checkpoint.memory import MemorySaver
+        
 
 from lang_agent.config import InstantiateConfig
 
@@ -52,7 +55,10 @@ class Pipeline:
                                    api_key=self.config.api_key,
                                    base_url=self.config.base_url)
         
-        self.agent = self.llm # NOTE: placeholder for now, add graph later
+        # self.agent = self.llm # NOTE: placeholder for now, add graph later
+        memory = MemorySaver()
+        tools = []
+        self.agent = create_react_agent(self.llm, tools, checkpointer=memory)
     
     def respond(self, msg:str):
         return self.agent.invoke(msg)
