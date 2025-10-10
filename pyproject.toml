@@ -8,7 +8,8 @@ dependencies = [
     "mcp>=1.8.1",
     "pydantic>=2.11.4",
     "mcp-proxy>=0.8.2",
-    "loguru"
+    "loguru",
+    "tyro"
 ]
 
 [tool.setuptools.packages.find]
