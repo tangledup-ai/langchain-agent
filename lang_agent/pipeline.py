@@ -55,7 +55,7 @@ class Pipeline:
                                    api_key=self.config.api_key,
                                    base_url=self.config.base_url)
         
-        # self.agent = self.llm # NOTE: placeholder for now, add graph later
+        # NOTE: placeholder for now, add graph later
         memory = MemorySaver()
         tools = []
         self.agent = create_react_agent(self.llm, tools, checkpointer=memory)
