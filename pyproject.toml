@@ -9,7 +9,8 @@ dependencies = [
     "pydantic>=2.11.4",
     "mcp-proxy>=0.8.2",
     "loguru",
-    "tyro"
+    "tyro",
+    "faiss-cpu"
 ]
 
 [tool.setuptools.packages.find]
