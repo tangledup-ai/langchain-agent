@@ -31,11 +31,12 @@ class QwenEmbeddings(Embeddings):
         dashscope.api_key = api_key
         if api_key is None:
             logger.warning("no api_key provided!!")
-            
+        
+        self.MAX_BATCH_SIZE = 10
         self.model = model
         self.max_workers = max_workers
         self.embedding_dimension = embedding_dimension
-        self.batch_size = min(batch_size, 10)  # DashScope limit
+        self.batch_size = min(batch_size, self.MAX_BATCH_SIZE)  # DashScope limit
         self.rate_limit_delay = rate_limit_delay
         
     def _get_batch_embeddings(self, texts: List[str]) -> List[List[float]]:
@@ -166,7 +167,7 @@ class QwenEmbeddings(Embeddings):
         if batch_size is not None and batch_size != self.batch_size:
             # Temporarily override batch size
             original_batch_size = self.batch_size
-            self.batch_size = min(batch_size, 10)
+            self.batch_size = min(batch_size, self.MAX_BATCH_SIZE)
             try:
                 return self.embed_documents(texts)
             finally:
@@ -185,7 +186,7 @@ class QwenEmbeddings(Embeddings):
         if batch_size is not None and batch_size != self.batch_size:
             # Temporarily override batch size
             original_batch_size = self.batch_size
-            self.batch_size = min(batch_size, 10)
+            self.batch_size = min(batch_size, self.MAX_BATCH_SIZE)
             try:
                 return await self.aembed_documents(texts)
             finally:
