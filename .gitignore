@@ -1,4 +1,5 @@
 assets/
-.vscode 
+.vscode/
+*.egg-info/ 
 
 *.pyc
