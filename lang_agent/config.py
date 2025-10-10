@@ -6,7 +6,7 @@ import os
 
 from loguru import logger
 
-## base classes taken from nerfstudio
+## NOTE: base classes taken from nerfstudio
 # Pretty printing class
 class PrintableConfig:
     """Printable Config defining str function"""
@@ -53,29 +53,6 @@ class InstantiateConfig(PrintableConfig):
         with open(filename, 'w') as f:
             yaml.dump(self, f)
         logger.info(f"[yellow]config saved to: {filename}[/yellow]")
-
-
-@dataclass
-class LiveConfig(InstantiateConfig):
-    key_id: str = None
-    """alpaca key id"""
-
-    key_secret: str = None
-    """alpaca secret"""
-
-    paper: bool = True
-    """is paper trading or not"""
-
-    def __post_init__(self):
-        if self.key_id is None:
-            from dotenv import load_dotenv
-            load_dotenv()
-            
-            self.key_id = os.getenv("ALPACA_KEY_ID")
-            self.key_secret = os.getenv("ALPACA_KEY_SECRET")
-
-            assert self.key_id is not None, "alpaca key id required!"
-            assert self.key_secret is not None, "alpaca key secret required!"
 
             
 
