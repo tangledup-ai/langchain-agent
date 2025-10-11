@@ -30,6 +30,8 @@ import sys
 import json
 from dotenv import load_dotenv
 
+from lang_agent.config import mcp_langchain_to_ws_config
+
 # Auto-load environment variables from a .env file if present
 load_dotenv()
 
@@ -40,6 +42,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger('MCP_PIPE')
 
+# from loguru import logger
 # Reconnection settings
 INITIAL_BACKOFF = 1  # Initial wait time in seconds
 MAX_BACKOFF = 600  # Maximum wait time in seconds
@@ -171,12 +174,13 @@ def signal_handler(sig, frame):
 
 def load_config():
     """Load JSON config from $MCP_CONFIG or ./mcp_config.json. Return dict or {}."""
-    path = os.environ.get("MCP_CONFIG") or os.path.join(os.getcwd(), "mcp_config.json")
+    # path = os.environ.get("MCP_CONFIG") or os.path.join(os.getcwd(), "mcp_config.json")
+    path = "configs/mcp_config.json"
     if not os.path.exists(path):
         return {}
     try:
         with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
+            return mcp_langchain_to_ws_config(json.load(f))
     except Exception as e:
         logger.warning(f"Failed to load config {path}: {e}")
         return {}
