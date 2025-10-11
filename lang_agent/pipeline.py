@@ -11,7 +11,7 @@ from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import MemorySaver
         
 from lang_agent.config import InstantiateConfig
-from lang_agent.rag.simple import SimpleRagConfig, SimpleRag
+from lang_agent.tool_manager import ToolManager, ToolManagerConfig
 
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
@@ -40,7 +40,7 @@ class PipelineConfig(InstantiateConfig):
     """what is my port"""
 
     # NOTE: For reference
-    rag_config: SimpleRagConfig = field(default_factory=SimpleRagConfig)
+    tool_manager_config: ToolManagerConfig = field(default_factory=ToolManagerConfig)
 
 
 class Pipeline:
@@ -56,9 +56,9 @@ class Pipeline:
                                    base_url=self.config.base_url)
         
         # NOTE: placeholder for now, add graph later
-        self.rag:SimpleRag = self.config.rag_config.setup()
+        self.tool_manager:ToolManager = self.config.tool_manager_config.setup()
         memory = MemorySaver()
-        tools = []
+        tools = self.tool_manager.get_tools()
         self.agent = create_react_agent(self.llm, tools, checkpointer=memory)
     
     def respond(self, msg:str):
