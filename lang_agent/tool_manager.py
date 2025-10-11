@@ -20,8 +20,12 @@ class ToolManagerConfig(InstantiateConfig):
 
     def __post_init__(self):
         if self.mcp_config_f is None:
-            self.mcp_config_f = osp.join(osp.dirname(osp.dirname(__file__)), "config", "mcp_config.json")
+            self.mcp_config_f = osp.join(osp.dirname(osp.dirname(__file__)), "configs", "mcp_config.json")
             logger.warning(f"config_f was not provided. Using default: {self.mcp_config_f}")
+            assert osp.exists(self.mcp_config_f), f"Default config_f {self.mcp_config_f} does not exist."
+
+        assert osp.exists(self.mcp_config_f), f"config_f {self.mcp_config_f} does not exist."
+
 
 class ToolManager:
     def __init__(self, config:ToolManagerConfig):
@@ -42,3 +46,10 @@ class ToolManager:
     def get_tools(self):
         tools = asyncio.run(self.aget_tools())
         return tools
+
+if __name__ == "__main__":
+    # NOTE: Simple test
+    config = ToolManagerConfig()
+    tool_manager = ToolManager(config)
+    tools = tool_manager.get_tools()
+    print(tools)
