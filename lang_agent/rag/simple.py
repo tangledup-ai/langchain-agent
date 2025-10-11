@@ -44,14 +44,20 @@ class SimpleRag:
         
     @mcp.tool()
     def retrieve(self, query:str):
-        """检索与给定查询相关的文档，并将其序列化为字符串格式。
+        """
+        检索与给定查询相关的文档，并将其序列化为字符串格式。
         参数:
             query (str): 用户输入的查询字符串。
         返回:
             Tuple[str, List[Document]]: 
-                - 序列化后的文档内容字符串，每个文档包含来源和内容。
-                - 检索到的 Document 对象列表。
-        该工具用于基于向量存储检索相关文档，适用于问答和知识检索场景。"""
+            - 序列化后的文档内容字符串，每个文档包含来源和内容。
+            - 检索到的 Document 对象列表。
+        该工具用于基于向量存储检索相关文档，适用于问答和知识检索场景。
+
+        用例示例:
+        1. 用户询问“推荐一些辣味食物”，系统会检索并返回相关的辣味美食推荐文档。
+        2. 用户搜索“适合夏天的清爽饮品”，系统会检索并返回相关饮品推荐及其来源信息。
+        """
         retrieved_docs:List[Document] = self.vec_store.search(query, search_kwargs={"k":3})
         serialized = "\n\n".join(
             (f"Source: {doc.metadata}\nContent: {doc.page_content}")
