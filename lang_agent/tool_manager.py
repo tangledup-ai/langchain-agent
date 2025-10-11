@@ -15,13 +15,13 @@ from lang_agent.config import InstantiateConfig
 class ToolManagerConfig(InstantiateConfig):
     _target: Type = field(default_factory=lambda: ToolManager)
 
-    config_f: str = None
+    mcp_config_f: str = None
     """path to all mcp configurations; expect json file"""
 
     def __post_init__(self):
-        if self.config_f is None:
-            self.config_f = osp.join(osp.dirname(osp.dirname(__file__)), "config", "mcp_config.json")
-            logger.warning(f"config_f was not provided. Using default: {self.config_f}")
+        if self.mcp_config_f is None:
+            self.mcp_config_f = osp.join(osp.dirname(osp.dirname(__file__)), "config", "mcp_config.json")
+            logger.warning(f"config_f was not provided. Using default: {self.mcp_config_f}")
 
 class ToolManager:
     def __init__(self, config:ToolManagerConfig):
@@ -30,7 +30,7 @@ class ToolManager:
         self.populate_module()
 
     def populate_module(self):
-        with open(self.config.config_f, "r") as f:
+        with open(self.config.mcp_config_f, "r") as f:
             self.mcp_configs = json.load(f)
 
         self.cli = MultiServerMCPClient(self.mcp_configs)
