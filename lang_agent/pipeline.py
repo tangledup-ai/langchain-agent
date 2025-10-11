@@ -86,9 +86,11 @@ class Pipeline:
             max_size=None,   # allow large messages
             max_queue=None,  # don't bound outgoing queue
         ):
-            # print("WebSocket server listening on ws://0.0.0.0:8765")
-            logger.info(f"listening to ws://{self.config.host}:{self.config.port}")
+            logger.info(f"listening to {self.get_ws_url}")
             await asyncio.Future()
+    
+    def get_ws_url(self):
+        return f"ws://{self.config.host}:{self.config.port}"
     
 
 
