@@ -1,0 +1,12 @@
+{
+    "calculator": {
+        "command": "python",
+        "args": ["dummy/calculator.py"],
+        "transport": "stdio"
+    },
+    "rag": {
+        "command": "python",
+        "args": ["lang_agent/rag/simple.py"],
+        "transport": "stdio"
+    }
+}
