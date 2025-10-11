@@ -59,6 +59,8 @@ def main(save_path = "assets/xiaozhan_emb"):
         "k":3
     })
 
+    u = loaded_vectorstore.similarity_search("灯与尘", k=2)
+
     res = retriever.invoke("灯与尘")
 
     for doc in res:
