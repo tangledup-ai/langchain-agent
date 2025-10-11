@@ -9,13 +9,14 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.documents.base import Document
 
 from lang_agent.rag.emb import QwenEmbeddings
+from lang_agent.config import InstantiateConfig
 
 
 mcp = FastMCP("Rag")
 
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
-class SimpleRagConfig:
+class SimpleRagConfig(InstantiateConfig):
     _target: Type = field(default_factory=lambda: SimpleRag)
 
     model_name:str = "text-embedding-v4"
