@@ -25,7 +25,7 @@ class SimpleRagConfig(InstantiateConfig):
     api_key:str = "wrong-key"
     """api_key for model; for generic text splitting; give a wrong key"""
 
-    folder_path:str = None
+    folder_path:str = "assets/xiaozhan_emb"
     """path to local database"""
 
 
