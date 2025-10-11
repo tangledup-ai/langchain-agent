@@ -15,7 +15,7 @@ class PrintableConfig:
         lines = [self.__class__.__name__ + ":"]
         for key, val in vars(self).items():
 
-            if key.endswith("_secret") or ("key" in key):
+            if self.is_secrete(key):
                 val = str(val)
                 val = val[:3] + "*"*(len(val) - 3)
                 
