@@ -110,7 +110,7 @@ def mcp_langchain_to_ws_config(conf:Dict[str, Dict[str, str]]):
             serv_conf[k] = {
                 "type" : v["transport"],
                 "command": v["command"],
-                "args": ["-m"] + v["args"] if v["command"] == "python" else v["args"],
+                "args": v["args"],
             }
         else:
             logger.warning(f"Unsupported transport {v['transport']} for MCP {k}. Skipping...")
