@@ -2,8 +2,8 @@ from dataclasses import dataclass, field
 from typing import Type, List
 import tyro
 from mcp.server.fastmcp import FastMCP
-import tyro
 from loguru import logger
+import os
 
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents.base import Document
@@ -13,7 +13,7 @@ from lang_agent.config import ToolConfig
 from lang_agent.base import LangToolBase
 
 
-mcp = FastMCP("Rag")
+# mcp = FastMCP("Rag")
 
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
@@ -31,7 +31,10 @@ class SimpleRagConfig(ToolConfig):
 
     def __post_init__(self):
         if self.api_key == "wrong-key":
-            logger.info("wrong embedding key, using simple retrieval method")
+            # logger.info("wrong embedding key, using simple retrieval method")
+            key = os.environ.get("ALI_API_KEY")
+            if key is None:
+                logger.error(f"no ALI_API_KEY provided for embedding")
 
 
 
@@ -48,7 +51,6 @@ class SimpleRag(LangToolBase):
 
         # self.retriever = self.vec_store.as_retriever(search_kwargs={"k":3})
         
-    @mcp.tool()
     def retrieve(self, query:str):
         """
         检索与给定查询相关的文档，并将其序列化为字符串格式。
@@ -75,8 +77,8 @@ class SimpleRag(LangToolBase):
         return [self.retrieve]
 
 
-if __name__ == "__main__":
-    # config = tyro.cli(SimpleRagConfig)
-    config = SimpleRagConfig()
-    rag:SimpleRag = config.setup()
-    mcp.run(transport="stdio")
+# if __name__ == "__main__":
+#     # config = tyro.cli(SimpleRagConfig)
+#     config = SimpleRagConfig()
+#     rag:SimpleRag = config.setup()
+#     mcp.run(transport="stdio")
