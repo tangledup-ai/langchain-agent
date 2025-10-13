@@ -2,10 +2,11 @@
 from dataclasses import dataclass, field
 from typing import Type, Literal
 import tyro
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
+from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
-from lang_agent.rag.simple import SimpleRag, SimpleRagConfig
+from lang_agent.rag.simple import SimpleRagConfig
 from lang_agent.base import LangToolBase
 from lang_agent.config import InstantiateConfig
 
@@ -17,7 +18,7 @@ class MCPServerConfig(InstantiateConfig):
 
     server_name:str = "langserver"
 
-    host: str = "localhost"
+    host: str = "6.6.6.78"
     """host of server"""
 
     port: int = 50051
@@ -34,6 +35,7 @@ class MCPServer:
     def __init__(self, config: MCPServerConfig):
         self.config = config
         self.mcp = FastMCP(self.config.server_name)
+        self.register_mcp_functions()
 
     def _register_tool_fnc(self, tool:LangToolBase):
         for fnc in tool.get_tool_fnc():
@@ -52,6 +54,18 @@ class MCPServer:
     
 
     def run(self):
+        # 获取FastAPI应用实例
+        app = self.mcp.http_app()
+
+        # 配置CORS
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+
         self.mcp.run(transport=self.config.transport,
                      host=self.config.host,
                      port=self.config.port)
