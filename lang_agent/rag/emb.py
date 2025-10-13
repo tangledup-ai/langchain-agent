@@ -14,7 +14,7 @@ class QwenEmbeddings(Embeddings):
                  api_key: str, 
                  model: str = "text-embedding-v4",
                  max_workers: int = 5,
-                 embedding_dimension: int = 512, 
+                 embedding_dimension: int = 512, # one of [2048, 1536, 1024, 768, 512, 256, 128, 64]
                  batch_size: int = 10,  # NOTE: DashScope supports up to 10 texts per batch
                  rate_limit_delay: float = 0.00001):
         """
