@@ -35,6 +35,8 @@ class SimpleRagConfig(ToolConfig):
             self.api_key = os.environ.get("ALI_API_KEY")
             if self.api_key is None:
                 logger.error(f"no ALI_API_KEY provided for embedding")
+            else:
+                logger.info("ALI_API_KEY loaded from environ")
 
 
 
