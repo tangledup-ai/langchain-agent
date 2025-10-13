@@ -3,6 +3,7 @@ from typing import Type, List
 import tyro
 from mcp.server.fastmcp import FastMCP
 import tyro
+from loguru import logger
 
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents.base import Document
@@ -23,10 +24,15 @@ class SimpleRagConfig(ToolConfig):
     """embedding model name"""
 
     api_key:str = "wrong-key"
-    """api_key for model; for generic text splitting; give a wrong key"""
+    """api_key for model; for generic text splitting; give a wrong key <-- wrong, MUST have api key"""
 
     folder_path:str = "assets/xiaozhan_emb"
     """path to local database"""
+
+    def __post_init__(self):
+        if self.api_key == "wrong-key":
+            logger.info("wrong embedding key, using simple retrieval method")
+
 
 
 class SimpleRag(LangToolBase):
