@@ -56,6 +56,11 @@ class InstantiateConfig(PrintableConfig):
 
             
 
+@dataclass
+class ToolConfig(InstantiateConfig):
+    use_tool:bool = True
+    """specify to use tool or not"""
+
 def load_tyro_conf(filename: str, inp_conf = None) -> InstantiateConfig:
     """load and overwrite config from file"""
     config = yaml.load(Path(filename).read_text(), Loader=yaml.Loader)
