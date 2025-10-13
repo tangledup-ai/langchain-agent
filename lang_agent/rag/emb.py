@@ -14,8 +14,8 @@ class QwenEmbeddings(Embeddings):
                  api_key: str, 
                  model: str = "text-embedding-v4",
                  max_workers: int = 5,
-                 embedding_dimension: int = 512,
-                 batch_size: int = 10,  # DashScope supports up to 10 texts per batch
+                 embedding_dimension: int = 512, 
+                 batch_size: int = 10,  # NOTE: DashScope supports up to 10 texts per batch
                  rate_limit_delay: float = 0.00001):
         """
         Initialize Qwen embeddings
@@ -45,7 +45,8 @@ class QwenEmbeddings(Embeddings):
             # DashScope supports batch processing natively
             response = TextEmbedding.call(
                 model=self.model,
-                input=texts  # Pass list directly
+                input=texts,  # Pass list directly
+                dimension=self.embedding_dimension
             )
             
             if response.status_code == 200:
