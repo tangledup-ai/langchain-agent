@@ -51,7 +51,7 @@ class SimpleRag(LangToolBase):
 
         # self.retriever = self.vec_store.as_retriever(search_kwargs={"k":3})
         
-    def retrieve(self, query:str):
+    def retrieve(self, query:str)->str:
         """
         检索与给定查询相关的文档，并将其序列化为字符串格式。
         参数:
@@ -72,7 +72,7 @@ class SimpleRag(LangToolBase):
             (f"Source: {doc.metadata}\nContent: {doc.page_content}")
             for doc in retrieved_docs
         )
-        return serialized, retrieved_docs
+        return serialized #, retrieved_docs
     
     def get_tool_fnc(self):
         return [self.retrieve]
@@ -82,6 +82,10 @@ if __name__ == "__main__":
 #     # config = tyro.cli(SimpleRagConfig)
     config = SimpleRagConfig()
     rag:SimpleRag = config.setup()
+
+    import time 
+    st_time = time.time()
     u = rag.retrieve("灯与尘")
+    print(time.time() - st_time)
     print(u)
 #     mcp.run(transport="stdio")
