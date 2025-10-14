@@ -43,7 +43,7 @@ class MCPServer:
     def __init__(self, config: MCPServerConfig):
         self.config = config
         self.mcp = FastMCP(self.config.server_name)
-        # self.register_mcp_functions()
+        self.register_mcp_functions()
 
     def _register_tool_fnc(self, tool:LangToolBase):
         for fnc in tool.get_tool_fnc():
