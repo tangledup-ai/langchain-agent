@@ -13,8 +13,6 @@ from lang_agent.config import ToolConfig
 from lang_agent.base import LangToolBase
 
 
-# mcp = FastMCP("Rag")
-
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
 class SimpleRagConfig(ToolConfig):
