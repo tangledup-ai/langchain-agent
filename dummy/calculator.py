@@ -1,45 +1,27 @@
-# NOTE: dummy mcp for developement
-
-# server.py
-from mcp.server.fastmcp import FastMCP
-import sys
-import logging
-
-logger = logging.getLogger('Calculator')
-
-# Fix UTF-8 encoding for Windows console
-if sys.platform == 'win32':
-    sys.stderr.reconfigure(encoding='utf-8')
-    sys.stdout.reconfigure(encoding='utf-8')
-
 import math
 import random
+from dataclasses import dataclass, field
+from typing import Type, List
+import tyro
 
-# Create an MCP server
-mcp = FastMCP("Calculator")
+from lang_agent.config import ToolConfig
+from lang_agent.base import LangToolBase
 
-# Add an addition tool
-# @mcp.tool()
-# def calculator(python_expression: str) -> dict:
-#     """For mathamatical calculation, always use this tool to calculate the result of a python expression. You can use 'math' or 'random' directly, without 'import'."""
-#     result = eval(python_expression, {"math": math, "random": random})
-#     logger.info(f"Calculating formula: {python_expression}, result: {result}")
-#     return {"success": True, "result": result}
+@tyro.conf.configure(tyro.conf.SuppressFixed)
+@dataclass
+class CalculatorConfig(ToolConfig):
+    _target:Type = field(default_factory=lambda: Calculator)
 
-class Calculator:
-    def __init__(self):
-        pass
 
-    @mcp.tool()
+class Calculator(LangToolBase):
+    def __init__(self, config: CalculatorConfig):
+        self.config = config
+
     def calculator(self, python_expression: str) -> dict:
         """For mathamatical calculation, always use this tool to calculate the result of a python expression. You can use 'math' or 'random' directly, without 'import'."""
         result = eval(python_expression, {"math": math, "random": random})
-        logger.info(f"Calculating formula: {python_expression}, result: {result}")
         return {"success": True, "result": result}
-
-
-
-# Start the server
-if __name__ == "__main__":
     
-    mcp.run(transport="stdio")
+    def get_tool_fnc(self):
+        return [self.calculator]
+
