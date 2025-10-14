@@ -10,7 +10,9 @@ dependencies = [
     "mcp-proxy>=0.8.2",
     "loguru",
     "tyro",
-    "faiss-cpu"
+    "faiss-cpu",
+    "fastmcp",
+    "fastapi"
 ]
 
 [tool.setuptools.packages.find]
