@@ -55,7 +55,7 @@ class MCPServer:
         tool_confs = []
         for e in dir(self.config):
             el = getattr(self.config, e)
-            if ("config" in e) and is_dataclass(el):
+            if ("calc_config" in e) and is_dataclass(el):
                 tool_confs.append(el)
         
         return tool_confs
@@ -63,7 +63,7 @@ class MCPServer:
     def register_mcp_functions(self):
 
         # NOTE: add config here for new tools; too stupid to do this automatically
-        tool_configs = [self.config.rag_config, self.config.cart_config]
+        tool_configs = self._get_tool_config()
         for tool_conf in tool_configs:
             if tool_conf.use_tool:
                 logger.info(f"using tool:{tool_conf._target}")
