@@ -5,6 +5,7 @@ import asyncio
 import websockets
 from websockets.asyncio.server import ServerConnection
 from loguru import logger
+import os
 
 from langchain.chat_models import init_chat_model
 from langgraph.prebuilt import create_react_agent
@@ -41,6 +42,16 @@ class PipelineConfig(InstantiateConfig):
 
     # NOTE: For reference
     tool_manager_config: ToolManagerConfig = field(default_factory=ToolManagerConfig)
+
+    def __post_init__(self):
+        if self.api_key == "wrong-key" or self.api_key is None:
+            # logger.info("wrong embedding key, using simple retrieval method")
+            self.api_key = os.environ.get("ALI_API_KEY")
+            if self.api_key is None:
+                logger.error(f"no ALI_API_KEY provided for embedding")
+            else:
+                logger.info("ALI_API_KEY loaded from environ")
+
 
 
 class Pipeline:
