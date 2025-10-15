@@ -35,6 +35,8 @@ class SimpleRagConfig(ToolConfig):
                 logger.error(f"no ALI_API_KEY provided for embedding")
             else:
                 logger.info("ALI_API_KEY loaded from environ")
+        
+        logger.info(f"using {self.folder_path} as database")
 
 
 
