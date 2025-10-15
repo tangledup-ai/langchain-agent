@@ -11,7 +11,7 @@ from lang_agent.rag.simple import SimpleRagConfig
 from lang_agent.base import LangToolBase
 from lang_agent.config import InstantiateConfig, ToolConfig
 from lang_agent.dummy.calculator import Calculator, CalculatorConfig
-
+from lang_agent.tool_manager import ToolManager, ToolManagerConfig
 
 from catering_end.lang_tool import CartToolConfig, CartTool
 
@@ -31,46 +31,26 @@ class MCPServerConfig(InstantiateConfig):
     transport:Literal["stdio", "sse", "streamable-http"] = "streamable-http"
     """transport method"""
 
-    # tool configs here; 
-    rag_config: SimpleRagConfig = field(default_factory=SimpleRagConfig)
-
-    cart_config: CartToolConfig = field(default_factory=CartToolConfig)
-
-    calc_config: CalculatorConfig = field(default_factory=CalculatorConfig)
+    toolmanager_config: ToolManagerConfig = field(default_factory=ToolManagerConfig)
 
 
 class MCPServer:
     def __init__(self, config: MCPServerConfig):
         self.config = config
         self.mcp = FastMCP(self.config.server_name)
+
+        self.populate_modules()
         self.register_mcp_functions()
 
-    def _register_tool_fnc(self, tool:LangToolBase):
-        for fnc in tool.get_tool_fnc():
-            if isinstance(fnc, FunctionTool):
-                fnc = fnc.fn
-            self.mcp.tool(fnc)
-
-    def _get_tool_config(self):
-        tool_confs = []
-        for e in dir(self.config):
-            el = getattr(self.config, e)
-            if ("calc_config" in e) and is_dataclass(el):
-                tool_confs.append(el)
-        
-        return tool_confs
+    def populate_modules(self):
+        self.tool_manager:ToolManager = self.config.toolmanager_config.setup()
 
     def register_mcp_functions(self):
+        
+        fncs = self.tool_manager.get_tool_fncs()
+        for fnc in fncs:
+            self.mcp.tool(fnc)
 
-        # NOTE: add config here for new tools; too stupid to do this automatically
-        tool_configs = self._get_tool_config()
-        for tool_conf in tool_configs:
-            if tool_conf.use_tool:
-                logger.info(f"using tool:{tool_conf._target}")
-                self._register_tool_fnc(tool_conf.setup())
-            else:
-                logger.info(f"skipping tool:{tool_conf._target}")
-    
 
     def run(self):
         # 获取FastAPI应用实例
