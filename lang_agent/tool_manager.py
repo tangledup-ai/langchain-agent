@@ -15,6 +15,8 @@ from lang_agent.rag.simple import SimpleRagConfig
 from lang_agent.dummy.calculator import CalculatorConfig
 from catering_end.lang_tool import CartToolConfig, CartTool
 
+from langchain.tools import StructuredTool
+
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
 class ToolManagerConfig(InstantiateConfig):
@@ -69,3 +71,7 @@ class ToolManager:
     
     def get_tool_fncs(self):
         return self.tool_fncs
+    
+    
+    def get_langchain_tools(self):
+        return [StructuredTool.from_function(func=func) for func in self.get_tool_fncs()]
