@@ -1,12 +1,6 @@
 {
     "calculator": {
-        "command": "python",
-        "args": ["dummy/calculator.py"],
-        "transport": "stdio"
-    },
-    "rag": {
-        "command": "python",
-        "args": ["lang_agent/rag/simple.py"],
-        "transport": "stdio"
-    }
+            "url": "http://6.6.6.78:50051/mcp",
+            "transport": "streamable_http"
+        }
 }
