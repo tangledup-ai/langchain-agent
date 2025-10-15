@@ -77,14 +77,14 @@ class SimpleRag(LangToolBase):
         return [self.retrieve]
 
 
-if __name__ == "__main__":
-#     # config = tyro.cli(SimpleRagConfig)
-    config = SimpleRagConfig()
-    rag:SimpleRag = config.setup()
+# if __name__ == "__main__":
+# #     # config = tyro.cli(SimpleRagConfig)
+#     config = SimpleRagConfig()
+#     rag:SimpleRag = config.setup()
 
-    import time 
-    st_time = time.time()
-    u = rag.retrieve("灯与尘")
-    print(time.time() - st_time)
-    print(u)
+#     import time 
+#     st_time = time.time()
+#     u = rag.retrieve("灯与尘")
+#     print(time.time() - st_time)
+#     print(u)
 #     mcp.run(transport="stdio")
