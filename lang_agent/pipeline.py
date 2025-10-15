@@ -126,7 +126,7 @@ class Pipeline:
         return out['messages'][-1].content
 
 
-if __name__ == "__main__":
-    pipeline:Pipeline = PipelineConfig().setup()
+# if __name__ == "__main__":
+#     pipeline:Pipeline = PipelineConfig().setup()
 
-    u = pipeline.chat("查查光与尘这杯茶的特点", as_stream=True)
+#     u = pipeline.chat("查查光与尘这杯茶的特点", as_stream=True)
