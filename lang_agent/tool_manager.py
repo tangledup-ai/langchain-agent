@@ -48,7 +48,7 @@ class ToolManager:
     
     def _get_tool_fnc(self, tool_obj:LangToolBase)->List:
         fnc_list = []
-        for fnc in tool_obj:
+        for fnc in tool_obj.get_tool_fnc():
             if isinstance(fnc, FunctionTool):
                 fnc = fnc.fn
             fnc_list.append(fnc)
