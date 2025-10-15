@@ -63,7 +63,7 @@ class ToolManager:
         tool_configs = self._get_tool_config()
         for tool_conf in tool_configs:
             if tool_conf.use_tool:
-                logger.info(f"using tool:{tool_conf._target}")
+                logger.info(f"making tool:{tool_conf._target}")
                 self.tool_fncs.extend(self._get_tool_fnc(tool_conf.setup()))
             else:
                 logger.info(f"skipping tool:{tool_conf._target}")
