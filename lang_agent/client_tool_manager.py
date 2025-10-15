@@ -12,8 +12,8 @@ from lang_agent.config import InstantiateConfig
 
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
-class ToolManagerConfig(InstantiateConfig):
-    _target: Type = field(default_factory=lambda: ToolManager)
+class ClientToolManagerConfig(InstantiateConfig):
+    _target: Type = field(default_factory=lambda: ClientToolManager)
 
     mcp_config_f: str = None
     """path to all mcp configurations; expect json file"""
@@ -27,8 +27,8 @@ class ToolManagerConfig(InstantiateConfig):
         assert osp.exists(self.mcp_config_f), f"config_f {self.mcp_config_f} does not exist."
 
 
-class ToolManager:
-    def __init__(self, config:ToolManagerConfig):
+class ClientToolManager:
+    def __init__(self, config:ClientToolManagerConfig):
         self.config = config
 
         self.populate_module()
@@ -49,7 +49,7 @@ class ToolManager:
 
 if __name__ == "__main__":
     # NOTE: Simple test
-    config = ToolManagerConfig()
-    tool_manager = ToolManager(config)
+    config = ClientToolManagerConfig()
+    tool_manager = ClientToolManager(config)
     tools = tool_manager.get_tools()
     print(tools)
