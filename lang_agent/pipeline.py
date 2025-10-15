@@ -108,5 +108,15 @@ class Pipeline:
     def get_ws_url(self):
         return f"ws://{self.config.host}:{self.config.port}"
     
+    def chat(self, inp:str):
+        inp = {"messages":[HumanMessage(inp)]}, {"configurable": {"thread_id": 3}}
+
+        out = self.invoke(*inp)
+        return out['messages'][-1].content
 
 
+if __name__ == "__main__":
+    pipeline:Pipeline = PipelineConfig().setup()
+    
+    print(pipeline.chat("I'm steve"))
+    print(pipeline.chat("what is my name?"))
