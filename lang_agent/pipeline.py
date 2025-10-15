@@ -13,7 +13,7 @@ from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import MemorySaver
         
 from lang_agent.config import InstantiateConfig
-from lang_agent.client_tool_manager import ClientToolManager, ClientToolManagerConfig
+from lang_agent.tool_manager import ToolManager, ToolManagerConfig
 
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
@@ -42,7 +42,7 @@ class PipelineConfig(InstantiateConfig):
     """what is my port"""
 
     # NOTE: For reference
-    tool_manager_config: ClientToolManagerConfig = field(default_factory=ClientToolManagerConfig)
+    tool_manager_config: ToolManagerConfig = field(default_factory=ToolManagerConfig)
 
     def __post_init__(self):
         if self.api_key == "wrong-key" or self.api_key is None:
@@ -68,10 +68,10 @@ class Pipeline:
                                    base_url=self.config.base_url)
         
         # NOTE: placeholder for now, add graph later
-        self.tool_manager:ClientToolManager = self.config.tool_manager_config.setup()
+        self.tool_manager:ToolManager = self.config.tool_manager_config.setup()
         memory = MemorySaver()
-        # tools = self.tool_manager.get_tools()
-        tools = []
+        tools = self.tool_manager.get_langchain_tools()
+        # tools = []
         self.agent = create_react_agent(self.llm, tools, checkpointer=memory)
     
 
