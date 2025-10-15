@@ -106,15 +106,26 @@ class Pipeline:
     def get_ws_url(self):
         return f"ws://{self.config.host}:{self.config.port}"
     
-    def chat(self, inp:str):
+    def chat(self, inp:str, as_stream:bool=False):
+        """
+        as_stream (bool): for debug only, gets the agent to print its thoughts
+        """
         inp = {"messages":[HumanMessage(inp)]}, {"configurable": {"thread_id": 3}}
+
+        if as_stream:
+            for step in self.agent.stream(*inp, stream_mode="values"):
+                step["messages"][-1].pretty_print()
+            
+            return
 
         out = self.invoke(*inp)
         return out['messages'][-1].content
 
 
-if __name__ == "__main__":
-    pipeline:Pipeline = PipelineConfig().setup()
+# if __name__ == "__main__":
+#     pipeline:Pipeline = PipelineConfig().setup()
     
-    print(pipeline.chat("I'm steve"))
-    print(pipeline.chat("what is my name?"))
+    # print(pipeline.chat("I'm steve"))
+    # print(pipeline.chat("what is my name?"))
+
+    # pipeline.chat("use the calculator tool to calculate what is 900 * 321", as_stream=True)
