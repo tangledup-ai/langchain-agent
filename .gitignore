@@ -1,5 +1,7 @@
 assets/
 .vscode/
+logs/
 *.egg-info/ 
 
 *.pyc
+django.log
