@@ -76,6 +76,9 @@ class Pipeline:
     
 
     def invoke(self, *nargs, as_stream:bool=False, **kwargs):
+        """
+        as_stream (bool): for debug only, gets the agent to print its thoughts
+        """
 
         if as_stream:
             for step in self.agent.stream(*nargs, stream_mode="values", **kwargs):
@@ -116,9 +119,6 @@ class Pipeline:
     
 
     def chat(self, inp:str, as_stream:bool=False):
-        """
-        as_stream (bool): for debug only, gets the agent to print its thoughts
-        """
         inp = {"messages":[HumanMessage(inp)]}, {"configurable": {"thread_id": 3}}
 
         out = self.invoke(*inp, as_stream=as_stream)
