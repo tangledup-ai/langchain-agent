@@ -70,7 +70,8 @@ class Pipeline:
         # NOTE: placeholder for now, add graph later
         self.tool_manager:ToolManager = self.config.tool_manager_config.setup()
         memory = MemorySaver()
-        tools = self.tool_manager.get_tools()
+        # tools = self.tool_manager.get_tools()
+        tools = []
         self.agent = create_react_agent(self.llm, tools, checkpointer=memory)
     
     # def respond(self, msg:str | List[SystemMessage, HumanMessage]):
