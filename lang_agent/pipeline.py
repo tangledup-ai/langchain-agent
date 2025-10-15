@@ -115,17 +115,16 @@ class Pipeline:
         if as_stream:
             for step in self.agent.stream(*inp, stream_mode="values"):
                 step["messages"][-1].pretty_print()
-            
-            return
+            out = step
+        else:
+            out = self.invoke(*inp)
 
-        out = self.invoke(*inp)
         return out['messages'][-1].content
 
 
-# if __name__ == "__main__":
-#     pipeline:Pipeline = PipelineConfig().setup()
-    
-    # print(pipeline.chat("I'm steve"))
-    # print(pipeline.chat("what is my name?"))
+if __name__ == "__main__":
+    pipeline:Pipeline = PipelineConfig().setup()
 
-    # pipeline.chat("use the calculator tool to calculate what is 900 * 321", as_stream=True)
+    u = pipeline.chat("use the calculator tool to calculate what is 900 * 321", as_stream=True)
+    print("================out")
+    print(u)
