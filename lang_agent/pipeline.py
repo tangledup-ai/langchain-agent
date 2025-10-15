@@ -13,7 +13,7 @@ from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import MemorySaver
         
 from lang_agent.config import InstantiateConfig
-from lang_agent.tool_manager import ToolManager, ToolManagerConfig
+from lang_agent.client_tool_manager import ToolManager, ToolManagerConfig
 
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
@@ -74,8 +74,6 @@ class Pipeline:
         tools = []
         self.agent = create_react_agent(self.llm, tools, checkpointer=memory)
     
-    # def respond(self, msg:str | List[SystemMessage, HumanMessage]):
-    #     return self.agent.invoke(msg)
 
     def invoke(self, *nargs, **kwargs):
         return self.agent.invoke(*nargs, **kwargs)
