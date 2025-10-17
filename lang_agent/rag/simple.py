@@ -24,7 +24,7 @@ class SimpleRagConfig(ToolConfig):
     api_key:str = "wrong-key"
     """api_key for model; for generic text splitting; give a wrong key <-- wrong, MUST have api key"""
 
-    folder_path:str = "assets/xiaozhan_emb"
+    folder_path:str = "/home/smith/projects/work/langchain-agent/assets/xiaozhan_emb"
     """path to local database"""
 
     def __post_init__(self):
@@ -68,7 +68,7 @@ class SimpleRag(LangToolBase):
         2. 用户搜索“适合夏天的清爽饮品”，系统会检索并返回相关饮品推荐及其来源信息。
         """
         retrieved_docs:List[Document] = self.vec_store.similarity_search(query,
-                                                                         k=3)
+                                                                         k=10)
         serialized = "\n\n".join(
             (f"Source: {doc.metadata}\nContent: {doc.page_content}")
             for doc in retrieved_docs
