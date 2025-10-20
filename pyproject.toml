@@ -2,7 +2,11 @@
 name = "lang_agent" 
 version = "0.1"   
 dependencies = [
-    "langchain",
+    "langchain==0.3.27",
+    "langchain_community==0.3.31",
+    "langchain-openai",
+    "httpx[socks]",
+    "dashscope",
     "python-dotenv>=1.0.0",
     "websockets>=11.0.3",
     "mcp>=1.8.1",
