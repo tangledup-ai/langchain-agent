@@ -16,7 +16,8 @@ from lang_agent.rag.simple import SimpleRagConfig
 from lang_agent.dummy.calculator import CalculatorConfig
 from catering_end.lang_tool import CartToolConfig, CartTool
 
-from langchain.tools import StructuredTool
+# from langchain.tools import StructuredTool
+from langchain_core.tools.structured import StructuredTool
 
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
@@ -116,4 +117,3 @@ class ToolManager:
                 )
 
         return out
-        # return [StructuredTool.from_function(func=func) for func in self.get_tool_fncs()]
