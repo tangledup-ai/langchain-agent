@@ -2,15 +2,15 @@
 name = "lang_agent" 
 version = "0.1"   
 dependencies = [
-    "langchain==0.3.27",
-    "langchain_community==0.3.31",
+    "langchain>=1.0",
+    "langchain_community",
     "langchain-openai",
     "httpx[socks]",
     "dashscope",
     "python-dotenv>=1.0.0",
     "websockets>=11.0.3",
     "mcp>=1.8.1",
-    "pydantic>=2.11.4",
+    "pydantic<2.12",
     "mcp-proxy>=0.8.2",
     "loguru",
     "tyro",
