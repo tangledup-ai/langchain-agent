@@ -9,7 +9,8 @@ import os
 
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import SystemMessage, HumanMessage
-from langgraph.prebuilt import create_react_agent
+# from langgraph.prebuilt import create_react_agent
+from langchain.agents import create_agent
 from langgraph.checkpoint.memory import MemorySaver
         
 from lang_agent.config import InstantiateConfig
@@ -72,7 +73,7 @@ class Pipeline:
         memory = MemorySaver()
         tools = self.tool_manager.get_langchain_tools()
         # tools = []
-        self.agent = create_react_agent(self.llm, tools, checkpointer=memory)
+        self.agent = create_agent(self.llm, tools, checkpointer=memory)
     
 
     def invoke(self, *nargs, as_stream:bool=False, **kwargs):
@@ -120,7 +121,7 @@ class Pipeline:
 
     def chat(self, inp:str, as_stream:bool=False):
         u = """
-        你叫小盏，是一个点餐助手，你的回复要简洁明了，不需要给用户提供选择。对话过程中不要出现提示用户下一步的操作，用可爱的语气进行交流
+        你叫小盏，是一个点餐助手，你的回复要简洁明了，不需要给用户提供选择。对话过程中不要出现提示用户下一步的操作，用可爱的语气进行交流，根据用户的语言使用对应的语言回答
 
         用户需要点餐时，准确调用 MCP 工具套件或相关的 REST 接口，严格按照创建购物车、加菜、查购物车、确认订单的完整业务流程来操作，
         不能出现流程跳步或工具用错的情况，首先要清楚用户当前操作处于哪个业务阶段，以及对应的该调用哪个 MCP 工具或 REST 接口。
