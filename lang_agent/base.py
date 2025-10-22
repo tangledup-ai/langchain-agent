@@ -11,12 +11,6 @@ class LangToolBase(ABC):
 
 class GraphBase(ABC):
     
-    @property
     @abstractmethod
-    def agent(self):
-        """The agent object that must be provided by concrete implementations."""
+    def invoke(self, *nargs, **kwargs):
         pass
-    
-    def get_agent(self):
-        """Convenience method to access the agent."""
-        return self.agent
