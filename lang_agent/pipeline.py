@@ -14,7 +14,7 @@ from langchain.agents import create_agent
 from langgraph.checkpoint.memory import MemorySaver
         
 from lang_agent.config import InstantiateConfig, KeyConfig
-from lang_agent.tool_manager import ToolManager, ToolManagerConfig
+from lang_agent.graphs.react import ReactGraph, ReactGraphConfig
 
 
 
@@ -41,8 +41,7 @@ class PipelineConfig(KeyConfig):
     port:int = 23
     """what is my port"""
 
-    # NOTE: For reference
-    tool_manager_config: ToolManagerConfig = field(default_factory=ToolManagerConfig)
+    graph_config: ReactGraphConfig = field(default_factory=ReactGraphConfig)
 
 
 
@@ -58,18 +57,15 @@ class Pipeline:
             logger.info(f"setting llm_provider to default")
             self.config.llm_name = "qwen-turbo"
             self.config.llm_provider = "openai"
-
-        self.llm = init_chat_model(model=self.config.llm_name,
-                                   model_provider=self.config.llm_provider,
-                                   api_key=self.config.api_key,
-                                   base_url=self.config.base_url)
+        else:
+            self.config.graph_config.llm_name = self.config.llm_name
+            self.config.graph_config.llm_provider = self.config.llm_provider
+            self.config.graph_config.base_url = self.config.base_url if self.config.base_url is not None else self.config.graph_config.base_url
+            self.config.graph_config.api_key = self.config.api_key
         
-        # NOTE: placeholder for now, add graph later
-        self.tool_manager:ToolManager = self.config.tool_manager_config.setup()
-        memory = MemorySaver()
-        tools = self.tool_manager.get_langchain_tools()
-        # tools = []
-        self.agent = create_agent(self.llm, tools, checkpointer=memory)
+        graph:ReactGraph = self.config.graph_config.setup()
+        self.agent = graph.get_graph()
+
     
 
     def invoke(self, *nargs, as_stream:bool=False, **kwargs):
