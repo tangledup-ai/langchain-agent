@@ -16,7 +16,9 @@ dependencies = [
     "tyro",
     "faiss-cpu",
     "fastmcp",
-    "fastapi"
+    "fastapi",
+    "matplotlib",
+    "Pillow"
 ]
 
 [tool.setuptools.packages.find]
