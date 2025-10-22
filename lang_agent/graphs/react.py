@@ -11,7 +11,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from langchain.agents import create_agent
 from langgraph.checkpoint.memory import MemorySaver
 
-
+# NOTE: maybe make this into a base_graph_config?
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
 class ReactGraphConfig(KeyConfig):
