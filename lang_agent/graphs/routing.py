@@ -76,8 +76,9 @@ class RoutingGraph(GraphBase):
         self.memory = MemorySaver()
         self.router = self.llm.with_structured_output(Route)
 
+        tool_manager:ToolManager = self.config.tool_manager_config.setup()
         self.chat_model = create_agent(self.llm, [], self.memory)
-        self.tool_model = create_agent(self.llm, [], self.memory)
+        self.tool_model = create_agent(self.llm, tool_manager.get_langchain_tools(), self.memory)
 
 
     def _router_call(self, state:State):
