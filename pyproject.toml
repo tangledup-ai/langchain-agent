@@ -2,7 +2,7 @@
 name = "lang_agent" 
 version = "0.1"   
 dependencies = [
-    "langchain>=1.0",
+    "langchain==1.0",
     "langchain_community",
     "langchain-openai",
     "httpx[socks]",
