@@ -3,11 +3,11 @@ from typing import Any, Tuple, Type
 import yaml
 from pathlib import Path
 from typing import Dict
+import os
 
 from loguru import logger
 
 ## NOTE: base classes taken from nerfstudio
-# Pretty printing class
 class PrintableConfig:
     """Printable Config defining str function"""
 
@@ -17,7 +17,7 @@ class PrintableConfig:
 
             if self.is_secrete(key):
                 val = str(val)
-                val = val[:3] + "*"*(len(val) - 3)
+                val = val[:3] + "*"*(len(val) - 6) + val[-3:]
                 
             if isinstance(val, Tuple):
                 flattened_val = "["
@@ -55,6 +55,22 @@ class InstantiateConfig(PrintableConfig):
         logger.info(f"[yellow]config saved to: {filename}[/yellow]")
 
             
+
+
+@dataclass
+class KeyConfig(InstantiateConfig):
+
+    api_key:str = None
+    """api key for llm"""
+
+    def __post_init__(self):
+        if self.api_key == "wrong-key" or self.api_key is None:
+            self.api_key = os.environ.get("ALI_API_KEY")
+            if self.api_key is None:
+                logger.error(f"no ALI_API_KEY provided for embedding")
+            else:
+                logger.info("ALI_API_KEY loaded from environ")
+
 
 @dataclass
 class ToolConfig(InstantiateConfig):
