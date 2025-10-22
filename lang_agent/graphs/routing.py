@@ -59,7 +59,13 @@ class RoutingGraph(GraphBase):
     def invoke(self, *nargs, as_stream:bool=False, **kwargs):
         assert len(kwargs) == 0, "due to inp assumptions"
 
-        state = self.workflow.invoke({"inp": nargs})
+        if as_stream:
+            for step in self.workflow.stream({"inp": nargs}, stream_mode="values", **kwargs):
+                step["messages"][-1].pretty_print()
+            state = step
+        else:
+            state = self.workflow.invoke({"inp": nargs})
+            
         return state["output"]
     
     def _build_modules(self):
