@@ -75,8 +75,18 @@ class Pipeline:
         else:
             logger.info(f"show graph not supported for {type(self.graph)}")
 
-    def invoke(self, *nargs, **kwargs):
-        return self.graph.invoke(*nargs, **kwargs)
+    def invoke(self, *nargs, **kwargs)->str:
+        out = self.graph.invoke(*nargs, **kwargs)
+        if isinstance(out, SystemMessage) or isinstance(out, HumanMessage):
+            return out.content
+        
+        if isinstance(out, list):
+            return out[-1].content
+        
+        if isinstance(out, str):
+            return out
+        
+        assert 0, "something is wrong"
 
     async def handle_connection(self, websocket:ServerConnection):
         try:
@@ -107,7 +117,7 @@ class Pipeline:
         return f"ws://{self.config.host}:{self.config.port}"
     
 
-    def chat(self, inp:str, as_stream:bool=False):
+    def chat(self, inp:str, as_stream:bool=False)->str:
         u = """
         你叫小盏，是一个点餐助手，你的回复要简洁明了，不需要给用户提供选择。对话过程中不要出现提示用户下一步的操作，用可爱的语气进行交流，根据用户的语言使用对应的语言回答
 
@@ -134,4 +144,5 @@ class Pipeline:
 
         out = self.invoke(*inp, as_stream=as_stream)
 
-        return out['messages'][-1].content
+        # return out['messages'][-1].content
+        return out
