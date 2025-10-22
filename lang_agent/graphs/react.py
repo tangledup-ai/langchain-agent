@@ -43,7 +43,7 @@ class ReactGraph(GraphBase):
                                    api_key=self.config.api_key,
                                    base_url=self.config.base_url)
         
-        # NOTE: placeholder for now, add graph later
+
         self.tool_manager:ToolManager = self.config.tool_manager_config.setup()
         memory = MemorySaver()
         tools = self.tool_manager.get_langchain_tools()
