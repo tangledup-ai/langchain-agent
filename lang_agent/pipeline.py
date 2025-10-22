@@ -14,6 +14,7 @@ from langchain.agents import create_agent
 from langgraph.checkpoint.memory import MemorySaver
         
 from lang_agent.config import InstantiateConfig, KeyConfig
+from lang_agent.graphs import AnnotatedGraph
 from lang_agent.graphs.react import ReactGraph, ReactGraphConfig
 
 
@@ -41,7 +42,8 @@ class PipelineConfig(KeyConfig):
     port:int = 23
     """what is my port"""
 
-    graph_config: ReactGraphConfig = field(default_factory=ReactGraphConfig)
+    # graph_config: ReactGraphConfig = field(default_factory=ReactGraphConfig)
+    graph_config: AnnotatedGraph = field(default_factory=ReactGraphConfig)
 
 
 
@@ -127,32 +129,3 @@ class Pipeline:
         out = self.invoke(*inp, as_stream=as_stream)
 
         return out['messages'][-1].content
-
-
-import signal
-import sys
-def signal_handler(sig, frame):
-    """Handle Ctrl+C signal for graceful shutdown"""
-    print("\n程序正在退出...")
-    sys.exit(0)
-
-def main():
-    # Register signal handler for Ctrl+C
-    signal.signal(signal.SIGINT, signal_handler)
-    
-    pipeline_config = PipelineConfig()
-    pipeline: Pipeline = pipeline_config.setup()
-
-    # 进行循环对话
-    while True:
-        
-        user_input = input("请讲：")
-        if user_input.lower() == "exit":
-            break
-        response = pipeline.chat(user_input, as_stream=True)
-        print(f"回答: {response}")
-
-
-if __name__ == "__main__":
-    # asyncio.run(main())
-    main()
