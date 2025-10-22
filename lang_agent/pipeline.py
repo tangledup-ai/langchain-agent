@@ -63,24 +63,12 @@ class Pipeline:
             self.config.graph_config.base_url = self.config.base_url if self.config.base_url is not None else self.config.graph_config.base_url
             self.config.graph_config.api_key = self.config.api_key
         
-        graph:ReactGraph = self.config.graph_config.setup()
-        self.agent = graph.get_graph()
+        self.graph:ReactGraph = self.config.graph_config.setup()
 
     
 
-    def invoke(self, *nargs, as_stream:bool=False, **kwargs):
-        """
-        as_stream (bool): for debug only, gets the agent to print its thoughts
-        """
-
-        if as_stream:
-            for step in self.agent.stream(*nargs, stream_mode="values", **kwargs):
-                step["messages"][-1].pretty_print()
-            out = step
-        else:
-            out = self.agent.invoke(*nargs, **kwargs)
-
-        return out
+    def invoke(self, *nargs, **kwargs):
+        return self.graph.invoke(*nargs, **kwargs)
 
     async def handle_connection(self, websocket:ServerConnection):
         try:

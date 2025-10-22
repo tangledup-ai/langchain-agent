@@ -49,5 +49,16 @@ class ReactGraph(GraphBase):
         tools = self.tool_manager.get_langchain_tools()
         self.agent = create_agent(self.llm, tools, checkpointer=memory)
     
-    def get_graph(self):
-        return self.agent
+    def invoke(self, *nargs, as_stream:bool=False, **kwargs):
+        """
+        as_stream (bool): for debug only, gets the agent to print its thoughts
+        """
+
+        if as_stream:
+            for step in self.agent.stream(*nargs, stream_mode="values", **kwargs):
+                step["messages"][-1].pretty_print()
+            out = step
+        else:
+            out = self.agent.invoke(*nargs, **kwargs)
+
+        return out
