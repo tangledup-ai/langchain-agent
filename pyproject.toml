@@ -18,7 +18,8 @@ dependencies = [
     "fastmcp",
     "fastapi",
     "matplotlib",
-    "Pillow"
+    "Pillow",
+    "jax"
 ]
 
 [tool.setuptools.packages.find]
