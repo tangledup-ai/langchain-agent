@@ -14,8 +14,8 @@ from langchain.agents import create_agent
 from langgraph.checkpoint.memory import MemorySaver
         
 from lang_agent.config import InstantiateConfig, KeyConfig
-from lang_agent.graphs import AnnotatedGraph
-from lang_agent.graphs.react import ReactGraph, ReactGraphConfig
+from lang_agent.graphs import AnnotatedGraph, ReactGraphConfig, RoutingConfig
+from lang_agent.base import GraphBase
 
 
 
@@ -43,7 +43,8 @@ class PipelineConfig(KeyConfig):
     """what is my port"""
 
     # graph_config: ReactGraphConfig = field(default_factory=ReactGraphConfig)
-    graph_config: AnnotatedGraph = field(default_factory=ReactGraphConfig)
+    # graph_config: AnnotatedGraph = field(default_factory=ReactGraphConfig)
+    graph_config: AnnotatedGraph = field(default_factory=RoutingConfig)
 
 
 
@@ -65,9 +66,14 @@ class Pipeline:
             self.config.graph_config.base_url = self.config.base_url if self.config.base_url is not None else self.config.graph_config.base_url
             self.config.graph_config.api_key = self.config.api_key
         
-        self.graph:ReactGraph = self.config.graph_config.setup()
+        self.graph:GraphBase = self.config.graph_config.setup()
 
-    
+    def show_graph(self):
+        if hasattr(self.graph, "show_graph"):
+            logger.info("showing graph")
+            self.graph.show_graph()
+        else:
+            logger.info(f"show graph not supported for {type(self.graph)}")
 
     def invoke(self, *nargs, **kwargs):
         return self.graph.invoke(*nargs, **kwargs)

@@ -3,6 +3,9 @@ from typing import Type, TypedDict, Literal, Dict, List, Tuple
 import tyro
 from pydantic import BaseModel, Field
 from loguru import logger
+from PIL import Image
+from io import BytesIO
+import matplotlib.pyplot as plt
 
 from lang_agent.config import KeyConfig
 from lang_agent.tool_manager import ToolManager, ToolManagerConfig
@@ -130,7 +133,9 @@ class RoutingGraph(GraphBase):
         inp = {"messages":[
             SystemMessage(
                 "You must use tool to complete the possible task"
-            ),self._get_human_msg(state)
+            ),
+            # self._get_human_msg(state)
+            *state["inp"][0][1:]
         ]}, state["inp"][1]
 
         out = self.tool_model.invoke(*inp)
@@ -161,3 +166,8 @@ class RoutingGraph(GraphBase):
         workflow = builder.compile()
 
         return workflow
+
+    def show_graph(self):
+        img = Image.open(BytesIO(self.workflow.get_graph().draw_mermaid_png()))
+        plt.imshow(img)
+        plt.show()
