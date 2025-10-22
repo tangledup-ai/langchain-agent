@@ -9,34 +9,20 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.documents.base import Document
 
 from lang_agent.rag.emb import QwenEmbeddings
-from lang_agent.config import ToolConfig
+from lang_agent.config import ToolConfig, KeyConfig
 from lang_agent.base import LangToolBase
 
 
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
-class SimpleRagConfig(ToolConfig):
+class SimpleRagConfig(ToolConfig, KeyConfig):
     _target: Type = field(default_factory=lambda: SimpleRag)
 
     model_name:str = "text-embedding-v4"
     """embedding model name"""
 
-    api_key:str = "wrong-key"
-    """api_key for model; for generic text splitting; give a wrong key <-- wrong, MUST have api key"""
-
     folder_path:str = "/home/smith/projects/work/langchain-agent/assets/xiaozhan_emb"
     """path to local database"""
-
-    def __post_init__(self):
-        if self.api_key == "wrong-key":
-            # logger.info("wrong embedding key, using simple retrieval method")
-            self.api_key = os.environ.get("ALI_API_KEY")
-            if self.api_key is None:
-                logger.error(f"no ALI_API_KEY provided for embedding")
-            else:
-                logger.info("ALI_API_KEY loaded from environ")
-        
-        logger.info(f"using {self.folder_path} as database")
 
 
 
