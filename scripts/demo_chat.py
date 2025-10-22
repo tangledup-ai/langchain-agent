@@ -10,13 +10,18 @@ def main(conf:PipelineConfig):
     
     pipeline:Pipeline = conf.setup()
     
-    while True:
+    # while True:
         
-        user_input = input("请讲：")
-        if user_input.lower() == "exit":
-            break
-        response = pipeline.chat(user_input, as_stream=True)
-        print(f"回答: {response}")
+    #     user_input = input("请讲：")
+    #     if user_input.lower() == "exit":
+    #         break
+    #     response = pipeline.chat(user_input, as_stream=True)
+    #     print(f"回答: {response}")
+
+    out = pipeline.chat("用工具算6856854-416846等于多少;然后解释它是怎么算出来的", as_stream=True)
+    # out = pipeline.chat("testing", as_stream=True)
+    print("=========== final ==========")
+    print(out)
 
 
 if __name__ == "__main__":
