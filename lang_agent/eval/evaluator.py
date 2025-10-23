@@ -38,7 +38,7 @@ class Evaluator:
         logger.info("preparing to run experiment")
         self.pipeline:Pipeline = self.config.pipe_config.setup()
         self.cli = Client()
-        self.validator:ValidatorConfig = self.config.validator_config.setup(
+        self.validator:Validator = self.config.validator_config.setup(
                                                 dataset_name=self.config.dataset_name
                                             )
         self.dataset = self.cli.read_dataset(dataset_name=self.config.dataset_name)
