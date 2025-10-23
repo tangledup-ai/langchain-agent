@@ -62,7 +62,9 @@ class ReactGraph(GraphBase):
         else:
             out = self.agent.invoke(*nargs, **kwargs)
 
+        msgs_list = jax.tree.leaves(out)
+
         if as_raw:
             return out
         else:
-            return jax.tree.leaves(out)[-1].content
+            return msgs_list[-1].content
