@@ -61,7 +61,7 @@ class RoutingGraph(GraphBase):
         self.workflow = self._build_graph()
     
 
-    def invoke(self, *nargs, as_stream:bool=False, as_raw:bool=False, **kwargs):
+    def invoke(self, *nargs, as_stream:bool=False, as_raw:bool=False, **kwargs)->str:
         self._validate_input(*nargs, **kwargs)
 
         if as_stream:
@@ -81,7 +81,7 @@ class RoutingGraph(GraphBase):
         if as_raw:
             return msg_list
 
-        return msg_list[-1].content
+        return msg_list[-1].content 
     
     def _validate_input(self, *nargs, **kwargs):
         assert len(nargs[0]["messages"]) >= 2, "need at least 1 system and 1 human message"

@@ -117,7 +117,7 @@ class Pipeline:
         return f"ws://{self.config.host}:{self.config.port}"
     
 
-    def chat(self, inp:str, as_stream:bool=False)->str:
+    def chat(self, inp:str, as_stream:bool=False, as_raw:bool=False)->str:
         u = """
         你叫小盏，是一个点餐助手，你的回复要简洁明了，不需要给用户提供选择。对话过程中不要出现提示用户下一步的操作，用可爱的语气进行交流，根据用户的语言使用对应的语言回答
 
@@ -142,7 +142,7 @@ class Pipeline:
         inp = {"messages":[SystemMessage(u),
                            HumanMessage(inp)]}, {"configurable": {"thread_id": 3}}
 
-        out = self.invoke(*inp, as_stream=as_stream)
+        out = self.invoke(*inp, as_stream=as_stream, as_raw=as_raw)
 
         # return out['messages'][-1].content
         return out
