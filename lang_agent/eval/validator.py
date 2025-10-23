@@ -14,9 +14,8 @@ class ValidatorConfig(KeyConfig):
 
 
 class Validator:
-    def __init__(self, config: ValidatorConfig, dataset_name:str):
+    def __init__(self, config: ValidatorConfig):
         self.config = config
-        self.dataset_name = dataset_name
 
         self.populate_modules()
 
