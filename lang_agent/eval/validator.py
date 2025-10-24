@@ -23,6 +23,10 @@ class Validator:
             "Toxic Queries" : self.Toxic_Queries_correct
         }
 
+        self.dict_inp_map = {
+            "Toxic Queries" : self.Toxic_Queries_inp_parse
+        }
+
 
     def populate_modules(self):
         self.judge_llm = init_chat_model(
@@ -41,7 +45,7 @@ class Validator:
             " does contain all of the expected information and 'INCORRECT'"
             " otherwise. Do not include anything else in your response."
         )
-        actual_answer = outputs[-1].content
+        actual_answer = outputs["output"][-1].content
         expected_answer = reference_outputs["label"]
 
         user_msg = (
@@ -58,5 +62,15 @@ class Validator:
 
         return response.content.upper() == "CORRECT"
     
+
+    def Toxic_Queries_inp_parse(self, inp, pipeline:Pipeline):
+        inp = inp["text"]
+        return pipeline.chat(inp, as_raw=True)
+
+    
     def get_val_fnc(self, dataset_name:str):
         return self.dict_corr_map[dataset_name]
+    
+
+    def get_inp_fnc(self,dataset_name:str):
+        return self.dict_inp_map[dataset_name]
