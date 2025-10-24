@@ -14,7 +14,10 @@ export LANGSMITH_API_KEY=REDACTED
 ```
 
 # Install
+need to install: `xiaoliang-catering `
+
 ```bash
+
 # for developement
 python -m pip install -e .
 
