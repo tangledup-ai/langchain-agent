@@ -56,7 +56,7 @@ class Evaluator:
         self.result = self.cli.evaluate(
             runnable,
             data=self.dataset.name,
-            evaluators=[self.validator.get_val_fnc(self.config.dataset_name)],
+            evaluators=self.validator.get_val_fnc(self.config.dataset_name),
             experiment_prefix=self.config.experiment_prefix,
             description=self.config.experiment_desc,
             max_concurrency=4

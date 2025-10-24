@@ -21,7 +21,7 @@ class Validator:
 
         # NOTE: Need to register function here
         self.dict_corr_map = {
-            "Toxic Queries" : self.Toxic_Queries_correct
+            "Toxic Queries" : [self.Toxic_Queries_correct]
         }
 
         # NOTE: Need to register function here
