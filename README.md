@@ -4,6 +4,15 @@
 # Install
 1. Install `xiaoliang-catering` for carttool support; otherwise, comment out in `lang_agent/tool_manager.py`
 
+# Environs
+Need these:
+```bash
+export ALI_API_KEY=REDACTED
+export ALI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+export MCP_ENDPOINT=REDACTED
+export LANGSMITH_API_KEY=REDACTED
+```
+
 ```bash
 # for developement
 python -m pip install -e .
