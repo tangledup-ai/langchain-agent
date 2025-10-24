@@ -13,6 +13,7 @@ export MCP_ENDPOINT=REDACTED
 export LANGSMITH_API_KEY=REDACTED
 ```
 
+# Install
 ```bash
 # for developement
 python -m pip install -e .
