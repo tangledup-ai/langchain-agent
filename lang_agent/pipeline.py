@@ -77,6 +77,10 @@ class Pipeline:
 
     def invoke(self, *nargs, **kwargs)->str:
         out = self.graph.invoke(*nargs, **kwargs)
+
+        if kwargs.get("as_raw"):
+            return out
+
         if isinstance(out, SystemMessage) or isinstance(out, HumanMessage):
             return out.content
         
