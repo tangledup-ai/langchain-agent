@@ -1,0 +1,8 @@
+{   // Prompt for router; manditory to say return as json for route_prompt; if not, there will be bugs
+    "route_prompt" : "Return a JSON object with 'step'.the value should be one of 'chat' or 'order' based on the user input",
+
+    // Prompt for tool branch
+    "tool_prompt" : "You must use tool to complete the possible task"
+    
+    // Optionally set chat_prompt to overwrite the system prompt from xiaozhi
+}
