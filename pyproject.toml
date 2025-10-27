@@ -5,6 +5,7 @@ dependencies = [
     "langchain==1.0",
     "langchain_community",
     "langchain-openai",
+    "langchain_mcp_adapters",
     "httpx[socks]",
     "dashscope",
     "python-dotenv>=1.0.0",
