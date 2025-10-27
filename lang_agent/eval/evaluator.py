@@ -24,7 +24,7 @@ class EvaluatorConfig(InstantiateConfig):
     experiment_desc:str = "testing if this works or not"
     """describe the experiment"""
 
-    dataset_name:Literal["Toxic Queries"] = "Toxic Queries"
+    dataset_name:Literal["Toxic Queries"] = "dev_langagent"
     """name of the dataset to evaluate"""
 
     pipe_config: PipelineConfig = field(default_factory=PipelineConfig)
