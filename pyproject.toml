@@ -20,7 +20,8 @@ dependencies = [
     "fastapi",
     "matplotlib",
     "Pillow",
-    "jax"
+    "jax",
+    "commentjson"
 ]
 
 [tool.setuptools.packages.find]
