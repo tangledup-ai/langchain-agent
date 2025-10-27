@@ -18,7 +18,8 @@ def main(conf:PipelineConfig):
     #     response = pipeline.chat(user_input, as_stream=True)
     #     print(f"回答: {response}")
 
-    out = pipeline.chat("用工具算6856854-416846等于多少;然后解释它是怎么算出来的", as_stream=True)
+    # out = pipeline.chat("用工具算6856854-416846等于多少;然后解释它是怎么算出来的", as_stream=True)
+    out = pipeline.chat("介绍一下自己", as_stream=True)
     # out = pipeline.chat("testing", as_stream=True)
     print("=========== final ==========")
     print(out)
