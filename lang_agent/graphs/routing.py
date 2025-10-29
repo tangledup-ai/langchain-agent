@@ -120,8 +120,7 @@ class RoutingGraph(GraphBase):
         decision:Route = self.router.invoke(
             [
                 SystemMessage(
-                    # content="Return a JSON object with 'step'.the value should be one of 'chat' or 'order' based on the user input"
-                    content=self.prompt_dict.get("route_prompt")
+                    content=self.prompt_dict["route_prompt"]
                 ),
                 self._get_human_msg(state)
             ]
@@ -157,12 +156,11 @@ class RoutingGraph(GraphBase):
         
         if self.prompt_dict.get("chat_prompt") is not None:
             inp = {"messages":[
-                SystemMessage(
-                    # "You must use tool to complete the possible task"
-                    self.prompt_dict["chat_prompt"]
-                ),
-                *state["inp"][0]["messages"][1:]
-            ]}, state["inp"][1]
+                        SystemMessage(
+                            self.prompt_dict["chat_prompt"]
+                        ),
+                        *state["inp"][0]["messages"][1:]
+                    ]}, state["inp"][1]
 
 
         out = self.chat_model.invoke(*inp)
@@ -172,7 +170,6 @@ class RoutingGraph(GraphBase):
     def _tool_model_call(self, state:State):
         inp = {"messages":[
             SystemMessage(
-                # "You must use tool to complete the possible task"
                 self.prompt_dict["tool_prompt"]
             ),
             *state["inp"][0]["messages"][1:]
