@@ -37,3 +37,15 @@ python scripts/start_mcp_server.py
 # update configs/ws_mcp_config.json with link from the command above
 python scripts/ws_start_register_tools.py
 ```
+
+# Eval Dataset Format
+see `scripts/make_eval_dataset.py` for example. Specific meaning of each entry:
+```json
+[
+    {
+        "inputs": {"text": "用retrieve查询光予尘然后介绍"}, // model input
+        "outputs": {"answer": "光予尘茉莉绿茶为底",         // reference answer
+                    "tool_use": ["retrieve"]}            // tool uses; assume model need to use all tools if more than 1 provided 
+    }
+]
+```
