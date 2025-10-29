@@ -125,5 +125,5 @@ class ToolManager:
 
         return self.langchain_tools
     
-    def get_list_langchain_tools(self):
+    def get_list_langchain_tools(self)->List[StructuredTool]:
         return self.langchain_tools
