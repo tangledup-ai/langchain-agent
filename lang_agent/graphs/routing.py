@@ -110,7 +110,7 @@ class RoutingGraph(GraphBase):
 
         tool_manager:ToolManager = self.config.tool_manager_config.setup()
         self.chat_model = create_agent(self.llm, [], checkpointer=self.memory)
-        self.tool_model = create_agent(self.llm, tool_manager.get_langchain_tools(), checkpointer=self.memory)
+        self.tool_model = create_agent(self.llm, tool_manager.get_list_langchain_tools(), checkpointer=self.memory)
 
         with open(self.config.sys_promp_json , "r") as f:
             self.prompt_dict = commentjson.load(f)
