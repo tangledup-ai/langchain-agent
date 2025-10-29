@@ -53,6 +53,9 @@ class InstantiateConfig(PrintableConfig):
         with open(filename, 'w') as f:
             yaml.dump(self, f)
         logger.info(f"[yellow]config saved to: {filename}[/yellow]")
+    
+    def get_name(self):
+        return self.__class__.__name__
 
             
 
