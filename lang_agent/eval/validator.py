@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Type, Callable, List
 import tyro
+import random
 
 from lang_agent.config import KeyConfig
 from lang_agent.pipeline import Pipeline, PipelineConfig
@@ -90,9 +91,10 @@ class Validator:
         if isinstance(inp, str):
             inp = [inp]
 
+        thread_id = random.randint(1, 9999999999)
         outs = []
         for usr_inp in inp:
-            outs.extend(pipeline.chat(usr_inp, as_raw=True))
+            outs.extend(pipeline.chat(usr_inp, as_raw=True, thread_id=thread_id))
 
         return outs
 
