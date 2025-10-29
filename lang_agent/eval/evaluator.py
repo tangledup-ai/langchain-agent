@@ -76,19 +76,21 @@ class Evaluator:
         exp_save_f = osp.join(f"{head_path}-{n_exp}.csv")
 
         df = self.result.to_pandas()
+        logger.info(f"saving experiment results to: {exp_save_f}")
         df.to_csv(exp_save_f, index=False)
 
         metric_col = [e for e in df.columns if "feedback" in e]
 
-        df_curr_m = df[metric_col].mean()
+        df_curr_m = df[metric_col].mean().to_frame().T
+        df_curr_m.index = [f'{head_path}-{n_exp}']
 
         metric_f = osp.join(self.config.log_dir, "0_exp_metrics.csv")  # start with 0 for first file in folder
         if osp.exists(metric_f):
-            df_m = pd.read_csv(metric_f)
+            df_m = pd.read_csv(metric_f, index_col=0)
             df_m = pd.concat([df_m, df_curr_m])
         else:
             df_m = df_curr_m
         
-        df_m.to_csv(metric_f, index=False)
+        df_m.to_csv(metric_f)
 
 
