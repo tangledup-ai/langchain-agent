@@ -65,10 +65,10 @@ class Validator:
 
         return response.content.upper() == "CORRECT"
     
-    def val_tool_use(self, inputs:dict, outputs:dict, reference_outputs:dict)->bool:
+    def val_tool_use(self, inputs:dict, outputs:dict, reference_outputs:dict)->float:
         tool_uses:List[str] = reference_outputs.get("tool_use")
         if tool_uses is None:
-            return True
+            return 1.0
 
         tool_msgs = [e for e in outputs["output"] if isinstance(e, ToolMessage)]
 
@@ -102,7 +102,7 @@ class Validator:
 
     
     def get_val_fnc(self, dataset_name:str)->List[Callable]:
-        return self.dict_corr_map.get(dataset_name, [self.default_correct])
+        return self.dict_corr_map.get(dataset_name, [self.default_correct, self.val_tool_use])
     
 
     def get_inp_fnc(self,dataset_name:str)->Callable:
