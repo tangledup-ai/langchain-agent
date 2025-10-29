@@ -82,7 +82,7 @@ class Evaluator:
         metric_col = [e for e in df.columns if "feedback" in e]
 
         df_curr_m = df[metric_col].mean().to_frame().T
-        df_curr_m.index = [f'{head_path}-{n_exp}']
+        df_curr_m.index = [f'{osp.basename(head_path)}-{n_exp}']
 
         metric_f = osp.join(self.config.log_dir, "0_exp_metrics.csv")  # start with 0 for first file in folder
         if osp.exists(metric_f):
