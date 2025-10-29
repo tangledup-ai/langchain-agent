@@ -90,7 +90,15 @@ class Validator:
     # NOTE: for every dataset; need one of these
     def default_inp_parse(self, inp, pipeline:Pipeline):
         inp = inp["text"]
-        return pipeline.chat(inp, as_raw=True)
+
+        if isinstance(inp, str):
+            inp = [inp]
+
+        outs = []
+        for usr_inp in inp:
+            outs.extend(pipeline.chat(usr_inp, as_raw=True))
+
+        return outs
 
     
     def get_val_fnc(self, dataset_name:str)->List[Callable]:
