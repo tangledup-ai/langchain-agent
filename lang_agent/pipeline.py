@@ -121,7 +121,7 @@ class Pipeline:
         return f"ws://{self.config.host}:{self.config.port}"
     
 
-    def chat(self, inp:str, as_stream:bool=False, as_raw:bool=False)->str:
+    def chat(self, inp:str, as_stream:bool=False, as_raw:bool=False, thread_id:int = None)->str:
         u = """
         你叫小盏，是一个点餐助手，你的回复要简洁明了，不需要给用户提供选择。对话过程中不要出现提示用户下一步的操作，用可爱的语气进行交流，根据用户的语言使用对应的语言回答
 
@@ -143,8 +143,9 @@ class Pipeline:
         返回数据库中 status=1 并且时间是最新的数据。
             """
 
+        thread_id = thread_id if thread_id is not None else 3
         inp = {"messages":[SystemMessage(u),
-                           HumanMessage(inp)]}, {"configurable": {"thread_id": 3}}
+                           HumanMessage(inp)]}, {"configurable": {"thread_id": thread_id}}
 
         out = self.invoke(*inp, as_stream=as_stream, as_raw=as_raw)
 
