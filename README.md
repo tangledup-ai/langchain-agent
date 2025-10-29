@@ -43,7 +43,7 @@ see `scripts/make_eval_dataset.py` for example. Specific meaning of each entry:
 ```json
 [
     {
-        "inputs": {"text": "用retrieve查询光予尘然后介绍"}, // model input
+        "inputs": {"text": "用retrieve查询光予尘然后介绍"}, // model input; use list for conversation
         "outputs": {"answer": "光予尘茉莉绿茶为底",         // reference answer
                     "tool_use": ["retrieve"]}            // tool uses; assume model need to use all tools if more than 1 provided 
     }
