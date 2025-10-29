@@ -120,7 +120,7 @@ class RoutingGraph(GraphBase):
         self.tool_model = create_agent(self.llm, tool_manager.get_list_langchain_tools(), checkpointer=self.memory)
 
         with open(self.config.sys_promp_json , "r") as f:
-            self.prompt_dict = commentjson.load(f)
+            self.prompt_dict:Dict[str, str] = commentjson.load(f)
 
 
     def _router_call(self, state:State):
