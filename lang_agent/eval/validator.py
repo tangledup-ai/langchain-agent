@@ -83,11 +83,7 @@ class Validator:
                     break
             tool_used.append(st_cond)
         
-        for cond in tool_used:
-            if not cond:
-                return False
-        
-        return True
+        return sum(tool_used)/len(tool_uses)
 
     
 
