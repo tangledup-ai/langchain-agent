@@ -127,3 +127,9 @@ class ToolManager:
     
     def get_list_langchain_tools(self)->List[StructuredTool]:
         return self.langchain_tools
+
+
+if __name__ == "__main__":
+    man: ToolManager = ToolManagerConfig().setup()
+    for lang_tool in man.get_list_langchain_tools():
+        print(lang_tool.name)
