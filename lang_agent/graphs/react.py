@@ -65,6 +65,6 @@ class ReactGraph(GraphBase):
         msgs_list = jax.tree.leaves(out)
 
         if as_raw:
-            return out
+            return msgs_list
         else:
             return msgs_list[-1].content
