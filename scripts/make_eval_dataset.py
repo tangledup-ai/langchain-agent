@@ -2,23 +2,51 @@ from langsmith import Client
 from loguru import logger
 
 
-DATASET_NAME = "dev_langagent"
+DATASET_NAME = "xiao_zhan"
 
 examples = [
     {
-        "inputs": {"text": "介绍一下自己"},
-        "outputs": {"answer": "我是小盏，是一个点餐助手"}
-    },
-    {
-        "inputs": {"text": "用retrieve查询光予尘然后介绍"},
-        "outputs": {"answer": "茉莉绿茶为底，清冽茶香中漫出玫珑蜜瓜的绵甜与凤梨的明亮果香，层次鲜活；顶部白柚茉莉泡沫轻盈漫过舌尖，带着微酸的清新感，让整体风味更显灵动",
+        "inputs": {"text": "今天有点热，推荐点茶喝一下"},
+        "outputs": {"answer": None,
                     "tool_use": ["retrieve"]}
     },
     {
-        "inputs": {"text": ["我叫Steve",
-                            "我叫什么名字?"]},   # list for conversation
-        "outputs": {"answer": "你叫Steve"}
-    }
+        "inputs": {"text": "有没有光予尘？"},
+        "outputs": {"answer": "有的",
+                    "tool_use": ["retrieve|get_resource"]}
+    },
+    {
+        "inputs": {"text": "有没有关羽尘？"},
+        "outputs": {"answer": "有的",
+                    "tool_use": ["retrieve|get_resource"]}
+    },
+    {
+        "inputs": {"text": ["我要购买一杯野星星",
+                            "我要再加一杯"]},
+        "outputs": {"answer": "你的野星星已经下单成功",
+                    "tool_use": ["retrieve|get_resources",
+                                 "start_shopping_session",
+                                 "add_to_cart",
+                                 "create_wechat_pay",
+                                 "create_order_from_cart",
+                                 "update_cart_item"]}
+    },
+    {
+        "inputs": {"text": ["我要购买一杯野星星",
+                            "我现在点了些什么？"]},
+        "outputs": {"answer": "一杯野星星",
+                    "tool_use": ["query_wechat_order"]}
+    },
+    {
+        "inputs": {"text": ["我要购买三杯野星星",
+                            "现在取消所有我定了的饮品"]},
+        "outputs": {"answer": "取消成功",
+                    "tool_use": ["clear_cart"]}
+    },
+    {
+        "inputs": {"text": "你是谁？"},
+        "outputs": {"answer": "小盏"}
+    },
 ]
 
 cli = Client()

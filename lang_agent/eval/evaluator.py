@@ -25,7 +25,7 @@ class EvaluatorConfig(InstantiateConfig):
     experiment_desc:str = "testing if this works or not"
     """describe the experiment"""
 
-    dataset_name:Literal["Toxic Queries"] = "dev_langagent"
+    dataset_name:Literal["Toxic Queries"] = "xiao_zhan"
     """name of the dataset to evaluate"""
 
     log_dir:str = "logs"
@@ -73,7 +73,7 @@ class Evaluator:
 
         head_path = osp.join(self.config.log_dir, f"{self.dataset.name}-{self.config.experiment_prefix}")
         n_exp = len(glob.glob(f"{head_path}*"))
-        exp_save_f = osp.join(f"{head_path}-{n_exp}.csv")
+        exp_save_f = f"{head_path}-{n_exp}.csv"
 
         df = self.result.to_pandas()
         logger.info(f"saving experiment results to: {exp_save_f}")
@@ -92,5 +92,7 @@ class Evaluator:
             df_m = df_curr_m
         
         df_m.to_csv(metric_f)
+
+        self.config.save_config(f"{head_path}-{n_exp}.yml")
 
 

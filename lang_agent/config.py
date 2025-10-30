@@ -50,8 +50,42 @@ class InstantiateConfig(PrintableConfig):
     
     def save_config(self, filename: str) -> None:
         """Save the config to a YAML file."""
+        def mask_value(key, value):
+            # Apply masking if key is secret-like
+            if isinstance(value, str) and self.is_secrete(key):
+                sval = str(value)
+                return sval[:3] + "*" * (len(sval) - 6) + sval[-3:]
+            return value
+
+        def to_masked_serializable(obj):
+            # Recursively convert dataclasses and containers to serializable with masked secrets
+            if is_dataclass(obj):
+                out = {}
+                for k, v in vars(obj).items():
+                    if is_dataclass(v) or isinstance(v, (dict, list, tuple)):
+                        out[k] = to_masked_serializable(v)
+                    else:
+                        out[k] = mask_value(k, v)
+                return out
+            if isinstance(obj, dict):
+                out = {}
+                for k, v in obj.items():
+                    if is_dataclass(v) or isinstance(v, (dict, list, tuple)):
+                        out[k] = to_masked_serializable(v)
+                    else:
+                        # k might be a non-string; convert to str for is_secrete check consistency
+                        key_str = str(k)
+                        out[k] = mask_value(key_str, v)
+                return out
+            if isinstance(obj, list):
+                return [to_masked_serializable(v) for v in obj]
+            if isinstance(obj, tuple):
+                return tuple(to_masked_serializable(v) for v in obj)
+            return obj
+
+        masked = to_masked_serializable(self)
         with open(filename, 'w') as f:
-            yaml.dump(self, f)
+            yaml.dump(masked, f)
         logger.info(f"[yellow]config saved to: {filename}[/yellow]")
     
     def get_name(self):

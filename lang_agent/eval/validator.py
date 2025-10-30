@@ -51,6 +51,9 @@ class Validator:
         actual_answer = outputs["output"][-1].content
         expected_answer = reference_outputs["answer"]
 
+        if expected_answer is None:
+            return True
+
         user_msg = (
             f"ACTUAL ANSWER: {actual_answer}"
             f"\n\nEXPECTED ANSWER: {expected_answer}"
@@ -77,7 +80,7 @@ class Validator:
             st_cond = False
             ref_tool = ref_tool.lower()
             for msg in tool_msgs:
-                st_cond = ref_tool in msg.name.lower()
+                st_cond = msg.name.lower() in ref_tool
                 if st_cond:
                     break
             tool_used.append(st_cond)
