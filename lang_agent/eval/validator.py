@@ -80,7 +80,7 @@ class Validator:
             st_cond = False
             ref_tool = ref_tool.lower()
             for msg in tool_msgs:
-                st_cond = ref_tool in msg.name.lower()
+                st_cond = msg.name.lower() in ref_tool
                 if st_cond:
                     break
             tool_used.append(st_cond)
