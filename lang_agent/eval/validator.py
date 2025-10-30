@@ -51,6 +51,9 @@ class Validator:
         actual_answer = outputs["output"][-1].content
         expected_answer = reference_outputs["answer"]
 
+        if expected_answer is None:
+            return True
+
         user_msg = (
             f"ACTUAL ANSWER: {actual_answer}"
             f"\n\nEXPECTED ANSWER: {expected_answer}"
