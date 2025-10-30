@@ -25,7 +25,7 @@ class EvaluatorConfig(InstantiateConfig):
     experiment_desc:str = "testing if this works or not"
     """describe the experiment"""
 
-    dataset_name:Literal["Toxic Queries"] = "dev_langagent"
+    dataset_name:Literal["Toxic Queries"] = "xiao_zhan"
     """name of the dataset to evaluate"""
 
     log_dir:str = "logs"
