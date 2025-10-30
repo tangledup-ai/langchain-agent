@@ -1,1 +1,3 @@
 Return a JSON object with 'step'.the value should be one of 'chat' or 'order' based on the user input
+每次聊天都先判断用户的需求，如果只是聊天交流就就查看chat_prompt中的要求
+如果用户有点餐、点菜、以及任何购买需求时，先查看chat_prompt中的要求再查看tool_prompt来调用工具
