@@ -1,0 +1,1 @@
+create a chat_prompt.txt to overwrite the system prompt from xiaozhi
