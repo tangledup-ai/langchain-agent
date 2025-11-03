@@ -24,7 +24,7 @@ examples = [
         "inputs": {"text": ["我要购买一杯野星星",
                             "我要再加一杯"]},
         "outputs": {"answer": "你的野星星已经下单成功",
-                    "tool_use": ["retrieve|get_resources",
+                    "tool_use": ["retrieve|get_resource",
                                  "start_shopping_session",
                                  "add_to_cart",
                                  "create_wechat_pay",
