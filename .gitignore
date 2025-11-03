@@ -6,3 +6,4 @@ logs/
 *.pyc
 *.zip
 django.log
+.env
