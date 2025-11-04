@@ -26,6 +26,8 @@ class ChatCompletionRequest(BaseModel):
     max_tokens: Optional[int] = Field(default=500, description="最大生成token数")
     stream: Optional[bool] = Field(default=False, description="是否流式返回")
     thread_id: Optional[int] = Field(default=3, description="线程ID，用于多轮对话")
+    llm_provider: Optional[str] = Field(default="openai", description="LLM提供商")
+    base_url: Optional[str] = Field(default="https://dashscope.aliyuncs.com/compatible-mode/v1", description="LLM API基础URL")
 
 class ChatCompletionResponseChoice(BaseModel):
     index: int
@@ -73,14 +75,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 初始化Pipeline
-pipeline_config = PipelineConfig()
-pipeline_config.llm_name = "qwen-flash"
-pipeline_config.llm_provider = "openai"
-pipeline_config.base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-
-pipeline = Pipeline(pipeline_config)
-
 @app.post("/v1/chat/completions", response_model=ChatCompletionResponse)
 async def chat_completions(
     request: ChatCompletionRequest, 
@@ -102,6 +96,15 @@ async def chat_completions(
         
         if not user_message:
             raise HTTPException(status_code=400, detail="缺少用户消息")
+        
+        # 动态创建PipelineConfig
+        pipeline_config = PipelineConfig()
+        pipeline_config.llm_name = request.model
+        pipeline_config.llm_provider = request.llm_provider
+        pipeline_config.base_url = request.base_url
+        
+        # 创建新的Pipeline实例
+        pipeline = Pipeline(pipeline_config)
         
         # 调用pipeline的chat方法
         response_content = pipeline.chat(
