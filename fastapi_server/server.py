@@ -30,6 +30,8 @@ class ChatCompletionRequest(BaseModel):
     max_tokens: Optional[int] = Field(default=500, description="最大生成token数")
     stream: Optional[bool] = Field(default=False, description="是否流式返回")
     thread_id: Optional[int] = Field(default=3, description="线程ID，用于多轮对话")
+    llm_provider: Optional[str] = Field(default="openai", description="LLM提供商")
+    base_url: Optional[str] = Field(default="https://dashscope.aliyuncs.com/compatible-mode/v1", description="LLM API基础URL")
 
 class ChatCompletionResponseChoice(BaseModel):
     index: int
@@ -224,7 +226,7 @@ async def chat_completions(
         for message in request.messages:
             if message.role == "user":
                 user_message = message.content
-            elif message.role == "system":
+            elif message.role == "system" or message.role == "assistant":
                 system_message = message.content
         
         if not user_message:
