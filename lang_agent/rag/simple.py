@@ -25,6 +25,7 @@ class SimpleRagConfig(ToolConfig, KeyConfig):
     """path to docker database"""
     
     def __post_init__(self):
+        super().__post_init__()
         if self.folder_path is None:
             self.folder_path = osp.join(osp.dirname(osp.dirname(osp.dirname(__file__))), "assets", "xiaozhan_emb")
             logger.info(f"no rag database provided, using default {self.folder_path}")
