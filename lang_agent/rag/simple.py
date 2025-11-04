@@ -3,7 +3,7 @@ from typing import Type, List
 import tyro
 from mcp.server.fastmcp import FastMCP
 from loguru import logger
-import os
+import os.path as osp
 
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents.base import Document
@@ -21,19 +21,13 @@ class SimpleRagConfig(ToolConfig, KeyConfig):
     model_name:str = "text-embedding-v4"
     """embedding model name"""
 
-    folder_path:str = "/Users/jeremygan/Desktop/TangledupAI/lang-agent/assets/xiaozhan_emb"
+    folder_path:str = None
     """path to docker database"""
     
-    # @property
-    # def folder_path(self) -> str:
-    #     """Dynamically determine the folder path for the vector store"""
-    #     # Check if environment variable is set
-    #     env_path = os.environ.get("RAG_FOLDER_PATH")
-    #     if env_path:
-    #         return env_path
-            
-    #     # Default to relative path from current working directory
-    #     return os.path.join(os.getcwd(), "assets", "xiaozhan_emb")
+    def __post_init__(self):
+        if self.folder_path is None:
+            self.folder_path = osp.join(osp.dirname(osp.dirname(osp.dirname(__file__))), "assets", "xiaozhan_emb")
+            logger.info(f"no rag database provided, using default {self.folder_path}")
 
     
 
@@ -45,18 +39,9 @@ class SimpleRag(LangToolBase):
         self.emb = QwenEmbeddings(self.config.api_key,
                                   self.config.model_name)
         
-        # Determine the folder path dynamically
-        # folder_path = os.environ.get("RAG_FOLDER_PATH")
-        # if not folder_path:
-        #     # Default to relative path from current working directory
-        #     folder_path = os.path.join(os.getcwd(), "assets", "xiaozhan_emb")
-        
-        # logger.info(f"Loading FAISS index from: {folder_path}")
-
-        folder_path = "/Users/jeremygan/Desktop/TangledupAI/lang-agent/assets/xiaozhan_emb"
         
         self.vec_store = FAISS.load_local(
-            folder_path=folder_path,
+            folder_path=self.config.folder_path,
             embeddings=self.emb,
             allow_dangerous_deserialization=True  # Required for LangChain >= 0.1.1
         )
