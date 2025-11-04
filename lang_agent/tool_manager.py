@@ -6,14 +6,14 @@ import inspect
 import asyncio
 import os.path as osp
 from loguru import logger
-from fastmcp.tools.tool import FunctionTool
+from fastmcp.tools.tool import Tool
 
 from lang_agent.config import InstantiateConfig, ToolConfig
 from lang_agent.base import LangToolBase
 
 from lang_agent.rag.simple import SimpleRagConfig
 from lang_agent.dummy.calculator import CalculatorConfig
-from catering_end.lang_tool import CartToolConfig, CartTool
+# from catering_end.lang_tool import CartToolConfig, CartTool
 
 from langchain_core.tools.structured import StructuredTool
 import jax
@@ -26,7 +26,7 @@ class ToolManagerConfig(InstantiateConfig):
     # tool configs here; MUST HAVE 'config' in name and must be dataclass
     rag_config: SimpleRagConfig = field(default_factory=SimpleRagConfig)
 
-    cart_config: CartToolConfig = field(default_factory=CartToolConfig)
+    # cart_config: CartToolConfig = field(default_factory=CartToolConfig)
 
     calc_config: CalculatorConfig = field(default_factory=CalculatorConfig)
 
@@ -78,7 +78,7 @@ class ToolManager:
     def _get_tool_fnc(self, tool_obj:LangToolBase)->List:
         fnc_list = []
         for fnc in tool_obj.get_tool_fnc():
-            if isinstance(fnc, FunctionTool):
+            if isinstance(fnc, Tool):
                 fnc = fnc.fn
             fnc_list.append(fnc)
         

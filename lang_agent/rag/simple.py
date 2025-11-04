@@ -21,8 +21,21 @@ class SimpleRagConfig(ToolConfig, KeyConfig):
     model_name:str = "text-embedding-v4"
     """embedding model name"""
 
-    folder_path:str = "/home/smith/projects/work/langchain-agent/assets/xiaozhan_emb"
-    """path to local database"""
+    folder_path:str = "/Users/jeremygan/Desktop/TangledupAI/lang-agent/assets/xiaozhan_emb"
+    """path to docker database"""
+    
+    # @property
+    # def folder_path(self) -> str:
+    #     """Dynamically determine the folder path for the vector store"""
+    #     # Check if environment variable is set
+    #     env_path = os.environ.get("RAG_FOLDER_PATH")
+    #     if env_path:
+    #         return env_path
+            
+    #     # Default to relative path from current working directory
+    #     return os.path.join(os.getcwd(), "assets", "xiaozhan_emb")
+
+    
 
 
 
@@ -31,8 +44,19 @@ class SimpleRag(LangToolBase):
         self.config = config
         self.emb = QwenEmbeddings(self.config.api_key,
                                   self.config.model_name)
+        
+        # Determine the folder path dynamically
+        # folder_path = os.environ.get("RAG_FOLDER_PATH")
+        # if not folder_path:
+        #     # Default to relative path from current working directory
+        #     folder_path = os.path.join(os.getcwd(), "assets", "xiaozhan_emb")
+        
+        # logger.info(f"Loading FAISS index from: {folder_path}")
+
+        folder_path = "/Users/jeremygan/Desktop/TangledupAI/lang-agent/assets/xiaozhan_emb"
+        
         self.vec_store = FAISS.load_local(
-            folder_path=self.config.folder_path,
+            folder_path=folder_path,
             embeddings=self.emb,
             allow_dangerous_deserialization=True  # Required for LangChain >= 0.1.1
         )
