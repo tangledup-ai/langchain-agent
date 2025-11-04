@@ -91,7 +91,7 @@ async def chat_completions(
         for message in request.messages:
             if message.role == "user":
                 user_message = message.content
-            elif message.role == "system":
+            elif message.role == "system" or message.role == "assistant":
                 system_message = message.content
         
         if not user_message:
