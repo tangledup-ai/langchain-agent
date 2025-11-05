@@ -12,7 +12,7 @@ from lang_agent.config import InstantiateConfig, ToolConfig
 from lang_agent.base import LangToolBase
 
 from lang_agent.rag.simple import SimpleRagConfig
-from lang_agent.dummy.calculator import CalculatorConfig
+# from lang_agent.dummy.calculator import CalculatorConfig
 # from catering_end.lang_tool import CartToolConfig, CartTool
 
 from langchain_core.tools.structured import StructuredTool
@@ -29,7 +29,7 @@ class ToolManagerConfig(InstantiateConfig):
 
     # cart_config: CartToolConfig = field(default_factory=CartToolConfig)
 
-    calc_config: CalculatorConfig = field(default_factory=CalculatorConfig)
+    # calc_config: CalculatorConfig = field(default_factory=CalculatorConfig)
 
 
 def async_to_sync(async_func: Callable) -> Callable:
