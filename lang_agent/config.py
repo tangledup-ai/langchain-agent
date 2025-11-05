@@ -6,6 +6,9 @@ from typing import Dict
 import os
 
 from loguru import logger
+from dotenv import load_dotenv
+
+load_dotenv()
 
 ## NOTE: base classes taken from nerfstudio
 class PrintableConfig:

@@ -3,7 +3,7 @@ from typing import Type, List
 import tyro
 from mcp.server.fastmcp import FastMCP
 from loguru import logger
-import os
+import os.path as osp
 
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents.base import Document
@@ -21,8 +21,16 @@ class SimpleRagConfig(ToolConfig, KeyConfig):
     model_name:str = "text-embedding-v4"
     """embedding model name"""
 
-    folder_path:str = "/home/smith/projects/work/langchain-agent/assets/xiaozhan_emb"
-    """path to local database"""
+    folder_path:str = None
+    """path to docker database"""
+    
+    def __post_init__(self):
+        super().__post_init__()
+        if self.folder_path is None:
+            self.folder_path = osp.join(osp.dirname(osp.dirname(osp.dirname(__file__))), "assets", "xiaozhan_emb")
+            logger.info(f"no rag database provided, using default {self.folder_path}")
+
+    
 
 
 
@@ -31,6 +39,8 @@ class SimpleRag(LangToolBase):
         self.config = config
         self.emb = QwenEmbeddings(self.config.api_key,
                                   self.config.model_name)
+        
+        
         self.vec_store = FAISS.load_local(
             folder_path=self.config.folder_path,
             embeddings=self.emb,

@@ -6,7 +6,7 @@ import inspect
 import asyncio
 import os.path as osp
 from loguru import logger
-from fastmcp.tools.tool import FunctionTool
+from fastmcp.tools.tool import Tool
 
 from lang_agent.config import InstantiateConfig, ToolConfig
 from lang_agent.base import LangToolBase
@@ -80,7 +80,7 @@ class ToolManager:
     def _get_tool_fnc(self, tool_obj:LangToolBase)->List:
         fnc_list = []
         for fnc in tool_obj.get_tool_fnc():
-            if isinstance(fnc, FunctionTool):
+            if isinstance(fnc, Tool):
                 fnc = fnc.fn
             fnc_list.append(fnc)
         
