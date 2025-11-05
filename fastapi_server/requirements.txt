@@ -7,6 +7,7 @@ langchain==1.0
 langchain-core>=0.1.0
 langchain-community
 langchain-openai
+openai>=1.0.0
 langchain-mcp-adapters
 langgraph>=0.0.40
 tyro>=0.7.0
