@@ -27,10 +27,10 @@ except Exception as e:
 
 
 # <<< Paste your running FastAPI base url here >>>
-BASE_URL = os.getenv("DS_BASE_URL", "http://localhost:8588")
+BASE_URL = os.getenv("DS_BASE_URL", "http://127.0.0.1:8588/api/")
 
 # Params
-API_KEY = os.getenv("ALI_API_KEY", "test-key")
+API_KEY = "salkjhglakshfs" #os.getenv("ALI_API_KEY", "test-key")
 APP_ID = os.getenv("ALI_APP_ID", "test-app")
 SESSION_ID = str(uuid.uuid4())
 
@@ -50,7 +50,9 @@ call_params = {
 
 def main():
     # Point the SDK to our FastAPI implementation
-    dashscope.base_http_api_url = BASE_URL
+    if BASE_URL and ("/api/" in BASE_URL):
+        dashscope.base_http_api_url = BASE_URL
+    # dashscope.base_http_api_url = BASE_URL
     print(f"Using base_http_api_url = {dashscope.base_http_api_url}")
 
     print("\nCalling Application.call(stream=True)...\n")

@@ -86,6 +86,7 @@ def sse_chunks_from_text(full_text: str, response_id: str, model: str = "qwen-fl
 
 
 @app.post("/v1/apps/{app_id}/sessions/{session_id}/responses")
+@app.post("/api/v1/apps/{app_id}/sessions/{session_id}/responses")
 async def application_responses(
     request: Request,
     app_id: str = Path(...),
@@ -168,6 +169,8 @@ async def application_responses(
 # Compatibility: some SDKs call /apps/{app_id}/completion without /v1 and without session in path
 @app.post("/apps/{app_id}/completion")
 @app.post("/v1/apps/{app_id}/completion")
+@app.post("/api/apps/{app_id}/completion")
+@app.post("/api/v1/apps/{app_id}/completion")
 async def application_completion(
     request: Request,
     app_id: str = Path(...),
