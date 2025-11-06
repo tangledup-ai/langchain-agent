@@ -22,7 +22,7 @@ class MCPServerConfig(InstantiateConfig):
 
     server_name:str = "langserver"
 
-    host: str = "6.6.6.78"
+    host: str = "6.6.6.136"
     """host of server"""
 
     port: int = 50051
