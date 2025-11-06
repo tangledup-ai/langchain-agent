@@ -40,7 +40,7 @@ RUN python -m pip install --upgrade pip \
     --trusted-host mirrors.aliyun.com \
     --default-timeout=300
 
-EXPOSE 8488
+EXPOSE 8588
 
 # Create entrypoint script that initializes conda/mamba and runs the command
 RUN echo '#!/bin/bash\n\
