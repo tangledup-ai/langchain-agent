@@ -1,24 +1,21 @@
-version: '3.8'
-
 services:
   lang-agent-api:
     build: .
     container_name: lang-agent-api
     ports:
-      - "8488:8488"
+      - "8588:8588"
     env_file:
       - ./.env
     environment:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
-      - RAG_FOLDER_PATH=/app/assets/xiaozhan_emb
     volumes:
       - ./configs:/app/configs
       - ./scripts:/app/scripts
       - ./assets:/app/assets
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8488/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8588/health')"]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -121,6 +121,7 @@ class Pipeline:
     
 
     def chat(self, inp:str, as_stream:bool=False, as_raw:bool=False, thread_id:int = None)->str:
+        # NOTE: this prompt will be overwritten by 'configs/route_sys_prompts/chat_prompt.txt' for route graph
         u = """
         [角色设定]
         你是一个和人对话的 AI，叫做小盏，是半盏青年茶馆的智能助手
