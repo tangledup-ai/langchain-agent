@@ -24,14 +24,13 @@ COPY fastapi_server/requirements.txt ./fastapi_server/
 COPY lang_agent/ ./lang_agent/
 COPY fastapi_server/ ./fastapi_server/
 
-# RUN curl -o ./.env http://6.6.6.86:8888/download/resources/.env 
-    # && \
-    # curl -o ./assets.zip http://6.6.6.86:8888/download/resources/assets.zip && \
-    # unzip assets.zip && \
-    # rm assets.zip
+
 
 # Install Python dependencies inside micromamba env
-RUN python -m pip install --upgrade pip && \
+RUN python -m pip install --upgrade pip \
+    -i https://mirrors.aliyun.com/pypi/simple/ \
+    --trusted-host mirrors.aliyun.com \
+    --default-timeout=300 && \
     python -m pip install --no-cache-dir -r fastapi_server/requirements.txt \
     -i https://mirrors.aliyun.com/pypi/simple/ \
     --trusted-host mirrors.aliyun.com \
@@ -43,4 +42,14 @@ RUN python -m pip install --upgrade pip && \
 
 EXPOSE 8488
 
-CMD ["micromamba", "run", "-n", "base", "python", "fastapi_server/server_dashscope.py"]
+# Create entrypoint script that initializes conda/mamba and runs the command
+RUN echo '#!/bin/bash\n\
+set -e\n\
+# Initialize conda (mamba uses conda under the hood)\n\
+eval "$(conda shell.bash hook)"\n\
+conda activate base\n\
+# Execute the command\n\
+exec "$@"' > /entrypoint.sh && chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["python", "fastapi_server/server_dashscope.py"]
