@@ -143,25 +143,26 @@ class ToolManager:
         self.langchain_tools = []
         for func in self.get_tool_fncs():
             if isinstance(func, StructuredTool):
-                self.langchain_tools.append(func)
+                if hasattr(func, 'coroutine') and func.coroutine is not None and (not hasattr(func, 'func') or func.func is None):
+                    sync_func = async_to_sync(func.coroutine)
+                    new_tool = StructuredTool(
+                        name=func.name,
+                        description=func.description,
+                        args_schema=func.args_schema,
+                        func=sync_func,
+                        coroutine=func.coroutine,
+                        metadata=func.metadata if hasattr(func, 'metadata') else None,
+                        return_direct=func.return_direct if hasattr(func, 'return_direct') else False,
+                    )
+                    self.langchain_tools.append(new_tool)
+                else:
+                    self.langchain_tools.append(func)
             else:
                 self.langchain_tools.append(self.fnc_to_structool(func))
-
         return self.langchain_tools
     
     def get_list_langchain_tools(self)->List[StructuredTool]:
-        all_langchain_tools = []
-        all_langchain_tools.extend(self.langchain_tools)
-        # 如果有 client_tool_manager，添加 MCP 工具（已经是 LangChain 格式）
-        if self.client_tool_manager:
-            try:
-                # 获取 MCP 工具（已经是 StructuredTool 格式）
-                mcp_tools = self.client_tool_manager.get_tools()
-                all_langchain_tools.extend(mcp_tools)
-            except Exception as e:
-                logger.warning(f"Failed to get MCP tools: {e}")
-
-        return all_langchain_tools
+        return self.langchain_tools
 
 
 if __name__ == "__main__":
