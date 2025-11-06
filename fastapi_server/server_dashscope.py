@@ -45,13 +45,10 @@ app.add_middleware(
 
 # Initialize Pipeline once
 pipeline_config = PipelineConfig()
-pipeline_config.llm_name = "qwen-flash"
-pipeline_config.llm_provider = "openai"
-pipeline_config.base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-pipeline = Pipeline(pipeline_config)
+pipeline:Pipeline = pipeline_config.setup()
 
 
-def sse_chunks_from_text(full_text: str, response_id: str, model: str = "qwen-flash", chunk_size: int = 10):
+def sse_chunks_from_text(full_text: str, response_id: str, model: str = "qwen-flash", chunk_size: int = 1000):
     created_time = int(time.time())
 
     for i in range(0, len(full_text), chunk_size):
@@ -217,7 +214,7 @@ async def application_completion(
 
         if stream:
             return StreamingResponse(
-                sse_chunks_from_text(result_text, response_id=response_id, model=pipeline_config.llm_name, chunk_size=10),
+                sse_chunks_from_text(result_text, response_id=response_id, model=pipeline_config.llm_name, chunk_size=1000),
                 media_type="text/event-stream",
             )
 
