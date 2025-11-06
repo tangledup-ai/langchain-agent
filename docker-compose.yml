@@ -11,7 +11,6 @@ services:
     environment:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
-      - RAG_FOLDER_PATH=/app/assets/xiaozhan_emb
     volumes:
       - ./configs:/app/configs
       - ./scripts:/app/scripts
