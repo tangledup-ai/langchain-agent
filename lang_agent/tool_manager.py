@@ -10,6 +10,7 @@ from fastmcp.tools.tool import Tool
 
 from lang_agent.config import InstantiateConfig, ToolConfig
 from lang_agent.base import LangToolBase
+from lang_agent.client_tool_manager import ClientToolManagerConfig
 
 from lang_agent.rag.simple import SimpleRagConfig
 # from lang_agent.dummy.calculator import CalculatorConfig
@@ -23,6 +24,8 @@ import jax
 @dataclass
 class ToolManagerConfig(InstantiateConfig):
     _target: Type = field(default_factory=lambda: ToolManager)
+
+    client_tool_manager: ClientToolManagerConfig = field(default_factory=ClientToolManagerConfig)
 
     # tool configs here; MUST HAVE 'config' in name and must be dataclass
     rag_config: SimpleRagConfig = field(default_factory=SimpleRagConfig)
@@ -102,9 +105,10 @@ class ToolManager:
                 logger.info(f"skipping tool:{tool_name}")
         
         try:
-            from lang_agent.client_tool_manager import ClientToolManagerConfig
-            client_config = ClientToolManagerConfig()
-            self.client_tool_manager = ClientToolManager(client_config)
+            # client_config = self.config.client_tool_manager
+            # self.client_tool_manager = ClientToolManager(client_config)
+            # self.client_tool_manager = ClientToolManager(self.config.client_tool_manager)
+            self.client_tool_manager:ClientToolManager = self.config.client_tool_manager.setup()
             logger.info("Successfully initialized client_tool_manager for MCP tools")
         except Exception as e:
             logger.warning(f"Failed to initialize client_tool_manager: {e}")
