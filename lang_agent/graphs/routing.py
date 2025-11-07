@@ -81,19 +81,24 @@ class RoutingGraph(GraphBase):
         self.workflow = self._build_graph()
     
 
+    def _stream_result(self, *nargs, **kwargs):
+        for chunk, metadata in self.workflow.stream({"inp": nargs}, stream_mode="messages", **kwargs):
+            node = metadata.get("langgraph_node")
+            if node != "model":
+                continue  # skip router or other intermediate nodes
+
+            # Yield only the final message content chunks
+            if isinstance(chunk, (BaseMessageChunk, BaseMessage)) and getattr(chunk, "content", None):
+                yield chunk.content
+
+    
+
     def invoke(self, *nargs, as_stream:bool=False, as_raw:bool=False, **kwargs):
         self._validate_input(*nargs, **kwargs)
 
         if as_stream:
             # Stream messages from the workflow
-            for chunk, metadata in self.workflow.stream({"inp": nargs}, stream_mode="messages", **kwargs):
-                node = metadata.get("langgraph_node")
-                if node != "model":
-                    continue  # skip router or other intermediate nodes
-
-                # Yield only the final message content chunks
-                if isinstance(chunk, (BaseMessageChunk, BaseMessage)) and getattr(chunk, "content", None):
-                    yield chunk.content
+            return self._stream_result(*nargs, **kwargs)
         else:
             state = self.workflow.invoke({"inp": nargs})
             
@@ -109,11 +114,11 @@ class RoutingGraph(GraphBase):
             return msg_list[-1].content 
     
     def _validate_input(self, *nargs, **kwargs):
-        print("\033[93m====================INPUT MESSAGES=============================\033[0m")
+        print("\033[93m====================INPUT HUMAN MESSAGES=============================\033[0m")
         for e in nargs[0]["messages"]:
-            if isinstance(e, BaseMessage):
+            if isinstance(e, HumanMessage):
                 e.pretty_print()
-        print("\033[93m====================END INPUT MESSAGES=============================\033[0m")
+        print("\033[93m====================END INPUT HUMAN MESSAGES=============================\033[0m")
         print(f"\033[93 model used: {self.config.llm_name}\033[0m")
 
         assert len(nargs[0]["messages"]) >= 2, "need at least 1 system and 1 human message"
