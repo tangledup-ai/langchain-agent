@@ -4,10 +4,10 @@ import os
 
 from lang_agent.rag.emb import QwenEmbeddings
 
-from langchain.text_splitter import CharacterTextSplitter
+from langchain_text_splitters import CharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_openai import OpenAIEmbeddings
-from langchain.schema import Document
+from langchain_core.documents import Document
 
 def main(save_path = "assets/xiaozhan_emb"):
     cat_f = "assets/xiaozhan_data/catering_end_category.csv"
