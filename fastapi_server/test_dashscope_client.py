@@ -80,7 +80,7 @@ def main():
                 u =  delta
             last_text = current_text
 
-            print("from stream: ", u)
+            logger.info(f"from stream: {u}")
     except TypeError:
         # 非流式回落（一次性返回）
         if responses.status_code != HTTPStatus.OK:
