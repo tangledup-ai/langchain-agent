@@ -44,12 +44,32 @@ class ClientToolManager:
         return tools
 
     def get_tools(self):
-        tools = asyncio.run(self.aget_tools())
-        return tools
+        try:
+            loop = asyncio.get_running_loop()
+            # Event loop is already running, we need to run in a thread
+            import concurrent.futures
+            
+            def run_in_thread():
+                # Create a new event loop in this thread
+                new_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                try:
+                    return new_loop.run_until_complete(self.aget_tools())
+                finally:
+                    new_loop.close()
+            
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(run_in_thread)
+                tools = future.result()
+                return tools
+        except RuntimeError:
+            # No event loop running, safe to use asyncio.run()
+            tools = asyncio.run(self.aget_tools())
+            return tools
 
 if __name__ == "__main__":
     # NOTE: Simple test
     config = ClientToolManagerConfig()
     tool_manager = ClientToolManager(config)
     tools = tool_manager.get_tools()
-    print(tools)
+    [print(e.name) for e in tools]
