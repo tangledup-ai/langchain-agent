@@ -236,6 +236,15 @@ python scripts/eval.py
     - for local computer `base_url=http://127.0.0.1:8588/api/`
     - if inside docker, it needs to be `base_url=http://{computer_ip}:8588/api/`
 
+
+```
+# Configure for Xiaozhi
+0. Start the `fastapi_server/server_dashscope.py` file
+1. Make a new model entry in `xiaozhi` with AliBL as provider. 
+2. Fill in the `base_url` entry. The other entries (`API_KEY`, `APP_ID`) can be garbage
+    - for local computer `base_url=http://127.0.0.1:8588/api/`
+    - if inside docker, it needs to be `base_url=http://{computer_ip}:8588/api/
+```
 ## 技术栈
 
 - **核心框架**: LangChain, LangGraph
