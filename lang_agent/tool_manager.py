@@ -9,8 +9,10 @@ from loguru import logger
 from fastmcp.tools.tool import Tool
 from lang_agent.config import InstantiateConfig, ToolConfig
 from lang_agent.base import LangToolBase
+from lang_agent.client_tool_manager import ClientToolManagerConfig
+
 from lang_agent.rag.simple import SimpleRagConfig
-from lang_agent.dummy.calculator import CalculatorConfig
+# from lang_agent.dummy.calculator import CalculatorConfig
 # from catering_end.lang_tool import CartToolConfig, CartTool
 from langchain_core.tools.structured import StructuredTool
 from lang_agent.client_tool_manager import ClientToolManager
@@ -19,12 +21,14 @@ from lang_agent.client_tool_manager import ClientToolManager
 class ToolManagerConfig(InstantiateConfig):
     _target: Type = field(default_factory=lambda: ToolManager)
 
+    client_tool_manager: ClientToolManagerConfig = field(default_factory=ClientToolManagerConfig)
+
     # tool configs here; MUST HAVE 'config' in name and must be dataclass
     rag_config: SimpleRagConfig = field(default_factory=SimpleRagConfig)
 
     # cart_config: CartToolConfig = field(default_factory=CartToolConfig)
 
-    calc_config: CalculatorConfig = field(default_factory=CalculatorConfig)
+    # calc_config: CalculatorConfig = field(default_factory=CalculatorConfig)
 
 
 def async_to_sync(async_func: Callable) -> Callable:
@@ -97,9 +101,10 @@ class ToolManager:
                 logger.info(f"skipping tool:{tool_name}")
         
         try:
-            from lang_agent.client_tool_manager import ClientToolManagerConfig
-            client_config = ClientToolManagerConfig()
-            self.client_tool_manager = ClientToolManager(client_config)
+            # client_config = self.config.client_tool_manager
+            # self.client_tool_manager = ClientToolManager(client_config)
+            # self.client_tool_manager = ClientToolManager(self.config.client_tool_manager)
+            self.client_tool_manager:ClientToolManager = self.config.client_tool_manager.setup()
             logger.info("Successfully initialized client_tool_manager for MCP tools")
         except Exception as e:
             logger.warning(f"Failed to initialize client_tool_manager: {e}")
@@ -134,25 +139,26 @@ class ToolManager:
         self.langchain_tools = []
         for func in self.get_tool_fncs():
             if isinstance(func, StructuredTool):
-                self.langchain_tools.append(func)
+                if hasattr(func, 'coroutine') and func.coroutine is not None and (not hasattr(func, 'func') or func.func is None):
+                    sync_func = async_to_sync(func.coroutine)
+                    new_tool = StructuredTool(
+                        name=func.name,
+                        description=func.description,
+                        args_schema=func.args_schema,
+                        func=sync_func,
+                        coroutine=func.coroutine,
+                        metadata=func.metadata if hasattr(func, 'metadata') else None,
+                        return_direct=func.return_direct if hasattr(func, 'return_direct') else False,
+                    )
+                    self.langchain_tools.append(new_tool)
+                else:
+                    self.langchain_tools.append(func)
             else:
                 self.langchain_tools.append(self.fnc_to_structool(func))
-
         return self.langchain_tools
     
     def get_list_langchain_tools(self)->List[StructuredTool]:
-        all_langchain_tools = []
-        all_langchain_tools.extend(self.langchain_tools)
-        # 如果有 client_tool_manager，添加 MCP 工具（已经是 LangChain 格式）
-        if self.client_tool_manager:
-            try:
-                # 获取 MCP 工具（已经是 StructuredTool 格式）
-                mcp_tools = self.client_tool_manager.get_tools()
-                all_langchain_tools.extend(mcp_tools)
-            except Exception as e:
-                logger.warning(f"Failed to get MCP tools: {e}")
-
-        return all_langchain_tools
+        return self.langchain_tools
 
 
 if __name__ == "__main__":

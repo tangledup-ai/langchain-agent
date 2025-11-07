@@ -12,19 +12,19 @@ examples = [
     },
     {
         "inputs": {"text": "有没有光予尘？"},
-        "outputs": {"answer": "有的",
-                    "tool_use": ["retrieve|get_resources"]}
+        "outputs": {"answer": "有",
+                    "tool_use": ["retrieve|get_dishes"]}
     },
     {
         "inputs": {"text": "有没有关羽尘？"},
-        "outputs": {"answer": "有的",
-                    "tool_use": ["retrieve|get_resources"]}
+        "outputs": {"answer": "有",
+                    "tool_use": ["retrieve|get_dishes"]}
     },
     {
         "inputs": {"text": ["我要购买一杯野星星",
                             "我要再加一杯"]},
         "outputs": {"answer": "你的野星星已经下单成功",
-                    "tool_use": ["retrieve|get_resource",
+                    "tool_use": ["retrieve|get_dishes",
                                  "start_shopping_session",
                                  "add_to_cart",
                                  "create_wechat_pay",

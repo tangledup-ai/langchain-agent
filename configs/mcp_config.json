@@ -1,6 +1,6 @@
 {
     "calculator": {
             "url": "https://xiaoliang.quant-speed.com/api/mcp/",
-            "transport": "streamable_https"
+            "transport": "streamable_http"
         }
 }
