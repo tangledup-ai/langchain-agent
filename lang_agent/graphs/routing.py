@@ -128,8 +128,14 @@ class RoutingGraph(GraphBase):
                                      api_key=self.config.api_key,
                                      base_url=self.config.base_url,
                                      temperature=0)
+        self.fast_llm = init_chat_model(model='qwen-flash',
+                                        model_provider='openai',
+                                        api_key=self.config.api_key,
+                                        base_url=self.config.base_url,
+                                        temperature=0)
+
         self.memory = MemorySaver()  # shared memory between the two branch
-        self.router = self.llm.with_structured_output(Route)
+        self.router = self.fast_llm.with_structured_output(Route)
 
         tool_manager:ToolManager = self.config.tool_manager_config.setup()
         self.chat_model = create_agent(self.llm, self._get_chat_tools(tool_manager), checkpointer=self.memory)
