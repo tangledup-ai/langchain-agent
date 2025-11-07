@@ -40,9 +40,9 @@ dialogue = [
 ]
 
 call_params = {
-    "api_key": API_KEY,
-    "app_id": APP_ID,
-    "session_id": SESSION_ID,
+    "api_key": "test_key",
+    "app_id": "test_app",
+    "session_id": "123",
     "messages": dialogue,
     "stream": True,
 }
