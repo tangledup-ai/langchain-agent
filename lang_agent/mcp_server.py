@@ -13,7 +13,7 @@ from lang_agent.config import InstantiateConfig, ToolConfig
 from lang_agent.dummy.calculator import Calculator, CalculatorConfig
 from lang_agent.tool_manager import ToolManager, ToolManagerConfig
 
-from catering_end.lang_tool import CartToolConfig, CartTool
+# from catering_end.lang_tool import CartToolConfig, CartTool
 
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
@@ -22,7 +22,7 @@ class MCPServerConfig(InstantiateConfig):
 
     server_name:str = "langserver"
 
-    host: str = "6.6.6.136"
+    host: str = "127.0.0.1"
     """host of server"""
 
     port: int = 50051
