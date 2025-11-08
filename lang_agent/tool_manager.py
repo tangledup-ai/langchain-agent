@@ -7,7 +7,6 @@ import asyncio
 import os.path as osp
 from loguru import logger
 from fastmcp.tools.tool import Tool
-
 from lang_agent.config import InstantiateConfig, ToolConfig
 from lang_agent.base import LangToolBase
 from lang_agent.client_tool_manager import ClientToolManagerConfig
@@ -15,11 +14,8 @@ from lang_agent.client_tool_manager import ClientToolManagerConfig
 from lang_agent.rag.simple import SimpleRagConfig
 # from lang_agent.dummy.calculator import CalculatorConfig
 # from catering_end.lang_tool import CartToolConfig, CartTool
-
 from langchain_core.tools.structured import StructuredTool
 from lang_agent.client_tool_manager import ClientToolManager
-import jax
-
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
 class ToolManagerConfig(InstantiateConfig):
