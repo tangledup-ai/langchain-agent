@@ -168,6 +168,10 @@ class Pipeline:
             yield chunk
 
     def chat(self, inp:str, as_stream:bool=False, as_raw:bool=False, thread_id:int = None):
+        """
+        as_stream (bool): if true, enable the thing to be streamable
+        as_raw (bool): return full dialoge of List[SystemMessage, HumanMessage, ToolMessage]
+        """
         # NOTE: this prompt will be overwritten by 'configs/route_sys_prompts/chat_prompt.txt' for route graph
         u = DEFAULT_PROMPT
 
