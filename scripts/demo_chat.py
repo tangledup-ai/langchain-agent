@@ -15,7 +15,7 @@ def main(conf:PipelineConfig):
         user_input = input("请讲：")
         if user_input.lower() == "exit":
             break
-        response = pipeline.chat(user_input, as_stream=True)
+        response = pipeline.chat(user_input)
         print(f"回答: {response}")
 
     # # out = pipeline.chat("用工具算6856854-416846等于多少;然后解释它是怎么算出来的", as_stream=True)
