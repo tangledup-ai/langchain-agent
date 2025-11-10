@@ -112,16 +112,6 @@ class ToolManager:
         self._build_langchain_tools()
     
     
-    def get_tool_fncs(self):
-        all_tools = []
-        all_tools.extend(self.tool_fncs)
-        if self.client_tool_manager is not None:
-            try:
-                mcp_tools = self.client_tool_manager.get_tools()
-                all_tools.extend(mcp_tools)
-            except Exception as e:
-                logger.warning(f"Failed to get MCP tools: {e}")
-        return all_tools
     
     def get_tool_dict(self):
         return self.tool_dict
