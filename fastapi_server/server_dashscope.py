@@ -9,11 +9,16 @@ import time
 import json
 import uvicorn
 from loguru import logger
+import tyro
 
 # Ensure we can import from project root
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from lang_agent.pipeline import Pipeline, PipelineConfig
+
+# Initialize Pipeline once
+pipeline_config = tyro.cli(PipelineConfig)
+pipeline:Pipeline = pipeline_config.setup()
 
 
 class DSMessage(BaseModel):
@@ -41,11 +46,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-# Initialize Pipeline once
-pipeline_config = PipelineConfig()
-pipeline:Pipeline = pipeline_config.setup()
 
 
 def sse_chunks_from_stream(chunk_generator, response_id: str, model: str = "qwen-flash"):
