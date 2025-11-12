@@ -1,9 +1,3 @@
-from __future__ import annotations   #  optional but recommended
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from lang_agent.graphs.routing import  State# only imported for type hints
-
 from dataclasses import dataclass, field, is_dataclass
 from typing import Type, TypedDict, Literal, Dict, List, Tuple
 import tyro
@@ -14,6 +8,7 @@ import os.path as osp
 from lang_agent.config import InstantiateConfig, KeyConfig
 from lang_agent.tool_manager import ToolManager
 from lang_agent.base import ToolNodeBase
+from lang_agent.graphs.graph_state import State
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import SystemMessage
