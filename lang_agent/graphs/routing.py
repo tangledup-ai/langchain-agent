@@ -14,6 +14,8 @@ import glob
 from lang_agent.config import KeyConfig
 from lang_agent.tool_manager import ToolManager, ToolManagerConfig
 from lang_agent.base import GraphBase
+from lang_agent.graphs.graph_state import State
+from lang_agent.graphs.tool_nodes import AnnotatedToolNode, ToolNode
 
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import SystemMessage, HumanMessage, BaseMessage
@@ -58,16 +60,6 @@ class Route(BaseModel):
     step: Literal["chat", "order"] = Field(
         None, description="The next step in the routing process"
     )
-
-
-class State(TypedDict):
-    inp: Tuple[Dict[str, List[SystemMessage | HumanMessage]], 
-               Dict[str, Dict[str, str|int]]]
-    messages: List[SystemMessage | HumanMessage]
-    decision: str
-    subgraph_states: Dict[str, Any]   # NOTE: Naively assuming subgraphs
-                                      #       won't be so complicated
-
 
 
 class RoutingGraph(GraphBase):
