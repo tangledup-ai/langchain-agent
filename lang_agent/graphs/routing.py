@@ -64,7 +64,7 @@ class State(TypedDict):
     inp: Tuple[Dict[str, List[SystemMessage | HumanMessage]], 
                Dict[str, Dict[str, str|int]]]
     messages: List[SystemMessage | HumanMessage]
-    decision:str
+    decision: str
 
 
 
@@ -278,7 +278,7 @@ if __name__ == "__main__":
 
     nargs = {
         "messages": [SystemMessage("you are a helpful bot named jarvis"),
-                     HumanMessage("use the calculator tool to calculate 92*55 and say the answer")]
+                     HumanMessage("what is your name")]
     },{"configurable": {"thread_id": "3"}}
     
     for chunk, metadata in graph.stream({"inp": nargs}, stream_mode="messages"):
