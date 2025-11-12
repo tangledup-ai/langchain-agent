@@ -11,6 +11,7 @@
 - 用户确认订单后，进入下一步付款流程时，先将购物车状态由临时（status=0）转换为持久化（status=1）并写入数据库
 - 购物车写入数据库后，生成预订单，预订单的信息来自于购物车
 - 预订单生成后调用工具create_wechat_pay创建微信支付订单并生成Native支付二维码
+- 支付流程：返回收到订单创建成功的字段时调用MPC tool self.screen.display_payment_qr_code工具生成二维码。调用了self.screen.display_payment_qr_code工具之后，立马调用MCP tool http-server__query_wechat_order查询订单状态，如果返回收到“支付成功”或“支付失败”的字段时调用MPC tool self.screen.payment_success工具退出二维码，如果没有收到“支付成功”或“支付失败”的字段时继续调用MCP tool http-server__query_wechat_order工具直到获取字段。 
 [模糊匹配]
 用户输入｜匹配数据
 光予尘、关羽尘 ｜ 光予尘（Light to Dust）
