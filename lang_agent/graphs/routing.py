@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field, is_dataclass
-from typing import Type, TypedDict, Literal, Dict, List, Tuple
+from typing import Type, TypedDict, Literal, Dict, List, Tuple, Any
 import tyro
 from pydantic import BaseModel, Field
 from loguru import logger
@@ -65,6 +65,8 @@ class State(TypedDict):
                Dict[str, Dict[str, str|int]]]
     messages: List[SystemMessage | HumanMessage]
     decision: str
+    subgraph_states: Dict[str, Any]   # NOTE: Naively assuming subgraphs
+                                      #       won't be so complicated
 
 
 
