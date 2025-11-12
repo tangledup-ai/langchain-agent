@@ -18,7 +18,7 @@ from langgraph.checkpoint.memory import MemorySaver
 class ReactGraphConfig(KeyConfig):
     _target: Type = field(default_factory=lambda: ReactGraph)
 
-    llm_name: str = "qwen-flash"
+    llm_name: str = "qwen-plus"
     """name of llm"""
 
     llm_provider:str = "openai"
