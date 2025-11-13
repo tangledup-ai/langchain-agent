@@ -152,7 +152,6 @@ class RoutingGraph(GraphBase):
             logger.info("loading sys_prompt from txt")
             sys_fs = glob.glob(osp.join(self.config.sys_promp_json, "*.txt"))
             sys_fs = sorted([e for e in sys_fs if not ("optional" in e)])
-            assert len(sys_fs) <= 3, "AT MOST 3 PROMPT!"
             self.prompt_dict = {}
             for sys_f in sys_fs:
                 key = osp.basename(sys_f).split(".")[0]
