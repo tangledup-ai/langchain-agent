@@ -14,3 +14,10 @@ class GraphBase(ABC):
     @abstractmethod
     def invoke(self, *nargs, **kwargs):
         pass
+
+
+class ToolNodeBase(ABC):
+
+    @abstractmethod
+    def tool_node_call(self, *nargs, **kwargs):
+        pass
