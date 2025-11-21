@@ -3,9 +3,6 @@ from typing import Type, TypedDict, Literal, Dict, List, Tuple, Any
 import tyro
 from pydantic import BaseModel, Field
 from loguru import logger
-from PIL import Image
-from io import BytesIO
-import matplotlib.pyplot as plt
 import jax
 import os.path as osp
 import commentjson
@@ -253,12 +250,6 @@ class RoutingGraph(GraphBase):
         workflow = builder.compile()
 
         return workflow
-
-    def show_graph(self):
-        logger.info("creating image")
-        img = Image.open(BytesIO(self.workflow.get_graph().draw_mermaid_png()))
-        plt.imshow(img)
-        plt.show()
 
 if __name__ == "__main__":
     from dotenv import load_dotenv
