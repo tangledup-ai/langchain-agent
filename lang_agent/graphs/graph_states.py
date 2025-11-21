@@ -1,6 +1,6 @@
 from typing import Type, TypedDict, Literal, Dict, List, Tuple, Any
 
-from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
 class State(TypedDict):
     inp: Tuple[Dict[str, List[SystemMessage | HumanMessage]], 
@@ -9,3 +9,10 @@ class State(TypedDict):
     decision: str
     subgraph_states: Dict[str, Any]   # NOTE: Naively assuming subgraphs
                                       #       won't be so complicated
+
+
+class ChattyToolState(TypedDict):
+    inp: Tuple[Dict[str, List[SystemMessage | HumanMessage]], 
+               Dict[str, Dict[str, str|int]]]
+    tool_messages: List[SystemMessage | HumanMessage | AIMessage]
+    chatty_messages: List[SystemMessage | HumanMessage | AIMessage]
