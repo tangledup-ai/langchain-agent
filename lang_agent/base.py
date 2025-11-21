@@ -32,3 +32,9 @@ class GraphBase(ABC):
         img = Image.open(BytesIO(self.workflow.get_graph().draw_mermaid_png()))
         plt.imshow(img)
         plt.show()
+
+
+class ToolNodeBase(GraphBase):
+    @abstractmethod
+    def get_streamable_tags(self)->List[List[str]]:
+        return [["tool_llm"]]
