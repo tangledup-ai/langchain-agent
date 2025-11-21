@@ -112,16 +112,18 @@ class RoutingGraph(GraphBase):
         return [lang_tool for lang_tool in man.get_list_langchain_tools() if lang_tool.name in self.chat_tool_names]
     
     def _build_modules(self):
-        self.llm = init_chat_model(model=self.config.llm_name,
+        self.chat_llm = init_chat_model(model=self.config.llm_name,
                                      model_provider=self.config.llm_provider,
                                      api_key=self.config.api_key,
                                      base_url=self.config.base_url,
-                                     temperature=0)
+                                     temperature=0,
+                                     tags=["route_chat_llm"])
         self.fast_llm = init_chat_model(model='qwen-flash',
                                         model_provider='openai',
                                         api_key=self.config.api_key,
                                         base_url=self.config.base_url,
-                                        temperature=0)
+                                        temperature=0,
+                                        tags=["route_fast"])
 
         self.memory = MemorySaver()  # shared memory between the two branch
         self.router = self.fast_llm.with_structured_output(Route)
@@ -129,7 +131,6 @@ class RoutingGraph(GraphBase):
         tool_manager:ToolManager = self.config.tool_manager_config.setup()
         self.chat_model = create_agent(self.llm, self._get_chat_tools(tool_manager), checkpointer=self.memory)
         self.tool_node:GraphBase = self.config.tool_node_config.setup(tool_manager=tool_manager,
-                                                                      llm=self.llm,
                                                                       memory=self.memory)
 
         self._load_sys_prompts()
