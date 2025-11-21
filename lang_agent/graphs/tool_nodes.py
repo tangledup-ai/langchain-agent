@@ -137,7 +137,7 @@ class ChattyToolNode(GraphBase):
                     ]}, state["inp"][1]
             outs.append(self.chatty_agent.invoke(*inp))
         
-        return {"chatty_message": outs}
+        return {"chatty_messages": outs}
 
 
     def _handoff_node(self, state:ChattyToolState):
@@ -198,11 +198,12 @@ if __name__ == "__main__":
     query = "use calculator to calculate 33*42"
     input = {"inp" : ({"messages":[SystemMessage("you are a kind helper"), HumanMessage(query)]}, 
                       {"configurable": {"thread_id": '3'}})}
-    inp = input["inp"]
+    inp = input
     
     graph = chatty_node.workflow
 
-    for chunk, metadata in graph.stream(*inp, stream_mode="messages"):
-        if isinstance(chunk, (BaseMessageChunk, BaseMessage)) and getattr(chunk, "content", None):
-            print(chunk.content, end="", flush=True)
-
+    # for chunk, metadata in graph.stream(inp, stream_mode="messages"):
+    #     if isinstance(chunk, (BaseMessageChunk, BaseMessage)) and getattr(chunk, "content", None):
+    #         print(chunk.content, end="", flush=True)
+    out = graph.invoke(inp)
+    assert 0
