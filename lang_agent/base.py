@@ -5,8 +5,7 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 from loguru import logger
 
-if TYPE_CHECKING:
-    from langgraph.graph.state import CompiledStateGraph
+from langgraph.graph.state import CompiledStateGraph
 
 
 class LangToolBase(ABC):
