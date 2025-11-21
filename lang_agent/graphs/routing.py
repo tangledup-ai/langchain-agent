@@ -129,7 +129,7 @@ class RoutingGraph(GraphBase):
         self.router = self.fast_llm.with_structured_output(Route)
 
         tool_manager:ToolManager = self.config.tool_manager_config.setup()
-        self.chat_model = create_agent(self.llm, self._get_chat_tools(tool_manager), checkpointer=self.memory)
+        self.chat_model = create_agent(self.chat_llm, self._get_chat_tools(tool_manager), checkpointer=self.memory)
         self.tool_node:GraphBase = self.config.tool_node_config.setup(tool_manager=tool_manager,
                                                                       memory=self.memory)
 
