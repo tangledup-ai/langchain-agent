@@ -14,7 +14,7 @@ import glob
 from lang_agent.config import KeyConfig
 from lang_agent.tool_manager import ToolManager, ToolManagerConfig
 from lang_agent.base import GraphBase
-from lang_agent.graphs.graph_state import State
+from lang_agent.graphs.graph_states import State
 from lang_agent.graphs.tool_nodes import AnnotatedToolNode, ToolNode
 
 from langchain.chat_models import init_chat_model

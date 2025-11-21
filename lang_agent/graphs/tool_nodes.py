@@ -8,7 +8,7 @@ import os.path as osp
 from lang_agent.config import InstantiateConfig, KeyConfig
 from lang_agent.tool_manager import ToolManager
 from lang_agent.base import ToolNodeBase
-from lang_agent.graphs.graph_state import State
+from lang_agent.graphs.graph_states import State
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import SystemMessage
