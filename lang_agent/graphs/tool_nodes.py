@@ -52,6 +52,9 @@ class ToolNode(ToolNodeBase):
 
         out = self.tool_agent.invoke(*inp)
         return {"messages": out}
+    
+    def get_streamable_tags(self):
+        return super().get_streamable_tags()
 
     
 @dataclass
