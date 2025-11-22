@@ -158,7 +158,7 @@ class ChattyToolNode(ToolNodeBase):
         tool_msgs = state.get("tool_messages")["messages"]
         inp = [
                 SystemMessage(
-                    "do nothing and repeat the last message"
+                    "REPEAT THE LAST MESSAGE AND DO NOTHING ELSE!"
                 ),
                 tool_msgs[-1].content
               ]
