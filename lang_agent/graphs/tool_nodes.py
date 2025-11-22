@@ -118,10 +118,11 @@ class ChattyToolNode(ToolNodeBase):
 
         inp = {"inp": state["inp"]}
         out = self.workflow.invoke(inp)
-        chat_msgs = out.get("chatty_message")
-        tool_msgs = out.get("tool_message")
+        chat_msgs = out.get("chatty_messages")["messages"]
+        tool_msgs = out.get("tool_messages")["messages"]
 
-        return {"messages": state["messages"] + chat_msgs + tool_msgs}
+        state_msgs = [] if state.get("messages") is None else state.get("messages")
+        return {"messages": state_msgs + chat_msgs + tool_msgs}
     
     def _tool_node_call(self, state:ChattyToolState):
         inp = {"messages":[
@@ -147,9 +148,9 @@ class ChattyToolNode(ToolNodeBase):
                         ),
                         *state["inp"][0]["messages"][1:]
                     ]}, state["inp"][1]
-            outs.append(self.chatty_agent.invoke(*inp))
+            outs.extend(self.chatty_agent.invoke(*inp)["messages"])
         
-        return {"chatty_messages": outs}
+        return {"chatty_messages": {"messages":outs}}
 
 
     def _handoff_node(self, state:ChattyToolState):
