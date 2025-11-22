@@ -1,5 +1,6 @@
 from langchain.chat_models import init_chat_model
 from langchain_core.language_models import BaseChatModel
+import re
 
 import os
 from dotenv import load_dotenv
@@ -19,3 +20,21 @@ def make_llm(model="qwen-plus",
                           **kwargs)
     
     return llm
+
+NON_WORD_PATTERN = re.compile(r'[^\u4e00-\u9fffA-Za-z0-9_\s]')
+def words_only(text):
+    """
+    Keep only:
+        - Chinese characters (U+4E00–U+9FFF)
+        - Latin letters, digits, underscore
+        - Whitespace (as separators)
+    Strip punctuation, emojis, etc.
+    Return a list of tokens (Chinese blocks or Latin word blocks).
+    """
+    # 1. Replace all non-allowed characters with a space
+    cleaned = NON_WORD_PATTERN.sub(' ', text)
+
+    # 2. Normalize multiple spaces and split into tokens
+    tokens = cleaned.split()
+
+    return "".join(tokens)
