@@ -2,13 +2,13 @@ from dataclasses import dataclass, field, is_dataclass
 from typing import Type, TypedDict, Literal, Dict, List, Tuple
 import tyro
 import os.path as osp
-
+import time
 
 from lang_agent.config import InstantiateConfig, KeyConfig
 from lang_agent.tool_manager import ToolManager
 from lang_agent.base import ToolNodeBase
 from lang_agent.graphs.graph_states import State, ChattyToolState
-from lang_agent.utils import make_llm
+from lang_agent.utils import make_llm, words_only
 
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain.agents import create_agent
@@ -139,7 +139,7 @@ class ChattyToolNode(ToolNodeBase):
 
     
     def _chat_node_call(self, state:ChattyToolState):
-        outs = []
+        outs:List[BaseMessage] = []
 
         while not self.tool_done:
             inp = {"messages":[
@@ -149,6 +149,11 @@ class ChattyToolNode(ToolNodeBase):
                         *state["inp"][0]["messages"][1:]
                     ]}, state["inp"][1]
             outs.extend(self.chatty_agent.invoke(*inp)["messages"])
+
+            # NOTE: words generate faster than speech
+            content = words_only(outs[-1].content)
+            time.sleep(len(content) * 0.22) # 0.22 = sec/words
+
         
         return {"chatty_messages": {"messages":outs}}
 
