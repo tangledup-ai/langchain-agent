@@ -10,7 +10,7 @@ from lang_agent.base import ToolNodeBase
 from lang_agent.graphs.graph_states import State, ChattyToolState
 from lang_agent.utils import make_llm, words_only
 
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, BaseMessage
 from langchain.agents import create_agent
 from langchain.chat_models import init_chat_model
 
@@ -198,8 +198,6 @@ AnnotatedToolNode = tyro.conf.OmitSubcommandPrefixes[tyro.conf.SuppressFixed[too
 
 def debug_chatty_node():
     from langchain_core.messages.base import BaseMessageChunk
-    from langchain_core.messages import BaseMessage
-    
     from lang_agent.tool_manager import ToolManagerConfig
     
     from dotenv import load_dotenv
