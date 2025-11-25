@@ -195,7 +195,8 @@ tool_node_dict = {
 tool_node_union = tyro.extras.subcommand_type_from_defaults(tool_node_dict, prefix_names=False)
 AnnotatedToolNode = tyro.conf.OmitSubcommandPrefixes[tyro.conf.SuppressFixed[tool_node_union]]
 
-if __name__ == "__main__":
+
+def debug_chatty_node():
     from langchain_core.messages.base import BaseMessageChunk
     from langchain_core.messages import BaseMessage
     
@@ -222,3 +223,6 @@ if __name__ == "__main__":
 
         if isinstance(chunk, (BaseMessageChunk, BaseMessage)) and getattr(chunk, "content", None):
             print(chunk.content, end="", flush=True)
+
+if __name__ == "__main__":
+    pass
