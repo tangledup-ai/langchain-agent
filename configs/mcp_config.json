@@ -1,6 +1,10 @@
 {
-    "calculator": {
+    "cart": {
             "url": "https://xiaoliang.quant-speed.com/api/mcp/",
             "transport": "streamable_http"
-        }
+        },
+    "xiaozhi": {
+    "url": "http://127.0.0.1:8805/sse",
+    "transport": "sse"
+  }
 }
