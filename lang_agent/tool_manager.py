@@ -12,7 +12,7 @@ from lang_agent.base import LangToolBase
 from lang_agent.client_tool_manager import ClientToolManagerConfig
 
 from lang_agent.rag.simple import SimpleRagConfig
-# from lang_agent.dummy.calculator import CalculatorConfig
+from lang_agent.dummy.calculator import CalculatorConfig
 # from catering_end.lang_tool import CartToolConfig, CartTool
 from langchain_core.tools.structured import StructuredTool
 from lang_agent.client_tool_manager import ClientToolManager
@@ -66,6 +66,10 @@ class ToolManager:
         self.tool_fncs = []    # list of functions that should be turned into tools
         self.client_tool_manager = []  # 用于获取 MCP 工具
         self.populate_modules()
+
+        logger.info("available tools:")
+        for tool in self.get_list_langchain_tools():
+            logger.info(tool.name)
     
     def _get_tool_config(self)->List[ToolConfig]:
         tool_confs = []
