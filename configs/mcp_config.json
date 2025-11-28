@@ -4,7 +4,10 @@
             "transport": "streamable_http"
         },
     "xiaozhi": {
-    "url": "http://127.0.0.1:8805/sse",
-    "transport": "sse"
-  }
+      "url": "http://127.0.0.1:8805/sse",
+      "transport": "sse"
+      // "headers": {
+      //   "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjoieV91akNRVUgwTmVvZFJPT0R3ay1CckhiazB1ZGVjZm1sbWJFNzg5NmxrQ0x3aThlV1l2ZWhUaXdPdXlPejVJM0xidHRIMk00T3I2VHhiSHQtYnFTTGplUVZqMjFoZGN6MnZIOGtEdTU2VHVoVkl0RTU2ajgifQ.YHd4qHNqJUJL_nqx4Di5U0w4ZYFWinMKYL8_6zZ4mK4"
+      // }
+    }
 }
