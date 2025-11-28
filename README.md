@@ -32,6 +32,7 @@ python fastapi_server/server_dashscope.py
 # this supports openai-api; unmaintained; NOT RECOMMENDED
 python fastapi_server/server.py
 ```
+see sample usage in `fastapi_server/test_dashscope_client.py` to see how to communicate with `fake_stream_server_dashscopy.py` or `server_dashscope.py` serveice
 
 
 ## Runnables
