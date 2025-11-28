@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Type
 import tyro
-import json
+import commentjson
 import asyncio
 import os.path as osp
 from loguru import logger
@@ -35,7 +35,7 @@ class ClientToolManager:
 
     def populate_module(self):
         with open(self.config.mcp_config_f, "r") as f:
-            self.mcp_configs = json.load(f)
+            self.mcp_configs = commentjson.load(f)
 
         self.cli = MultiServerMCPClient(self.mcp_configs)
     
