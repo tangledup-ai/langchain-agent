@@ -9,6 +9,9 @@ from langgraph.graph.state import CompiledStateGraph
 
 
 class LangToolBase(ABC):
+    """
+    class to inherit if to create a new local tool
+    """
 
     @abstractmethod
     def get_tool_fnc(self)->List[Callable]:
@@ -37,4 +40,7 @@ class GraphBase(ABC):
 class ToolNodeBase(GraphBase):
     @abstractmethod
     def get_streamable_tags(self)->List[List[str]]:
+        """
+        returns names of llm model to listen to when streaming
+        """
         return [["tool_llm"]]
