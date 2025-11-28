@@ -25,7 +25,7 @@ class GraphBase(ABC):
     def invoke(self, *nargs, **kwargs):
         pass
 
-    def show_graph(self):
+    def show_graph(self, ret_img:bool=False):
         #NOTE: just a useful tool for debugging; has zero useful functionality
         
         err_str = f"{type(self)} does not have workflow, this is unsupported"
@@ -33,8 +33,12 @@ class GraphBase(ABC):
 
         logger.info("creating image")
         img = Image.open(BytesIO(self.workflow.get_graph().draw_mermaid_png()))
-        plt.imshow(img)
-        plt.show()
+
+        if not ret_img:
+            plt.imshow(img)
+            plt.show()
+        else:
+            return img
 
 
 class ToolNodeBase(GraphBase):
