@@ -6,7 +6,7 @@ from langchain.chat_models import init_chat_model
 import dotenv, os
 
 from langchain_core.messages.base import BaseMessageChunk
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import BaseMessage, AIMessage
 from langchain.agents import create_agent
 dotenv.load_dotenv()
 
@@ -102,7 +102,7 @@ state0 = (
 #     print("[STREAM UPDATE]:", event)
 
 
-for chunk, metadata in graph.stream(*state0, stream_mode="messages"):
+for chunk in graph.stream(*state0, stream_mode="updates"):
     # node = metadata.get("langgraph_node")
     # if node not in ("model"):
         # continue  # skip router or other intermediate nodes
