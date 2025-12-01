@@ -52,6 +52,7 @@ def sse_chunks_from_stream(chunk_generator, response_id: str, model: str = "qwen
     """
     Stream chunks from pipeline and format as SSE.
     Accumulates text and sends incremental updates.
+    DashScope SDK expects accumulated text in each chunk (not deltas).
     """
     created_time = int(time.time())
     accumulated_text = ""
@@ -64,8 +65,8 @@ def sse_chunks_from_stream(chunk_generator, response_id: str, model: str = "qwen
                 "code": 200,
                 "message": "OK",
                 "output": {
-                    # Send empty during stream; many SDKs only expose output_text on final
-                    "text": "",
+                    # DashScope SDK expects accumulated text, not empty or delta
+                    "text": accumulated_text,
                     "created": created_time,
                     "model": model,
                 },
