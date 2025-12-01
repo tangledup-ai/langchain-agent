@@ -7,6 +7,7 @@ import jax
 import os.path as osp
 import commentjson
 import glob
+import time
 
 from lang_agent.config import KeyConfig
 from lang_agent.tool_manager import ToolManager, ToolManagerConfig
@@ -82,6 +83,7 @@ class RoutingGraph(GraphBase):
 
             # Yield only the final message content chunks
             if isinstance(chunk, (BaseMessageChunk, BaseMessage)) and getattr(chunk, "content", None):
+                print(chunk.content, end="", flush=True)
                 yield chunk.content
 
     
@@ -91,6 +93,7 @@ class RoutingGraph(GraphBase):
 
         if as_stream:
             # Stream messages from the workflow
+            print("\033[93m====================STREAM OUTPUT=============================\033[0m")
             return self._stream_result(*nargs, **kwargs)
         else:
             state = self.workflow.invoke({"inp": nargs})
@@ -112,7 +115,7 @@ class RoutingGraph(GraphBase):
             if isinstance(e, HumanMessage):
                 e.pretty_print()
         print("\033[93m====================END INPUT HUMAN MESSAGES=============================\033[0m")
-        print(f"\033[93 model used: {self.config.llm_name}\033[0m")
+        print(f"\033[93m model used: {self.config.llm_name}\033[0m")
 
         assert len(nargs[0]["messages"]) >= 2, "need at least 1 system and 1 human message"
         assert len(kwargs) == 0, "due to inp assumptions"
