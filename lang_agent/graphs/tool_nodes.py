@@ -84,6 +84,9 @@ class ChattyToolNode(ToolNodeBase):
         self.mem = memory
         self.tool_done = False
 
+        self.chat_key = "[CHATTY_OUT]"
+        self.tool_key = "[TOOL_OUT]"
+
         self.populate_modules()
         self.build_graph()
     
@@ -147,7 +150,7 @@ class ChattyToolNode(ToolNodeBase):
         while not self.tool_done:
             inp = {"messages":[
                         SystemMessage(
-                            "回复的最开始应该是[CHATTY_OUT]\n"+self.chatty_sys_prompt
+                            f"回复的最开始应该是{self.chat_key}\n"+self.chatty_sys_prompt
                         ),
                         *state["inp"][0]["messages"][1:]
                     ]}, state["inp"][1]
@@ -164,15 +167,13 @@ class ChattyToolNode(ToolNodeBase):
     def _handoff_node(self, state:ChattyToolState):
         # NOTE: This exists just to stream the thing correctly
         tool_msgs = state.get("tool_messages")["messages"]
-        reit_msg = "[TOOL_OUT]\n"+tool_msgs[-1].content
+        reit_msg = f"{self.tool_key}\n"+tool_msgs[-1].content
         inp = [
                 SystemMessage(
                     "REPEAT THE LAST MESSAGE AND DO NOTHING ELSE!"
                 ),
                 HumanMessage(reit_msg)
               ]
-        logger.info(f"!!REIT MESSAGE:{reit_msg}")
-        print("\n")
         self.reit_llm.invoke(inp)
         return {}
 
@@ -191,7 +192,8 @@ class ChattyToolNode(ToolNodeBase):
 
         self.workflow = builder.compile()
 
-
+    def get_delay_keys(self):
+        return self.chat_key, self.tool_key
 
 tool_node_dict = {
     "tool_node" : ToolNodeConfig(),
