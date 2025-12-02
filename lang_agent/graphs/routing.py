@@ -14,6 +14,7 @@ from lang_agent.components.tool_manager import ToolManager, ToolManagerConfig
 from lang_agent.base import GraphBase, ToolNodeBase
 from lang_agent.graphs.graph_states import State
 from lang_agent.graphs.tool_nodes import AnnotatedToolNode, ToolNodeConfig
+from lang_agent.components.text_releaser import TextReleaser
 
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import SystemMessage, HumanMessage, BaseMessage
@@ -69,23 +70,24 @@ class RoutingGraph(GraphBase):
     def _stream_result(self, *nargs, **kwargs):
         streamable_tags = self.tool_node.get_streamable_tags() + [["route_chat_llm"]]
 
-        for chunk, metadata in self.workflow.stream({"inp": nargs}, 
-                                                    stream_mode="messages", 
-                                                    subgraphs=True,
-                                                    **kwargs):
-            
-            if isinstance(metadata, tuple):
-                chunk, metadata = metadata
+        def text_iterator():
+            for chunk, metadata in self.workflow.stream({"inp": nargs}, 
+                                                        stream_mode="messages", 
+                                                        subgraphs=True,
+                                                        **kwargs):
+                if isinstance(metadata, tuple):
+                    chunk, metadata = metadata
 
-            tags = metadata.get("tags")
-            if not (tags in streamable_tags):
-                continue
+                tags = metadata.get("tags")
+                if not (tags in streamable_tags):
+                    continue
 
-            # Yield only the final message content chunks
-            if isinstance(chunk, (BaseMessageChunk, BaseMessage)) and getattr(chunk, "content", None):
-                print(chunk.content, end="", flush=True)
-                yield chunk.content
+                if isinstance(chunk, (BaseMessageChunk, BaseMessage)) and getattr(chunk, "content", None):
+                    yield chunk.content
 
+        text_releaser = TextReleaser(*self.tool_node.get_delay_keys())
+        for chunk in text_releaser.release(text_iterator()):
+            yield chunk
     
 
     def invoke(self, *nargs, as_stream:bool=False, as_raw:bool=False, **kwargs):
@@ -259,6 +261,7 @@ if __name__ == "__main__":
     from lang_agent.graphs.tool_nodes import AnnotatedToolNode, ToolNodeConfig, ChattyToolNodeConfig
     load_dotenv()
 
+    # route:RoutingGraph = RoutingConfig(tool_node_config=ChattyToolNodeConfig()).setup()
     route:RoutingGraph = RoutingConfig(tool_node_config=ChattyToolNodeConfig()).setup()
     graph = route.workflow
 
@@ -268,8 +271,8 @@ if __name__ == "__main__":
     },{"configurable": {"thread_id": "3"}}
 
     for chunk in route.invoke(*nargs, as_stream=True):
-        # pass
-        print(chunk, end="", flush=True)
+        print(f"\033[92m{chunk}\033[0m", end="", flush=True)
+
     
     # for chunk, metadata in graph.stream({"inp": nargs}, stream_mode="messages"):
     #     node = metadata.get("langgraph_node")
