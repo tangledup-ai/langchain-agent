@@ -24,11 +24,11 @@ class ToolManagerConfig(InstantiateConfig):
     client_tool_manager: ClientToolManagerConfig = field(default_factory=ClientToolManagerConfig)
 
     # tool configs here; MUST HAVE 'config' in name and must be dataclass
-    rag_config: SimpleRagConfig = field(default_factory=SimpleRagConfig)
+    # rag_config: SimpleRagConfig = field(default_factory=SimpleRagConfig)
 
     # cart_config: CartToolConfig = field(default_factory=CartToolConfig)
 
-    # calc_config: CalculatorConfig = field(default_factory=CalculatorConfig)
+    calc_config: CalculatorConfig = field(default_factory=CalculatorConfig)
 
 
 def async_to_sync(async_func: Callable) -> Callable:
