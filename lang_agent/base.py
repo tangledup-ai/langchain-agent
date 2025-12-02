@@ -52,6 +52,6 @@ class ToolNodeBase(GraphBase):
     def get_delay_keys(self)->Tuple[str, str]:
         """
         returns 2 words, one for starting delayed yeilding, the other for ending delayed yielding,
-        they should be of format ('[key1]', '[key2]')
+        they should be of format ('[key1]', '[key2]'); key1 is starting, key2 is ending
         """
         return None, None
