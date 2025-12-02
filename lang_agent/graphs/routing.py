@@ -87,6 +87,7 @@ class RoutingGraph(GraphBase):
 
         text_releaser = TextReleaser(*self.tool_node.get_delay_keys())
         for chunk in text_releaser.release(text_iterator()):
+            print(f"\033[92m{chunk}\033[0m", end="", flush=True)
             yield chunk
     
 
