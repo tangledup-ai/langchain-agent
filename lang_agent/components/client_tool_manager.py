@@ -20,7 +20,7 @@ class ClientToolManagerConfig(InstantiateConfig):
 
     def __post_init__(self):
         if self.mcp_config_f is None:
-            self.mcp_config_f = osp.join(osp.dirname(osp.dirname(__file__)), "configs", "mcp_config.json")
+            self.mcp_config_f = osp.join(osp.dirname(osp.dirname(osp.dirname(__file__))), "configs", "mcp_config.json")
             logger.warning(f"config_f was not provided. Using default: {self.mcp_config_f}")
             assert osp.exists(self.mcp_config_f), f"Default config_f {self.mcp_config_f} does not exist."
 
