@@ -46,7 +46,7 @@ class TextReleaser:
         """
         self.start_key = start_key
         self.end_key = end_key
-        self.WAIT_TIME = 0.2  # sec/word in chinese
+        self.WAIT_TIME = 0.15  # sec/word in chinese
 
         # Internal state for producer-consumer pattern
         self._buffer: deque = deque()  # stores (chunk, chunk_start_pos, chunk_end_pos)
