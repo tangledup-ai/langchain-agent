@@ -15,15 +15,10 @@ from lang_agent.config import InstantiateConfig
 class ClientToolManagerConfig(InstantiateConfig):
     _target: Type = field(default_factory=lambda: ClientToolManager)
 
-    mcp_config_f: str = None
+    mcp_config_f: str = osp.join(osp.dirname(osp.dirname(osp.dirname(__file__))), "configs", "mcp_config.json")
     """path to all mcp configurations; expect json file"""
 
     def __post_init__(self):
-        if self.mcp_config_f is None:
-            self.mcp_config_f = osp.join(osp.dirname(osp.dirname(osp.dirname(__file__))), "configs", "mcp_config.json")
-            logger.warning(f"config_f was not provided. Using default: {self.mcp_config_f}")
-            assert osp.exists(self.mcp_config_f), f"Default config_f {self.mcp_config_f} does not exist."
-
         assert osp.exists(self.mcp_config_f), f"config_f {self.mcp_config_f} does not exist."
 
 
