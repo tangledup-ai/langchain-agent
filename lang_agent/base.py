@@ -1,4 +1,4 @@
-from typing import List, Callable, TYPE_CHECKING
+from typing import List, Callable, Tuple
 from abc import ABC, abstractmethod
 from PIL import Image
 from io import BytesIO
@@ -48,3 +48,10 @@ class ToolNodeBase(GraphBase):
         returns names of llm model to listen to when streaming
         """
         return [["tool_llm"]]
+    
+    def get_delay_keys(self)->Tuple[str, str]:
+        """
+        returns 2 words, one for starting delayed yeilding, the other for ending delayed yielding,
+        they should be of format ('[key1]', '[key2]')
+        """
+        return None, None
