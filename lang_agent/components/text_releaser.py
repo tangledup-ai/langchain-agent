@@ -249,6 +249,10 @@ class TextReleaser:
                     continue
 
                 if state.in_delay_mode:
-                    time.sleep(self.WAIT_TIME)
-
-                yield text_to_yield
+                    # Yield character by character with delay
+                    for char in text_to_yield:
+                        yield char
+                        time.sleep(self.WAIT_TIME)
+                else:
+                    # Yield entire chunk immediately
+                    yield text_to_yield
