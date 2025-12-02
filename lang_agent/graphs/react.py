@@ -4,7 +4,7 @@ import tyro
 import jax
 
 from lang_agent.config import KeyConfig
-from lang_agent.tool_manager import ToolManager, ToolManagerConfig
+from lang_agent.components.tool_manager import ToolManager, ToolManagerConfig
 from lang_agent.base import GraphBase
 
 from langchain.chat_models import init_chat_model

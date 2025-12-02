@@ -3,9 +3,10 @@ from typing import Type, TypedDict, Literal, Dict, List, Tuple
 import tyro
 import os.path as osp
 import time
+from loguru import logger
 
 from lang_agent.config import InstantiateConfig, KeyConfig
-from lang_agent.tool_manager import ToolManager
+from lang_agent.components.tool_manager import ToolManager
 from lang_agent.base import ToolNodeBase
 from lang_agent.graphs.graph_states import State, ChattyToolState
 from lang_agent.utils import make_llm, words_only
@@ -152,7 +153,7 @@ class ChattyToolNode(ToolNodeBase):
 
             # NOTE: words generate faster than speech
             content = words_only(outs[-1].content)
-            time.sleep(len(content) * 0.22) # 0.22 = sec/words
+            time.sleep(len(content) * 0.20) # 0.22 = sec/words
 
         
         return {"chatty_messages": {"messages":outs}}
@@ -165,8 +166,10 @@ class ChattyToolNode(ToolNodeBase):
                 SystemMessage(
                     "REPEAT THE LAST MESSAGE AND DO NOTHING ELSE!"
                 ),
-                tool_msgs[-1].content
+                HumanMessage(tool_msgs[-1].content)
               ]
+        
+        logger.info("!!!!!!!!!!!!! tool result is out !!!!!!!!!!!!!!!!!!!!!")
         self.reit_llm.invoke(inp)
         return {}
 
@@ -223,4 +226,4 @@ def debug_chatty_node():
             print(chunk.content, end="", flush=True)
 
 if __name__ == "__main__":
-    pass
+    debug_chatty_node()

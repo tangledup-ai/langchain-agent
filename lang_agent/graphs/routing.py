@@ -10,7 +10,7 @@ import glob
 import time
 
 from lang_agent.config import KeyConfig
-from lang_agent.tool_manager import ToolManager, ToolManagerConfig
+from lang_agent.components.tool_manager import ToolManager, ToolManagerConfig
 from lang_agent.base import GraphBase, ToolNodeBase
 from lang_agent.graphs.graph_states import State
 from lang_agent.graphs.tool_nodes import AnnotatedToolNode, ToolNodeConfig
