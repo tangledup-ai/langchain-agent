@@ -7,6 +7,7 @@ from loguru import logger
 
 from lang_agent.config import InstantiateConfig, KeyConfig
 from lang_agent.components.tool_manager import ToolManager
+from lang_agent.components.reit_llm import ReitLLM
 from lang_agent.base import ToolNodeBase
 from lang_agent.graphs.graph_states import State, ChattyToolState
 from lang_agent.utils import make_llm, words_only
@@ -100,7 +101,8 @@ class ChattyToolNode(ToolNodeBase):
                                         base_url=self.config.base_url,
                                         temperature=0,
                                         tags=["tool_llm"])
-        self.reit_llm = make_llm(model="qwen-flash", tags=["reit_llm"])
+        
+        self.reit_llm = ReitLLM(tags=["reit_llm"])
         
         self.chatty_agent = create_agent(self.chatty_llm, [], checkpointer=self.mem)
         self.tool_agent = create_agent(self.tool_llm, self.tool_manager.get_list_langchain_tools(), checkpointer=self.mem)
@@ -145,7 +147,7 @@ class ChattyToolNode(ToolNodeBase):
         while not self.tool_done:
             inp = {"messages":[
                         SystemMessage(
-                            self.chatty_sys_prompt
+                            "回复的最开始应该是[CHATTY_OUT]\n"+self.chatty_sys_prompt
                         ),
                         *state["inp"][0]["messages"][1:]
                     ]}, state["inp"][1]
@@ -153,7 +155,7 @@ class ChattyToolNode(ToolNodeBase):
 
             # NOTE: words generate faster than speech
             content = words_only(outs[-1].content)
-            time.sleep(len(content) * 0.20) # 0.22 = sec/words
+            # time.sleep(len(content) * 0.20) # 0.22 = sec/words
 
         
         return {"chatty_messages": {"messages":outs}}
@@ -162,14 +164,15 @@ class ChattyToolNode(ToolNodeBase):
     def _handoff_node(self, state:ChattyToolState):
         # NOTE: This exists just to stream the thing correctly
         tool_msgs = state.get("tool_messages")["messages"]
+        reit_msg = "[TOOL_OUT]\n"+tool_msgs[-1].content
         inp = [
                 SystemMessage(
                     "REPEAT THE LAST MESSAGE AND DO NOTHING ELSE!"
                 ),
-                HumanMessage(tool_msgs[-1].content)
+                HumanMessage(reit_msg)
               ]
-        
-        logger.info("!!!!!!!!!!!!! tool result is out !!!!!!!!!!!!!!!!!!!!!")
+        logger.info(f"!!REIT MESSAGE:{reit_msg}")
+        print("\n")
         self.reit_llm.invoke(inp)
         return {}
 
@@ -227,3 +230,14 @@ def debug_chatty_node():
 
 if __name__ == "__main__":
     debug_chatty_node()
+    # reit_llm = make_llm(model="qwen-flash", tags=["reit_llm"])
+    # reit_msg = "[TOOL_OUT]\n" + "what the fuck is this" #"The result of 33 multiplied by 42 is 1386."
+    # inp = [
+    #         SystemMessage(
+    #             "REPEAT THE HUMAN MESSAGE AND DO NOTHING ELSE!"
+    #         ),
+    #         HumanMessage(reit_msg)
+    #         ]
+        
+    # out = reit_llm.invoke(inp)
+    # print(out.content)
