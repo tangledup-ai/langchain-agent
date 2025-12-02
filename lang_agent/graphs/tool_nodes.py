@@ -201,7 +201,7 @@ AnnotatedToolNode = tyro.conf.OmitSubcommandPrefixes[tyro.conf.SuppressFixed[too
 
 def debug_chatty_node():
     from langchain_core.messages.base import BaseMessageChunk
-    from lang_agent.tool_manager import ToolManagerConfig
+    from lang_agent.components.tool_manager import ToolManagerConfig
     
     from dotenv import load_dotenv
     load_dotenv()
