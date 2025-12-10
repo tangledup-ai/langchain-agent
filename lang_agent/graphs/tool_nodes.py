@@ -232,6 +232,7 @@ def debug_chatty_node():
 
 
 def debug_tool_node():
+    import jax
     from langchain_core.messages.base import BaseMessageChunk
     from lang_agent.components.tool_manager import ToolManagerConfig
     
@@ -244,15 +245,13 @@ def debug_tool_node():
                                                 memory=mem)
 
     query =  "use calculator to calculate 33*42"
-    input = ({"messages":[SystemMessage("you are a kind helper"), 
-                                   HumanMessage(query)]}, 
-                      {"configurable": {"thread_id": '3'}})
-    inp = {
-        "inp":input
-    }
+    input = ({"messages":[SystemMessage("you are a kind helper"), HumanMessage(query)]}, 
+             {"configurable": {"thread_id": '3'}})
+    graph = tool_node.tool_agent
 
-    out = tool_node.invoke(inp)
-    assert 0
+    for chunk in graph.stream(*input, stream_mode="updates"):
+        el = jax.tree.leaves(chunk)[-1]
+        print(el.pretty_print())
 
 
 if __name__ == "__main__":
