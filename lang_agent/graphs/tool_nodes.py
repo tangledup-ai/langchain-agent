@@ -53,7 +53,7 @@ class ToolNode(ToolNodeBase):
         ]}, state["inp"][1]
 
         out = self.tool_agent.invoke(*inp)
-        return {"messages": out}
+        return {"messages": out["messages"]}
     
     def get_streamable_tags(self):
         return super().get_streamable_tags()
@@ -230,8 +230,34 @@ def debug_chatty_node():
         if isinstance(chunk, (BaseMessageChunk, BaseMessage)) and getattr(chunk, "content", None):
             print(chunk.content, end="", flush=True)
 
+
+def debug_tool_node():
+    from langchain_core.messages.base import BaseMessageChunk
+    from lang_agent.components.tool_manager import ToolManagerConfig
+    
+    from dotenv import load_dotenv
+    load_dotenv()
+
+    mem = MemorySaver()
+    tool_manager = ToolManagerConfig().setup()
+    tool_node:ToolNode = ToolNodeConfig().setup(tool_manager=tool_manager, 
+                                                memory=mem)
+
+    query =  "use calculator to calculate 33*42"
+    input = ({"messages":[SystemMessage("you are a kind helper"), 
+                                   HumanMessage(query)]}, 
+                      {"configurable": {"thread_id": '3'}})
+    inp = {
+        "inp":input
+    }
+
+    out = tool_node.invoke(inp)
+    assert 0
+
+
 if __name__ == "__main__":
-    debug_chatty_node()
+    # debug_chatty_node()
+    debug_tool_node()
     # reit_llm = make_llm(model="qwen-flash", tags=["reit_llm"])
     # reit_msg = "[TOOL_OUT]\n" + "what the fuck is this" #"The result of 33 multiplied by 42 is 1386."
     # inp = [
