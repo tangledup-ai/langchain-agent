@@ -231,8 +231,22 @@ def debug_chatty_node():
             print(chunk.content, end="", flush=True)
 
 
+def check_mcp_conn():
+    import httpx
+    mcp_url = "https://therianclouds.mynatapp.cc/api/mcp/"
+    try:
+        response = httpx.get(mcp_url, timeout=5.0)
+        logger.info(f"MCP server at {mcp_url} is accessible, status: {response.status_code}")
+    except httpx.ConnectError as e:
+        logger.warning(f"MCP server at {mcp_url} connection failed: {e}")
+    except httpx.TimeoutException:
+        logger.warning(f"MCP server at {mcp_url} connection timed out")
+    except Exception as e:
+        logger.warning(f"MCP server at {mcp_url} check failed: {e}")
+
 def debug_tool_node():
     import jax
+    import httpx
     from langchain_core.messages.base import BaseMessageChunk
     from lang_agent.components.tool_manager import ToolManagerConfig
     
@@ -243,15 +257,32 @@ def debug_tool_node():
     tool_manager = ToolManagerConfig().setup()
     tool_node:ToolNode = ToolNodeConfig().setup(tool_manager=tool_manager, 
                                                 memory=mem)
-
-    query =  "use calculator to calculate 33*42"
-    input = ({"messages":[SystemMessage("you are a kind helper"), HumanMessage(query)]}, 
-             {"configurable": {"thread_id": '3'}})
     graph = tool_node.tool_agent
-
-    for chunk in graph.stream(*input, stream_mode="updates"):
-        el = jax.tree.leaves(chunk)[-1]
-        print(el.pretty_print())
+    
+    print("Tool Node Debug Chat - Enter 'quit' or 'exit' to stop")
+    print("-" * 50)
+    
+    try:
+        while True:
+            # Get user input for the query
+            query = input("\nYou: ").strip()
+            
+            if query.lower() in ['quit', 'exit', 'q']:
+                print("Goodbye!")
+            
+            # Check MCP server connectivity
+            check_mcp_conn()
+            
+            input_data = ({"messages":[SystemMessage("you are a kind helper"), HumanMessage(query)]}, 
+                            {"configurable": {"thread_id": '3'}})
+            
+            print("Assistant: ", end="", flush=True)
+            for chunk in graph.stream(*input_data, stream_mode="updates"):
+                el = jax.tree.leaves(chunk)[-1]
+                el.pretty_print()
+    except Exception as e:
+        print(e)
+        check_mcp_conn()
 
 
 if __name__ == "__main__":
