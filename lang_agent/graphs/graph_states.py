@@ -7,8 +7,6 @@ class State(TypedDict):
                Dict[str, Dict[str, str|int]]]
     messages: List[SystemMessage | HumanMessage]
     decision: str
-    subgraph_states: Dict[str, Any]   # NOTE: Naively assuming subgraphs
-                                      #       won't be so complicated
 
 
 class ChattyToolState(TypedDict):
