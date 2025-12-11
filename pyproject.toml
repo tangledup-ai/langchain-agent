@@ -23,7 +23,8 @@ dependencies = [
     "Pillow",
     "jax",
     "commentjson",
-    "pandas"
+    "pandas",
+    "asgiref"
 ]
 
 [tool.setuptools.packages.find]
