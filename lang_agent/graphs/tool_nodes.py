@@ -73,6 +73,7 @@ class ChattyToolNodeConfig(KeyConfig, ToolNodeConfig):
     """base url; could be used to overwrite the baseurl in llm provider"""
 
     chatty_sys_prompt_f:str = osp.join(osp.dirname(osp.dirname(osp.dirname(__file__))), "configs", "route_sys_prompts", "chatty_prompt.txt")
+    """path to chatty system prompt"""
 
 
 class ChattyToolNode(ToolNodeBase):
