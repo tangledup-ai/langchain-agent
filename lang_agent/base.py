@@ -1,4 +1,4 @@
-from typing import List, Callable, Tuple
+from typing import List, Callable, Tuple, Dict
 from abc import ABC, abstractmethod
 from PIL import Image
 from io import BytesIO
@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from loguru import logger
 
 from langgraph.graph.state import CompiledStateGraph
+from langchain_core.messages import BaseMessage
 
 
 class LangToolBase(ABC):
@@ -55,3 +56,7 @@ class ToolNodeBase(GraphBase):
         they should be of format ('[key1]', '[key2]'); key1 is starting, key2 is ending
         """
         return None, None
+    
+    @abstractmethod
+    def invoke(self, inp)->Dict[str, List[BaseMessage]]:
+        pass
