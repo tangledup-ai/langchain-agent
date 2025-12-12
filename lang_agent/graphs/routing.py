@@ -49,7 +49,7 @@ class RoutingConfig(KeyConfig):
 
 
 class Route(BaseModel):
-    step: Literal["chat", "order"] = Field(
+    step: Literal["chat", "tool"] = Field(
         None, description="The next step in the routing process"
     )
 
