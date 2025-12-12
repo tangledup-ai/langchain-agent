@@ -33,7 +33,7 @@ class ToolNode(ToolNodeBase):
                        memory:MemorySaver):
         self.config = config
         self.tool_manager = tool_manager
-        self.mem = memory
+        self.mem = memory if memory is not None else MemorySaver()
 
         self.populate_modules()
 
