@@ -141,7 +141,7 @@ class ChattyToolNode(ToolNodeBase):
         out = self.tool_agent.invoke(*inp)
 
         self.tool_done = True
-        return {"tool_messages": out}
+        return {"tool_messages": out["messages"]}
 
     
     def _chat_node_call(self, state:ChattyToolState):
@@ -286,8 +286,8 @@ def debug_tool_node():
 
 
 if __name__ == "__main__":
-    # debug_chatty_node()
-    debug_tool_node()
+    debug_chatty_node()
+    # debug_tool_node()
     # reit_llm = make_llm(model="qwen-flash", tags=["reit_llm"])
     # reit_msg = "[TOOL_OUT]\n" + "what the fuck is this" #"The result of 33 multiplied by 42 is 1386."
     # inp = [
