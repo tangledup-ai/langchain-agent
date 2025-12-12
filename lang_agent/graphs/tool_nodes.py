@@ -166,7 +166,7 @@ class ChattyToolNode(ToolNodeBase):
 
     def _handoff_node(self, state:ChattyToolState):
         # NOTE: This exists just to stream the thing correctly
-        tool_msgs = state.get("tool_messages")["messages"]
+        tool_msgs = state.get("tool_messages")
         reit_msg = f"{self.tool_key}\n"+tool_msgs[-1].content
         inp = [
                 SystemMessage(
