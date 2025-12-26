@@ -66,10 +66,10 @@ class PipelineConfig(KeyConfig):
     config_f: str = None
     """path to config file"""
 
-    llm_name: str = None
+    llm_name: str = "qwen-plus"
     """name of llm; use default for qwen-plus"""
 
-    llm_provider:str = None
+    llm_provider:str = "openai"
     """provider of the llm; use default for openai"""
 
     base_url:str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
@@ -135,34 +135,7 @@ class Pipeline:
         
         assert 0, "something is wrong"
 
-    async def handle_connection(self, websocket:ServerConnection):
-        try:
-            async for message in websocket:
-                if isinstance(message, bytes):
-                    #NOTE: For binary, echo back.
-                    await websocket.send(message)
-                else:
-                    # TODO: handle this better, will have system/user prompt send here
-                    response = self.invoke(message)
-                    await websocket.send(response)
-        except websockets.ConnectionClosed:
-            pass
-    
 
-    async def start_server(self):
-        async with websockets.serve(
-            self.handle_connection,
-            host=self.config.host,
-            port=self.config.port,
-            max_size=None,   # allow large messages
-            max_queue=None,  # don't bound outgoing queue
-        ):
-            logger.info(f"listening to {self.get_ws_url}")
-            await asyncio.Future()
-    
-    def get_ws_url(self):
-        return f"ws://{self.config.host}:{self.config.port}"
-    
     def _stream_res(self, out:list):
         for chunk in out:
             yield chunk
