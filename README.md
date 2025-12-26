@@ -32,8 +32,8 @@ python fastapi_server/server_dashscope.py
 # start server with chatty tool node; NOTE: streaming only!
 python fastapi_server/server_dashscope.py route chatty_tool_node
 
-# this supports openai-api; unmaintained; NOT RECOMMENDED
-python fastapi_server/server.py
+# this supports openai-api; 
+python fastapi_server/server_openai.py
 ```
 see sample usage in `fastapi_server/test_dashscope_client.py` to see how to communicate with `fake_stream_server_dashscopy.py` or `server_dashscope.py` service
 
