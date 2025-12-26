@@ -20,7 +20,6 @@ RUN mamba install -y -c conda-forge \
     && mamba clean -a -y
 
 COPY pyproject.toml ./
-COPY fastapi_server/requirements.txt ./fastapi_server/
 COPY lang_agent/ ./lang_agent/
 COPY fastapi_server/ ./fastapi_server/
 
@@ -28,10 +27,6 @@ COPY fastapi_server/ ./fastapi_server/
 
 # Install Python dependencies inside micromamba env
 RUN python -m pip install --upgrade pip \
-    -i https://mirrors.aliyun.com/pypi/simple/ \
-    --trusted-host mirrors.aliyun.com \
-    --default-timeout=300 && \
-    python -m pip install --no-cache-dir -r fastapi_server/requirements.txt \
     -i https://mirrors.aliyun.com/pypi/simple/ \
     --trusted-host mirrors.aliyun.com \
     --default-timeout=300 && \
