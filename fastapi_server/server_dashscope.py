@@ -101,7 +101,7 @@ async def application_responses(
 
         # Prefer path params
         req_app_id = app_id or body.get("app_id")
-        req_session_id = session_id or body.get("session_id")
+        req_session_id = session_id or body['input'].get("session_id")
 
         # Normalize messages
         messages = body.get("messages")
@@ -120,7 +120,7 @@ async def application_responses(
         if stream is None:
             stream = body.get("parameters", {}).get("stream", True)
 
-        thread_id = body.get("thread_id", 3)
+        thread_id = body['input'].get("session_id")
 
         # Extract latest user message
         user_msg = None
@@ -183,7 +183,7 @@ async def application_completion(
     try:
         body = await request.json()
 
-        req_session_id = body.get("session_id")
+        req_session_id = body['input'].get("session_id")
 
         # Normalize messages
         messages = body.get("messages")
@@ -201,7 +201,7 @@ async def application_completion(
         if stream is None:
             stream = body.get("parameters", {}).get("stream", True)
 
-        thread_id = body.get("thread_id", 3)
+        thread_id = body['input'].get("session_id")
 
         user_msg = None
         for m in reversed(messages):
