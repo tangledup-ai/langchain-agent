@@ -3,6 +3,7 @@ from typing import Type, TypedDict, Literal, Dict, List, Tuple
 import tyro
 import os.path as osp
 import time
+import asyncio
 from loguru import logger
 
 from lang_agent.config import InstantiateConfig, KeyConfig
@@ -53,6 +54,18 @@ class ToolNode(ToolNodeBase):
         ]}, state["inp"][1]
 
         out = self.tool_agent.invoke(*inp)
+        return {"messages": out["messages"]}
+
+    async def ainvoke(self, state:State):
+        """Async version of invoke using LangGraph's native async support."""
+        inp = {"messages":[
+            SystemMessage(
+                self.sys_prompt
+            ),
+            *state["inp"][0]["messages"][1:]
+        ]}, state["inp"][1]
+
+        out = await self.tool_agent.ainvoke(*inp)
         return {"messages": out["messages"]}
     
     def get_streamable_tags(self):
@@ -129,6 +142,18 @@ class ChattyToolNode(ToolNodeBase):
 
         inp = {"inp": state["inp"]}
         out = self.workflow.invoke(inp)
+        chat_msgs = out.get("chatty_messages")["messages"]
+        tool_msgs = out.get("tool_messages")["messages"]
+
+        state_msgs = [] if state.get("messages") is None else state.get("messages")
+        return {"messages": state_msgs + chat_msgs + tool_msgs}
+
+    async def ainvoke(self, state:State):
+        """Async version of invoke using LangGraph's native async support."""
+        self.tool_done = False
+
+        inp = {"inp": state["inp"]}
+        out = await self.workflow.ainvoke(inp)
         chat_msgs = out.get("chatty_messages")["messages"]
         tool_msgs = out.get("tool_messages")["messages"]
 
