@@ -205,6 +205,11 @@ class TextReleaser:
         - When end_key is seen: skip all pending chunks and resume after end_key
         - Keys can span multiple chunks, chunks are held until key is confirmed or ruled out
         """
+        # Reset instance state for safe reuse
+        self._buffer.clear()
+        self._producer_done.clear()
+        self._accumulated_text = ""
+
         producer_thread = threading.Thread(target=self._producer, args=(text_iterator,), daemon=True)
         producer_thread.start()
 
@@ -399,6 +404,9 @@ class AsyncTextReleaser:
         - start_key and end_key are never yielded
         - When end_key is seen: skip all pending chunks and resume after end_key
         """
+        # Reset instance state for safe reuse
+        self._accumulated_text = ""
+        
         buffer: deque = deque()  # stores (chunk, chunk_start_pos, chunk_end_pos)
         state = ReleaseState()
         producer_done = False
