@@ -91,6 +91,47 @@ def sse_chunks_from_stream(chunk_generator, response_id: str, model: str, create
     yield "data: [DONE]\n\n"
 
 
+async def sse_chunks_from_astream(chunk_generator, response_id: str, model: str, created_time: int):
+    """
+    Async version: Stream chunks from pipeline and format as OpenAI SSE.
+    """
+    async for chunk in chunk_generator:
+        if chunk:
+            data = {
+                "id": response_id,
+                "object": "chat.completion.chunk",
+                "created": created_time,
+                "model": model,
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "content": chunk
+                        },
+                        "finish_reason": None
+                    }
+                ]
+            }
+            yield f"data: {json.dumps(data)}\n\n"
+
+    # Final message
+    final = {
+        "id": response_id,
+        "object": "chat.completion.chunk",
+        "created": created_time,
+        "model": model,
+        "choices": [
+            {
+                "index": 0,
+                "delta": {},
+                "finish_reason": "stop"
+            }
+        ]
+    }
+    yield f"data: {json.dumps(final)}\n\n"
+    yield "data: [DONE]\n\n"
+
+
 @app.post("/v1/chat/completions")
 async def chat_completions(request: Request):
     try:
@@ -121,15 +162,15 @@ async def chat_completions(request: Request):
         created_time = int(time.time())
         
         if stream:
-            # Use actual streaming from pipeline
-            chunk_generator = pipeline.chat(inp=user_msg, as_stream=True, thread_id=thread_id)
+            # Use async streaming from pipeline
+            chunk_generator = await pipeline.achat(inp=user_msg, as_stream=True, thread_id=thread_id)
             return StreamingResponse(
-                sse_chunks_from_stream(chunk_generator, response_id=response_id, model=model, created_time=created_time),
+                sse_chunks_from_astream(chunk_generator, response_id=response_id, model=model, created_time=created_time),
                 media_type="text/event-stream",
             )
         
-        # Non-streaming: get full result
-        result_text = pipeline.chat(inp=user_msg, as_stream=False, thread_id=thread_id)
+        # Non-streaming: get full result using async
+        result_text = await pipeline.achat(inp=user_msg, as_stream=False, thread_id=thread_id)
         if not isinstance(result_text, str):
             result_text = str(result_text)
         

@@ -1,4 +1,4 @@
-from typing import List, Callable, Tuple, Dict
+from typing import List, Callable, Tuple, Dict, AsyncIterator
 from abc import ABC, abstractmethod
 from PIL import Image
 from io import BytesIO
@@ -25,6 +25,10 @@ class GraphBase(ABC):
     @abstractmethod
     def invoke(self, *nargs, **kwargs):
         pass
+
+    async def ainvoke(self, *nargs, **kwargs):
+        """Async version of invoke. Subclasses should override for true async support."""
+        raise NotImplementedError("Subclass should implement ainvoke for async support")
 
     def show_graph(self, ret_img:bool=False):
         #NOTE: just a useful tool for debugging; has zero useful functionality
@@ -60,3 +64,7 @@ class ToolNodeBase(GraphBase):
     @abstractmethod
     def invoke(self, inp)->Dict[str, List[BaseMessage]]:
         pass
+
+    async def ainvoke(self, inp)->Dict[str, List[BaseMessage]]:
+        """Async version of invoke. Subclasses should override for true async support."""
+        raise NotImplementedError("Subclass should implement ainvoke for async support")

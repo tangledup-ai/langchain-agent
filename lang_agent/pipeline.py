@@ -140,6 +140,11 @@ class Pipeline:
         for chunk in out:
             yield chunk
 
+    async def _astream_res(self, out):
+        """Async version of _stream_res for async generators."""
+        async for chunk in out:
+            yield chunk
+
     def chat(self, inp:str, as_stream:bool=False, as_raw:bool=False, thread_id:int = None):
         """
         as_stream (bool): if true, enable the thing to be streamable
@@ -159,3 +164,47 @@ class Pipeline:
             return self._stream_res(out)
         else:
             return out
+
+    async def ainvoke(self, *nargs, **kwargs):
+        """Async version of invoke using LangGraph's native async support."""
+        out = await self.graph.ainvoke(*nargs, **kwargs)
+
+        # If streaming, return async generator
+        if kwargs.get("as_stream"):
+            return self._astream_res(out)
+
+        # Non-streaming path
+        if kwargs.get("as_raw"):
+            return out
+
+        if isinstance(out, SystemMessage) or isinstance(out, HumanMessage):
+            return out.content
+        
+        if isinstance(out, list):
+            return out[-1].content
+        
+        if isinstance(out, str):
+            return out
+        
+        assert 0, "something is wrong"
+
+    async def achat(self, inp:str, as_stream:bool=False, as_raw:bool=False, thread_id:int = None):
+        """
+        Async version of chat using LangGraph's native async support.
+        
+        as_stream (bool): if true, enable the thing to be streamable
+        as_raw (bool): return full dialoge of List[SystemMessage, HumanMessage, ToolMessage]
+        """
+        # NOTE: this prompt will be overwritten by 'configs/route_sys_prompts/chat_prompt.txt' for route graph
+        u = DEFAULT_PROMPT
+
+        thread_id = thread_id if thread_id is not None else 3
+        inp_data = {"messages":[SystemMessage(u),
+                           HumanMessage(inp)]}, {"configurable": {"thread_id": thread_id}}
+
+        if as_stream:
+            # Return async generator for streaming
+            out = await self.ainvoke(*inp_data, as_stream=True, as_raw=as_raw)
+            return self._astream_res(out)
+        else:
+            return await self.ainvoke(*inp_data, as_stream=False, as_raw=as_raw)

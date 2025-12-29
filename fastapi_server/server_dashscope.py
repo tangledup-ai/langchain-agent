@@ -89,6 +89,46 @@ def sse_chunks_from_stream(chunk_generator, response_id: str, model: str = "qwen
     yield f"data: {json.dumps(final)}\n\n"
 
 
+async def sse_chunks_from_astream(chunk_generator, response_id: str, model: str = "qwen-flash"):
+    """
+    Async version: Stream chunks from pipeline and format as SSE.
+    Accumulates text and sends incremental updates.
+    DashScope SDK expects accumulated text in each chunk (not deltas).
+    """
+    created_time = int(time.time())
+    accumulated_text = ""
+
+    async for chunk in chunk_generator:
+        if chunk:
+            accumulated_text += chunk
+            data = {
+                "request_id": response_id,
+                "code": 200,
+                "message": "OK",
+                "output": {
+                    "text": accumulated_text,
+                    "created": created_time,
+                    "model": model,
+                },
+                "is_end": False,
+            }
+            yield f"data: {json.dumps(data)}\n\n"
+
+    # Final message with complete text
+    final = {
+        "request_id": response_id,
+        "code": 200,
+        "message": "OK",
+        "output": {
+            "text": accumulated_text,
+            "created": created_time,
+            "model": model,
+        },
+        "is_end": True,
+    }
+    yield f"data: {json.dumps(final)}\n\n"
+
+
 @app.post("/v1/apps/{app_id}/sessions/{session_id}/responses")
 @app.post("/api/v1/apps/{app_id}/sessions/{session_id}/responses")
 async def application_responses(
@@ -137,15 +177,15 @@ async def application_responses(
         response_id = f"appcmpl-{os.urandom(12).hex()}"
 
         if stream:
-            # Use actual streaming from pipeline
-            chunk_generator = pipeline.chat(inp=user_msg, as_stream=True, thread_id=thread_id)
+            # Use async streaming from pipeline
+            chunk_generator = await pipeline.achat(inp=user_msg, as_stream=True, thread_id=thread_id)
             return StreamingResponse(
-                sse_chunks_from_stream(chunk_generator, response_id=response_id, model=pipeline_config.llm_name),
+                sse_chunks_from_astream(chunk_generator, response_id=response_id, model=pipeline_config.llm_name),
                 media_type="text/event-stream",
             )
 
-        # Non-streaming: get full result
-        result_text = pipeline.chat(inp=user_msg, as_stream=False, thread_id=thread_id)
+        # Non-streaming: get full result using async
+        result_text = await pipeline.achat(inp=user_msg, as_stream=False, thread_id=thread_id)
         if not isinstance(result_text, str):
             result_text = str(result_text)
 
@@ -217,15 +257,15 @@ async def application_completion(
         response_id = f"appcmpl-{os.urandom(12).hex()}"
 
         if stream:
-            # Use actual streaming from pipeline
-            chunk_generator = pipeline.chat(inp=user_msg, as_stream=True, thread_id=thread_id)
+            # Use async streaming from pipeline
+            chunk_generator = await pipeline.achat(inp=user_msg, as_stream=True, thread_id=thread_id)
             return StreamingResponse(
-                sse_chunks_from_stream(chunk_generator, response_id=response_id, model=pipeline_config.llm_name),
+                sse_chunks_from_astream(chunk_generator, response_id=response_id, model=pipeline_config.llm_name),
                 media_type="text/event-stream",
             )
 
-        # Non-streaming: get full result
-        result_text = pipeline.chat(inp=user_msg, as_stream=False, thread_id=thread_id)
+        # Non-streaming: get full result using async
+        result_text = await pipeline.achat(inp=user_msg, as_stream=False, thread_id=thread_id)
         if not isinstance(result_text, str):
             result_text = str(result_text)
 

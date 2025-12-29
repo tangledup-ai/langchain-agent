@@ -128,7 +128,7 @@ async def application_responses(
             user_msg = last.get("content") if isinstance(last, dict) else str(last)
 
         # Invoke pipeline (non-stream) then stream-chunk it to the client
-        result_text = pipeline.chat(inp=user_msg, as_stream=False, thread_id=thread_id)
+        result_text = await pipeline.achat(inp=user_msg, as_stream=False, thread_id=thread_id)
         if not isinstance(result_text, str):
             result_text = str(result_text)
 
@@ -206,7 +206,7 @@ async def application_completion(
             last = messages[-1]
             user_msg = last.get("content") if isinstance(last, dict) else str(last)
 
-        result_text = pipeline.chat(inp=user_msg, as_stream=False, thread_id=thread_id)
+        result_text = await pipeline.achat(inp=user_msg, as_stream=False, thread_id=thread_id)
         if not isinstance(result_text, str):
             result_text = str(result_text)
 
