@@ -14,3 +14,4 @@ class ChattyToolState(TypedDict):
                Dict[str, Dict[str, str|int]]]
     tool_messages: List[SystemMessage | HumanMessage | AIMessage]
     chatty_messages: List[SystemMessage | HumanMessage | AIMessage]
+    tool_done: bool  # Flag to signal when tool execution is complete
