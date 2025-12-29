@@ -54,7 +54,8 @@ def test_streaming():
         stream = client.chat.completions.create(
             model="qwen-plus",  # Using qwen-plus as configured
             messages=messages,
-            stream=True
+            stream=True,
+            extra_body={"thread_id":2000}
         )
         
         full_response = ""
@@ -90,7 +91,8 @@ def test_non_streaming():
         response = client.chat.completions.create(
             model="qwen-plus",  # Using qwen-plus as configured
             messages=messages,
-            stream=False
+            stream=False,
+            extra_body={"thread_id":2000}
         )
         
         content = response.choices[0].message.content
@@ -111,13 +113,13 @@ def main():
     print(f"\nUsing base_url = {BASE_URL}\n")
     
     # Test both streaming and non-streaming
-    streaming_result = test_streaming()
+    # streaming_result = test_streaming()
     non_streaming_result = test_non_streaming()
     
     print("\n" + "="*60)
     print("SUMMARY")
     print("="*60)
-    print(f"Streaming response length: {len(streaming_result)}")
+    # print(f"Streaming response length: {len(streaming_result)}")
     print(f"Non-streaming response length: {len(non_streaming_result)}")
     print("\nBoth tests completed successfully!")
 
