@@ -35,7 +35,26 @@ python fastapi_server/server_dashscope.py route chatty_tool_node
 # this supports openai-api; 
 python fastapi_server/server_openai.py
 ```
-see sample usage in `fastapi_server/test_dashscope_client.py` to see how to communicate with `fake_stream_server_dashscopy.py` or `server_dashscope.py` service
+see sample usage in `fastapi_server/test_dashscope_client.py` to see how to communicate with `fake_stream_server_dashscopy.py` or `server_dashscope.py` service  
+
+### Openai API differences
+For the python `openai` package it does not handle memory. Ours does, so each call remembers what happens previously. For managing memory, pass in a `thread_id` to manager the conversations
+```python
+from openai import OpenAI
+
+client = OpenAI(
+        base_url=BASE_URL,
+        api_key="test-key"  # Dummy key for testing
+    )
+
+client.chat.completions.create(
+            model="qwen-plus", 
+            messages=messages,
+            stream=True,
+            extra_body={"thread_id":2000}  # pass in a thread id
+        )
+```
+
 
 
 ## Runnables
