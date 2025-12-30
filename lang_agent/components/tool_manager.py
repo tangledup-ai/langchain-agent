@@ -155,16 +155,10 @@ class ToolManager:
                     @functools.wraps(func.coroutine)
                     def sync_func(*args, _wrapper=sync_wrapper, **kwargs):
                         return _wrapper(*args, **kwargs)
-                    new_tool = StructuredTool(
-                        name=func.name,
-                        description=func.description,
-                        args_schema=func.args_schema,
-                        func=sync_func,
-                        coroutine=func.coroutine,
-                        metadata=func.metadata if hasattr(func, 'metadata') else None,
-                        return_direct=func.return_direct if hasattr(func, 'return_direct') else False,
-                    )
-                    self.langchain_tools.append(new_tool)
+                    # Preserve the original tool's class (e.g., DeviceIdInjectedTool)
+                    # by setting func directly instead of creating a new StructuredTool
+                    func.func = sync_func
+                    self.langchain_tools.append(func)
                 else:
                     self.langchain_tools.append(func)
             else:
