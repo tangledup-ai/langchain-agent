@@ -26,8 +26,6 @@ class DeviceIdInjectedTool(StructuredTool):
         config: Optional[RunnableConfig] = None,
         **kwargs,
     ):  
-        logger.info("================================================CONFIG========================")
-        logger.info(config)
         # Inject device_id from config into the input dict
         if config and "configurable" in config:
             device_id = config["configurable"].get("device_id")
@@ -46,8 +44,6 @@ class DeviceIdInjectedTool(StructuredTool):
         **kwargs,
     ):
         logger.info(f"========== DeviceIdInjectedTool.ainvoke CALLED ==========")
-        logger.info(f"input: {input}")
-        logger.info(f"config: {config}")
         # Inject device_id from config into the input dict
         if config and "configurable" in config:
             device_id = config["configurable"].get("device_id")
