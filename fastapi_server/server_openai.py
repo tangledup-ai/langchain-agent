@@ -33,7 +33,7 @@ class OpenAIChatCompletionRequest(BaseModel):
     temperature: Optional[float] = Field(default=1.0)
     max_tokens: Optional[int] = Field(default=None)
     # Optional overrides for pipeline behavior
-    thread_id: Optional[int] = Field(default=3)
+    thread_id: Optional[str] = Field(default='3')
 
 
 app = FastAPI(

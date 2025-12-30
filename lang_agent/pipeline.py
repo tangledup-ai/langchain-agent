@@ -145,7 +145,7 @@ class Pipeline:
         async for chunk in out:
             yield chunk
 
-    def chat(self, inp:str, as_stream:bool=False, as_raw:bool=False, thread_id:int = None):
+    def chat(self, inp:str, as_stream:bool=False, as_raw:bool=False, thread_id:str = '3'):
         """
         as_stream (bool): if true, enable the thing to be streamable
         as_raw (bool): return full dialoge of List[SystemMessage, HumanMessage, ToolMessage]
@@ -153,7 +153,6 @@ class Pipeline:
         # NOTE: this prompt will be overwritten by 'configs/route_sys_prompts/chat_prompt.txt' for route graph
         u = DEFAULT_PROMPT
 
-        thread_id = thread_id if thread_id is not None else 3
         inp = {"messages":[SystemMessage(u),
                            HumanMessage(inp)]}, {"configurable": {"thread_id": thread_id}}
 
@@ -188,7 +187,7 @@ class Pipeline:
         
         assert 0, "something is wrong"
 
-    async def achat(self, inp:str, as_stream:bool=False, as_raw:bool=False, thread_id:int = None):
+    async def achat(self, inp:str, as_stream:bool=False, as_raw:bool=False, thread_id:str = '3'):
         """
         Async version of chat using LangGraph's native async support.
         
@@ -198,7 +197,6 @@ class Pipeline:
         # NOTE: this prompt will be overwritten by 'configs/route_sys_prompts/chat_prompt.txt' for route graph
         u = DEFAULT_PROMPT
 
-        thread_id = thread_id if thread_id is not None else 3
         inp_data = {"messages":[SystemMessage(u),
                            HumanMessage(inp)]}, {"configurable": {"thread_id": thread_id}}
 

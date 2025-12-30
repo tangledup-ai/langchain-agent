@@ -33,7 +33,7 @@ class DSApplicationCallRequest(BaseModel):
     messages: List[DSMessage]
     stream: bool = Field(default=True)
     # Optional overrides for pipeline behavior
-    thread_id: Optional[int] = Field(default=3)
+    thread_id: Optional[str] = Field(default="3")
 
 
 app = FastAPI(title="DashScope-Compatible Application API",
