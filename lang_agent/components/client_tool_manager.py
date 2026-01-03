@@ -148,12 +148,27 @@ class ClientToolManager:
     def populate_module(self):
         with open(self.config.mcp_config_f, "r") as f:
             self.mcp_configs = commentjson.load(f)
-
-        self.cli = MultiServerMCPClient(self.mcp_configs)
     
     async def aget_tools(self):
-        tools = await self.cli.get_tools()
-        return tools
+        """
+        Get tools from all configured MCP servers.
+        Handles connection failures gracefully by logging warnings and continuing.
+        """
+        all_tools = []
+        
+        for server_name, server_config in self.mcp_configs.items():
+            try:
+                # Create a client for this single server
+                single_server_config = {server_name: server_config}
+                client = MultiServerMCPClient(single_server_config)
+                tools = await client.get_tools()
+                all_tools.extend(tools)
+                logger.info(f"Successfully connected to MCP server '{server_name}', retrieved {len(tools)} tools")
+            except Exception as e:
+                logger.warning(f"Failed to connect to MCP server '{server_name}' at {server_config.get('url', 'unknown URL')}: {e}")
+                continue
+        
+        return all_tools
 
     def get_tools(self):
         try:
