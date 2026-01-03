@@ -29,7 +29,7 @@ class ToolManagerConfig(InstantiateConfig):
 
     # cart_config: CartToolConfig = field(default_factory=CartToolConfig)
 
-    calc_config: CalculatorConfig = field(default_factory=CalculatorConfig)
+    # calc_config: CalculatorConfig = field(default_factory=CalculatorConfig)
 
 
 def async_to_sync(async_func: Callable) -> Callable:
