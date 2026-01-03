@@ -13,7 +13,6 @@ from lang_agent.components.client_tool_manager import ClientToolManagerConfig
 
 from lang_agent.rag.simple import SimpleRagConfig
 from lang_agent.dummy.calculator import CalculatorConfig
-# from catering_end.lang_tool import CartToolConfig, CartTool
 from langchain_core.tools.structured import StructuredTool
 from lang_agent.components.client_tool_manager import ClientToolManager
 # from asgiref.sync import async_to_sync     # NOTE： THIS SHT DOES NOT WORK
