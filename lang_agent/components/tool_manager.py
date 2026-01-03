@@ -106,9 +106,6 @@ class ToolManager:
                 logger.info(f"skipping tool:{tool_name}")
         
         try:
-            # client_config = self.config.client_tool_manager
-            # self.client_tool_manager = ClientToolManager(client_config)
-            # self.client_tool_manager = ClientToolManager(self.config.client_tool_manager)
             self.client_tool_manager:ClientToolManager = self.config.client_tool_manager.setup()
             logger.info("Successfully initialized client_tool_manager for MCP tools")
         except Exception as e:
