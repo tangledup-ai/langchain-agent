@@ -51,6 +51,7 @@ class ToolNodeBase(GraphBase):
     def get_streamable_tags(self)->List[List[str]]:
         """
         returns names of llm model to listen to when streaming
+        NOTE: must be [['A1'], ['A2'] ...]
         """
         return [["tool_llm"]]
     
