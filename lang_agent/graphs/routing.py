@@ -57,20 +57,12 @@ class Route(BaseModel):
 class RoutingGraph(GraphBase):
     def __init__(self, config: RoutingConfig):
         self.config = config
-
-        # NOTE: tool that the chatbranch should have
-        self.chat_tool_names = ["retrieve", 
-                                "get_resources"]
         
         self._build_modules()
 
         self.workflow = self._build_graph()
 
         self.streamable_tags:List[List[str]] = self.tool_node.get_streamable_tags() + [["route_chat_llm"]]
-    
-    
-    def _get_chat_tools(self, man:ToolManager):
-        return [lang_tool for lang_tool in man.get_list_langchain_tools() if lang_tool.name in self.chat_tool_names]
     
     def _build_modules(self):
         self.chat_llm = init_chat_model(model=self.config.llm_name,
@@ -90,7 +82,7 @@ class RoutingGraph(GraphBase):
         self.router = self.fast_llm.with_structured_output(Route)
 
         tool_manager:ToolManager = self.config.tool_manager_config.setup()
-        self.chat_model = create_agent(self.chat_llm, self._get_chat_tools(tool_manager), checkpointer=self.memory)
+        self.chat_model = create_agent(self.chat_llm, [], checkpointer=self.memory)
         self.tool_node:ToolNodeBase = self.config.tool_node_config.setup(tool_manager=tool_manager,
                                                                          memory=self.memory)
 
