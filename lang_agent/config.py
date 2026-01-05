@@ -144,6 +144,18 @@ class KeyConfig(InstantiateConfig):
 
 
 @dataclass
+class LLMKeyConfig(KeyConfig):
+    llm_name: str = "qwen-plus"
+    """name of llm"""
+
+    llm_provider:str = "openai"
+    """provider of the llm"""
+
+    base_url:str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    """base url; could be used to overwrite the baseurl in llm provider"""
+
+
+@dataclass
 class ToolConfig(InstantiateConfig):
     use_tool:bool = True
     """
