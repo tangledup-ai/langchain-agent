@@ -42,7 +42,8 @@ class ReactGraph(GraphBase):
         self.llm = init_chat_model(model=self.config.llm_name,
                                    model_provider=self.config.llm_provider,
                                    api_key=self.config.api_key,
-                                   base_url=self.config.base_url)
+                                   base_url=self.config.base_url,
+                                   tags=["main_llm"])
         
 
         self.tool_manager:ToolManager = self.config.tool_manager_config.setup()
