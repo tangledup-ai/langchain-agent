@@ -65,10 +65,11 @@ class RoutingGraph(GraphBase):
         self._build_modules()
 
         self.workflow = self._build_graph()
+
+        self.streamable_tags:List[List[str]] = self.tool_node.get_streamable_tags() + [["route_chat_llm"]]
     
 
     def _stream_result(self, *nargs, **kwargs):
-        streamable_tags = self.tool_node.get_streamable_tags() + [["route_chat_llm"]]
 
         def text_iterator():
             for chunk, metadata in self.workflow.stream({"inp": nargs}, 
@@ -79,7 +80,7 @@ class RoutingGraph(GraphBase):
                     chunk, metadata = metadata
 
                 tags = metadata.get("tags")
-                if not (tags in streamable_tags):
+                if not (tags in self.streamable_tags):
                     continue
 
                 if isinstance(chunk, (BaseMessageChunk, BaseMessage)) and getattr(chunk, "content", None):
