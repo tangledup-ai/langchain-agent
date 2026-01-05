@@ -137,7 +137,6 @@ class RoutingGraph(GraphBase):
 
     async def _astream_result(self, *nargs, **kwargs) -> AsyncIterator[str]:
         """Async streaming using LangGraph's astream method."""
-        streamable_tags = self.tool_node.get_streamable_tags() + [["route_chat_llm"]]
 
         async def text_iterator():
             async for chunk, metadata in self.workflow.astream(
@@ -150,7 +149,7 @@ class RoutingGraph(GraphBase):
                     chunk, metadata = metadata
 
                 tags = metadata.get("tags")
-                if not (tags in streamable_tags):
+                if not (tags in self.streamable_tags):
                     continue
 
                 if isinstance(chunk, (BaseMessageChunk, BaseMessage)) and getattr(chunk, "content", None):
