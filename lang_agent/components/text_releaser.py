@@ -37,7 +37,7 @@ class TextReleaser:
     """
     KEY_START_CHAR = "["
 
-    def __init__(self, start_key: str = None, end_key: str = None):
+    def __init__(self, start_key: str = None, end_key: str = None, wait_time:float=0.15):
         """
         Initialize the TextReleaser.
         
@@ -47,7 +47,7 @@ class TextReleaser:
         """
         self.start_key = start_key
         self.end_key = end_key
-        self.WAIT_TIME = 0.15  # sec/word in chinese
+        self.WAIT_TIME = wait_time  # sec/word in chinese
 
         # Internal state for producer-consumer pattern
         self._buffer: deque = deque()  # stores (chunk, chunk_start_pos, chunk_end_pos)
@@ -273,7 +273,7 @@ class AsyncTextReleaser:
     """
     KEY_START_CHAR = "["
 
-    def __init__(self, start_key: str = None, end_key: str = None):
+    def __init__(self, start_key: str = None, end_key: str = None, wait_time:float = 0.15):
         """
         Initialize the AsyncTextReleaser.
         
@@ -283,7 +283,7 @@ class AsyncTextReleaser:
         """
         self.start_key = start_key
         self.end_key = end_key
-        self.WAIT_TIME = 0.15  # sec/word in chinese
+        self.WAIT_TIME = wait_time  # sec/word in chinese
         self._accumulated_text = ""
 
     def _is_prefix_of_key(self, text: str) -> bool:
