@@ -15,6 +15,7 @@ def main(save_path = "assets/xiaozhan_emb"):
 
     df_cat = pd.read_csv(cat_f)
     df_desc = pd.read_csv(desc_f)
+    df_desc = df_desc[df_desc["is_available"] == 't'].reset_index(drop=True)
 
     id_desc_dic = {}
     for _, (id, name, desc) in df_cat[["id", "name", "description"]].iterrows():
@@ -32,13 +33,7 @@ def main(save_path = "assets/xiaozhan_emb"):
     texts = data
     embeddings = QwenEmbeddings(
         api_key=os.environ.get("ALI_API_KEY")
-    )  
-    # embeddings = OpenAIEmbeddings(
-    #     model="text-embedding-v4",
-    #     api_key=os.environ.get("ALI_API_KEY"),
-    #     base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
-    # )
-    # embeddings = OpenAIEmbeddings()
+    )
 
     if not osp.exists(save_path):
         # --- STEP 2: Create vector store ---
@@ -66,12 +61,12 @@ def main(save_path = "assets/xiaozhan_emb"):
 
     # --- STEP 5: Use the retriever/QA chain on the loaded store ---
     retriever = loaded_vectorstore.as_retriever(search_kwargs={
-        "k":3
+        "k":5
     })
 
     u = loaded_vectorstore.similarity_search("灯与尘", k=2)
 
-    res = retriever.invoke("灯与尘")
+    res = retriever.invoke("野心心")
 
     for doc in res:
         print(doc)
