@@ -41,7 +41,7 @@ class ToolNode(ToolNodeBase):
     def populate_modules(self):
         self.llm = make_llm(tags=["tool_llm"])
 
-        self.tool_agent = create_agent(self.llm, self.tool_manager.get_list_langchain_tools(), checkpointer=self.mem)
+        self.tool_agent = create_agent(self.llm, self.tool_manager.get_langchain_tools(), checkpointer=self.mem)
         with open(self.config.tool_prompt_f, "r") as f:
             self.sys_prompt = f.read()
 

@@ -69,7 +69,7 @@ class ToolManager:
         self.populate_modules()
 
         logger.info("available tools:")
-        for tool in self.get_list_langchain_tools():
+        for tool in self.get_langchain_tools():
             logger.info(tool.name)
     
     def _get_tool_config(self)->List[ToolConfig]:
@@ -161,11 +161,12 @@ class ToolManager:
                 self.langchain_tools.append(self.fnc_to_structool(func))
         return self.langchain_tools
     
-    def get_list_langchain_tools(self)->List[StructuredTool]:
+    def get_langchain_tools(self)->List[StructuredTool]:
+        """get tools usuable in langchain"""
         return self.langchain_tools
 
 
 if __name__ == "__main__":
     man: ToolManager = ToolManagerConfig().setup()
-    for lang_tool in man.get_list_langchain_tools():
+    for lang_tool in man.get_langchain_tools():
         print(lang_tool.name)
