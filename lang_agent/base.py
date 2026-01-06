@@ -29,8 +29,9 @@ class LangToolBase(ABC):
 
 
 class GraphBase(ABC):
-    workflow: CompiledStateGraph
-    streamable_tags: List[List[str]]
+    workflow: CompiledStateGraph     # the main workflow
+    streamable_tags: List[List[str]] # which llm to stream outputs; see routing.py for complex usage
+    textreleaser_delay_keys: List[str] = (None, None)  # use to control when to start streaming; see routing.py for complex usage
     
     def _stream_result(self, *nargs, **kwargs):
 
@@ -49,7 +50,7 @@ class GraphBase(ABC):
                 if isinstance(chunk, (BaseMessageChunk, BaseMessage)) and getattr(chunk, "content", None):
                     yield chunk.content
 
-        text_releaser = TextReleaser(*self.tool_node.get_delay_keys())
+        text_releaser = TextReleaser(*self.textreleaser_delay_keys)
         logger.info("streaming output")
         for chunk in text_releaser.release(text_iterator()):
             print(f"\033[92m{chunk}\033[0m", end="", flush=True)
@@ -120,7 +121,7 @@ class GraphBase(ABC):
                 if isinstance(chunk, (BaseMessageChunk, BaseMessage)) and getattr(chunk, "content", None):
                     yield chunk.content
 
-        text_releaser = AsyncTextReleaser(*self.tool_node.get_delay_keys())
+        text_releaser = AsyncTextReleaser(*self.textreleaser_delay_keys)
         async for chunk in text_releaser.release(text_iterator()):
             print(f"\033[92m{chunk}\033[0m", end="", flush=True)
             yield chunk 
