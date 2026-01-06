@@ -63,6 +63,7 @@ class RoutingGraph(GraphBase):
         self.workflow = self._build_graph()
 
         self.streamable_tags:List[List[str]] = self.tool_node.get_streamable_tags() + [["route_chat_llm"]]
+        self.textreleaser_delay_keys = self.tool_node.get_delay_keys()
     
     def _build_modules(self):
         self.chat_llm = init_chat_model(model=self.config.llm_name,
