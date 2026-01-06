@@ -21,7 +21,7 @@ from langgraph.graph import StateGraph, START, END
 
 SYS_PROMPT = "you are a helpful helper who will have a fun conversation with the user"
 
-TOOL_SYS_PROMPT = "base on the user's speech, identify their emotions and change the light color to its appropriate colors. If it sounds neutral, do nothing"
+TOOL_SYS_PROMPT = "base on the user's speech, identify their emotions and change the light color to its appropriate colors. Always use the tool"
 
 
 @dataclass
@@ -37,7 +37,12 @@ def turn_lights(col:Literal["red", "green", "yellow", "blue"]):
     """
     Turn on the color of the lights
     """
-    print(f"TURNED ON LIGHT: {col}  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    # print(f"TURNED ON LIGHT: {col}  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+
+    import time
+    for _ in range(10):
+        print(f"TURNED ON LIGHT: {col}  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        time.sleep(0.3)
 
 
 class Dual(GraphBase):
@@ -46,7 +51,7 @@ class Dual(GraphBase):
 
         self._build_modules()
         self.workflow = self._build_graph()
-        self.streamable_tags = ["dual_chat_llm"]
+        self.streamable_tags = [["dual_chat_llm"]]
 
     def _build_modules(self):
         self.chat_llm = init_chat_model(model=self.config.llm_name,
@@ -66,8 +71,8 @@ class Dual(GraphBase):
         self.memory = MemorySaver()
         self.tool_manager: ToolManager = self.config.tool_manager_config.setup()
         self.chat_agent = create_agent(self.chat_llm, [], checkpointer=self.memory)
-        # self.tool_agent = create_agent(self.tool_llm, self.tool_manager.get_langchain_tools())
-        self.tool_agent = create_agent(self.tool_llm, [turn_lights])
+        self.tool_agent = create_agent(self.tool_llm, self.tool_manager.get_langchain_tools())
+        # self.tool_agent = create_agent(self.tool_llm, [turn_lights])
 
         self.streamable_tags = [["dual_chat_llm"]]
     
@@ -105,5 +110,7 @@ if __name__ == "__main__":
                           HumanMessage("I feel very very sad")]
     }, {"configurable": {"thread_id": "3"}}
 
-    out = dual.invoke(*nargs)
-    print(out)
+    # out = dual.invoke(*nargs)
+    # print(out)
+    for chunk in dual.invoke(*nargs, as_stream=True):
+        continue
