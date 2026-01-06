@@ -146,21 +146,15 @@ class GraphBase(ABC):
         else:
             inp = state["inp"]
         
-        if human_msg is None:
-            inp = {"messages":[
-                        SystemMessage(
-                            system_prompt
-                        ),
-                        *state["inp"][0]["messages"][1:]
-                    ]}, state["inp"][1]
-        else:
-            inp = {"messages":[
-                        SystemMessage(
-                            system_prompt
-                        ),
-                        *state["inp"][0]["messages"][1:],
-                        HumanMessage(human_msg)
-                    ]}, state["inp"][1]
+        messages = [
+            SystemMessage(system_prompt),
+            *state["inp"][0]["messages"][1:]
+        ]
+
+        if human_msg is not None:
+            messages.append(HumanMessage(human_msg))
+
+        inp = ({"messages": messages}, state["inp"][1])
 
 
         out = model.invoke(*inp)
