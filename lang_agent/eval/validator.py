@@ -94,7 +94,7 @@ class Validator:
         if isinstance(inp, str):
             inp = [inp]
 
-        thread_id = random.randint(1, 9999999999)
+        thread_id = str(random.randint(1, 9999999999))
         outs = []
         for usr_inp in inp:
             outs.extend(pipeline.chat(usr_inp, as_raw=True, thread_id=thread_id))
