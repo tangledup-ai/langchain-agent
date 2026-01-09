@@ -27,7 +27,7 @@ class EvaluatorConfig(InstantiateConfig):
     experiment_desc:str = "testing if this works or not"
     """describe the experiment"""
 
-    dataset_name:Literal["Toxic Queries"] = "xiao_zhan"
+    dataset_name:Literal["Toxic Queries"] = "QA_xiaozhan"
     """name of the dataset to evaluate"""
 
     log_dir:str = "logs"
@@ -111,8 +111,8 @@ class Evaluator:
             
             return None
         
-        outs = df["outputs.output"]
-        df["outputs.output"] = outs.apply(map_fnc)
-        df["tool_out"] = outs.apply(extract_tool_out)
+        # outs = df["outputs.output"]
+        # df["outputs.output"] = outs.apply(map_fnc)
+        # df["tool_out"] = outs.apply(extract_tool_out)
         
         return df
