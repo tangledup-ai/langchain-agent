@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, is_dataclass
 from typing import Type, Any, Optional
 import tyro
 import commentjson
@@ -16,6 +16,44 @@ from pydantic import BaseModel, Field, create_model
 from lang_agent.config import InstantiateConfig
 
 
+def _json_default_serializer(obj: Any) -> Any:
+    """
+    Best-effort fallback serializer for objects that json can't handle.
+    
+    This is mainly to support rich MCP return types such as ImageContent.
+    Strategy (in order):
+    - If the object has `model_dump()`, use that (Pydantic v2 style).
+    - Else if it has `dict()`, use that (Pydantic v1 / dataclass-like).
+    - Else if it's a dataclass, convert via `asdict`.
+    - Else fall back to `str(obj)`.
+    """
+    # Pydantic v2 models
+    if hasattr(obj, "model_dump") and callable(getattr(obj, "model_dump")):
+        try:
+            return obj.model_dump()
+        except Exception:
+            pass
+
+    # Pydantic v1 or similar
+    if hasattr(obj, "dict") and callable(getattr(obj, "dict")):
+        try:
+            return obj.dict()
+        except Exception:
+            pass
+
+    # Dataclasses
+    if is_dataclass(obj):
+        from dataclasses import asdict
+
+        try:
+            return asdict(obj)
+        except Exception:
+            pass
+
+    # Fallback: string representation (works for exceptions, custom types, etc.)
+    return str(obj)
+
+
 def _format_tool_result(result: Any, tool_call_info: dict | None) -> str | ToolMessage:
     """
     Format the tool result to match the expected output format.
@@ -24,8 +62,10 @@ def _format_tool_result(result: Any, tool_call_info: dict | None) -> str | ToolM
     
     If tool_call_info is provided (from a ToolCall), returns a ToolMessage.
     Otherwise, returns the raw content string for direct invocations.
+    The JSON serialization is made robust to non-serializable objects
+    (e.g. ImageContent) via `_json_default_serializer`.
     """
-    content = json.dumps(list(result))
+    content = json.dumps(list(result), default=_json_default_serializer, ensure_ascii=False)
     if tool_call_info and tool_call_info.get("id"):
         return ToolMessage(content=content,
                            name=tool_call_info.get("name"),
@@ -307,10 +347,10 @@ if __name__ == "__main__":
         print("-" * 80)
     
     ## Use the self_camera_capture_and_send tool
-    camera_tool = next((t for t in tools if t.name == "self_camera_capture_and_send"), None)
+    camera_tool = next((t for t in tools if t.name == "self_camera_take_photo"), None)
     if camera_tool:
         print("\n=== Using self_camera_capture_and_send tool ===")
-        result = camera_tool.invoke({})
+        result = camera_tool.invoke({"question": ""})
         print(f"Result: {result}")
     
     # Use the self_screen_set_brightness tool
