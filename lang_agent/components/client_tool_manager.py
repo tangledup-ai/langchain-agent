@@ -16,16 +16,21 @@ from pydantic import BaseModel, Field, create_model
 from lang_agent.config import InstantiateConfig
 
 
-def _format_tool_result(result: Any, input: dict) -> str:
+def _format_tool_result(result: Any, tool_call_info: dict | None) -> str | ToolMessage:
     """
     Format the tool result to match the expected output format.
     MCP tools return a tuple (result, error), which needs to be converted
     to a JSON array string for consistency with StructuredTool.invoke() behavior.
+    
+    If tool_call_info is provided (from a ToolCall), returns a ToolMessage.
+    Otherwise, returns the raw content string for direct invocations.
     """
     content = json.dumps(list(result))
-    return ToolMessage(content=content,
-                       name=input.get("name"),
-                       tool_call_id=input.get("id"))    
+    if tool_call_info and tool_call_info.get("id"):
+        return ToolMessage(content=content,
+                           name=tool_call_info.get("name"),
+                           tool_call_id=tool_call_info["id"])
+    return content    
 
 
 def _is_tool_call(input: Any) -> bool:
@@ -82,11 +87,11 @@ class DeviceIdInjectedTool(StructuredTool):
         # which would strip the device_id field not in args_schema
         if self.func is not None:
             result = self.func(**tool_args)
-            return _format_tool_result(result, tool_call_info or {})
+            return _format_tool_result(result, tool_call_info)
         elif self.coroutine is not None:
             # Run async function synchronously
             result = asyncio.run(self.coroutine(**tool_args))
-            return _format_tool_result(result, tool_call_info or {})
+            return _format_tool_result(result, tool_call_info)
         else:
             # Fallback to parent implementation
             return super().invoke(input, config, **kwargs)
@@ -117,12 +122,12 @@ class DeviceIdInjectedTool(StructuredTool):
         # which would strip the device_id field not in args_schema
         if self.coroutine is not None:
             result = await self.coroutine(**tool_args)
-            return _format_tool_result(result, tool_call_info or {})
+            return _format_tool_result(result, tool_call_info)
         elif self.func is not None:
             # Run sync function in thread pool to avoid blocking
             loop = asyncio.get_running_loop()
             result = await loop.run_in_executor(None, lambda: self.func(**tool_args))
-            return _format_tool_result(result, tool_call_info or {})
+            return _format_tool_result(result, tool_call_info)
         else:
             # Fallback to parent implementation
             return await super().ainvoke(input, config, **kwargs)
@@ -293,4 +298,30 @@ if __name__ == "__main__":
     config = ClientToolManagerConfig()
     tool_manager = ClientToolManager(config)
     tools = tool_manager.get_tools()
-    [print(e.name) for e in tools]
+    
+    for tool in tools:
+        print(f"Name: {tool.name}")
+        print(f"Description: {tool.description}")
+        if hasattr(tool, 'args_schema') and tool.args_schema:
+            print(f"Args Schema: {tool.args_schema}")
+        print("-" * 80)
+    
+    ## Use the self_camera_capture_and_send tool
+    camera_tool = next((t for t in tools if t.name == "self_camera_capture_and_send"), None)
+    if camera_tool:
+        print("\n=== Using self_camera_capture_and_send tool ===")
+        result = camera_tool.invoke({})
+        print(f"Result: {result}")
+    
+    # Use the self_screen_set_brightness tool
+    # brightness_tool = next((t for t in tools if t.name == "self_screen_set_brightness"), None)
+    # if brightness_tool:
+    #     print("\n=== Using self_screen_set_brightness tool ===")
+    #     # Check what arguments it expects
+    #     if hasattr(brightness_tool, 'args_schema') and brightness_tool.args_schema:
+    #         schema = brightness_tool.args_schema.model_json_schema() if hasattr(brightness_tool.args_schema, 'model_json_schema') else None
+    #         if schema:
+    #             print(f"Expected args: {schema.get('properties', {})}")
+    #     # Try setting brightness to 50 (assuming 0-100 scale)
+    #     result = brightness_tool.invoke({"brightness": 0})
+    #     print(f"Result: {result}")
