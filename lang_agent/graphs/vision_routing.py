@@ -146,7 +146,10 @@ class VisionRoutingGraph(GraphBase):
             base_url=self.config.base_url,
             temperature=0,
             tags=["vision_llm"],
-            enable_search=True  # Enable thinking for better vision analysis
+            # reasoning={
+            #     "effort": "medium",  # Can be "low", "medium", or "high"
+            #     "summary": "auto",  # Can be "auto", "concise", or "detailed"
+            # }
         )
 
         self.memory = MemorySaver()
@@ -347,27 +350,27 @@ if __name__ == "__main__":
     graph = VisionRoutingGraph(config)
     
     # Test with a conversation request
-    # print("\n=== Test 1: Conversation (no photo needed) ===")
-    # nargs = {
-    #     "messages": [
-    #         SystemMessage("You are a helpful assistant"),
-    #         HumanMessage("Hello, how are you today?")
-    #     ]
-    # }, {"configurable": {"thread_id": "1"}}
-    
-    # result = graph.invoke(*nargs)
-    # print(f"Result: {result}")
-    
-    # Test with a photo request
-    print("\n=== Test 2: Photo request ===")
+    print("\n=== Test 1: Conversation (no photo needed) ===")
     nargs = {
         "messages": [
             SystemMessage("You are a helpful assistant"),
-            HumanMessage("Take a photo and tell me what you see")
+            HumanMessage("Hello, how are you today?")
         ]
-    }, {"configurable": {"thread_id": "2"}}
+    }, {"configurable": {"thread_id": "1"}}
     
     result = graph.invoke(*nargs)
-    print(f"\033[32mResult: {result}\033[0m")
+    print(f"Result: {result}")
+    
+    # Test with a photo request
+    # print("\n=== Test 2: Photo request ===")
+    # nargs = {
+    #     "messages": [
+    #         SystemMessage("You are a helpful assistant"),
+    #         HumanMessage("Take a photo and tell me what you see")
+    #     ]
+    # }, {"configurable": {"thread_id": "2"}}
+    
+    # result = graph.invoke(*nargs)
+    # print(f"\033[32mResult: {result}\033[0m")
     
     # print(f"Result: {result}")
