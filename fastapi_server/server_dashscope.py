@@ -18,6 +18,7 @@ from lang_agent.pipeline import Pipeline, PipelineConfig
 
 # Initialize Pipeline once
 pipeline_config = tyro.cli(PipelineConfig)
+logger.info(f"starting agent with pipeline: \n{pipeline_config}")
 pipeline:Pipeline = pipeline_config.setup()
 
 
