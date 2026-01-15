@@ -20,6 +20,9 @@ MCP_ENDPOINT=<OBSOLETE>
 LANGSMITH_API_KEY=<LANG SMITH API KEY> # for testing only; location of where dataset is stored
 ```
 
+### Hardware tools
+update the link to xiaozhi server in `configs/mcp_config.json`
+
 ## 运行服务
 
 ```bash
