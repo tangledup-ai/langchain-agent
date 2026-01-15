@@ -6,6 +6,7 @@ import asyncio
 import json
 import os.path as osp
 from loguru import logger
+from mcp.types import ImageContent
 
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_core.tools import BaseTool, StructuredTool
@@ -14,6 +15,7 @@ from langchain_core.messages import ToolMessage
 from pydantic import BaseModel, Field, create_model
 
 from lang_agent.config import InstantiateConfig
+
 
 
 def _json_default_serializer(obj: Any) -> Any:
@@ -27,6 +29,9 @@ def _json_default_serializer(obj: Any) -> Any:
     - Else if it's a dataclass, convert via `asdict`.
     - Else fall back to `str(obj)`.
     """
+    if isinstance(obj, ImageContent):
+        return {'image_base64':obj.data}
+
     # Pydantic v2 models
     if hasattr(obj, "model_dump") and callable(getattr(obj, "model_dump")):
         try:
@@ -65,7 +70,57 @@ def _format_tool_result(result: Any, tool_call_info: dict | None) -> str | ToolM
     The JSON serialization is made robust to non-serializable objects
     (e.g. ImageContent) via `_json_default_serializer`.
     """
-    content = json.dumps(list(result), default=_json_default_serializer, ensure_ascii=False)
+    # Prefer a dict-style JSON payload instead of a generic list-of-objects.
+    # Special handling for common MCP pattern: (json_string_or_dict, [ImageContent, ...])
+    if isinstance(result, tuple):
+        primary, secondary = result if len(result) == 2 else (result, None)
+
+        # Decode primary part
+        if isinstance(primary, str):
+            try:
+                primary_obj: Any = json.loads(primary)
+            except Exception:
+                primary_obj = primary
+        else:
+            primary_obj = primary
+
+        # Attach secondary part (e.g. images) in a structured way
+        if secondary is not None:
+            # Normalise to list
+            secondary_list = list(secondary) if not isinstance(secondary, list) else secondary
+            secondary_serialized = [_json_default_serializer(x) for x in secondary_list]
+
+            if isinstance(primary_obj, dict):
+                # Prefer a top-level "image_base64" key when there is exactly one image,
+                # to match expected contract for simple image-returning tools.
+                if (
+                    len(secondary_serialized) == 1
+                    and isinstance(secondary_serialized[0], dict)
+                    and "image_base64" in secondary_serialized[0]
+                ):
+                    primary_obj = {
+                        **primary_obj,
+                        "image_base64": secondary_serialized[0]["image_base64"],
+                    }
+                else:
+                    # Fallback: attach all serialized items under "images"
+                    primary_obj = {
+                        **primary_obj,
+                        "images": secondary_serialized,
+                    }
+            else:
+                # Fallback: wrap everything into a dict
+                primary_obj = {
+                    "result": primary_obj,
+                    "images": secondary_serialized,
+                }
+
+        content_obj = primary_obj
+    else:
+        # Non-tuple results are serialized as-is (dict, list, scalar, etc.)
+        content_obj = result
+
+    content = json.dumps(content_obj, default=_json_default_serializer, ensure_ascii=False)
     if tool_call_info and tool_call_info.get("id"):
         return ToolMessage(content=content,
                            name=tool_call_info.get("name"),
