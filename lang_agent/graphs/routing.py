@@ -72,7 +72,7 @@ class RoutingGraph(GraphBase):
                                      base_url=self.config.base_url,
                                      temperature=0,
                                      tags=["route_chat_llm"])
-        self.fast_llm = init_chat_model(model='qwen-flash',
+        self.fast_llm = init_chat_model(model='qwen-plus',
                                         model_provider='openai',
                                         api_key=self.config.api_key,
                                         base_url=self.config.base_url,
