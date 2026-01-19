@@ -14,7 +14,7 @@ from lang_agent.eval.validator import ValidatorConfig, Validator
 
 from langsmith import Client
 
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, ToolMessage, BaseMessage # NOTE: this is used in 'eval()
+from langchain_core.messages import ToolMessage, BaseMessage
 
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
