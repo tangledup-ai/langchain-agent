@@ -6,7 +6,7 @@ import os
 
 load_dotenv()
 
-DATASET_NAME = "QA_xiaozhan"
+DATASET_NAME = "QA_xiaozhan_sub"
 from loguru import logger
 
 ASSETS_DIR = osp.join(osp.dirname(osp.dirname(__file__)), "assets")
@@ -134,13 +134,6 @@ examples = [
     }
   },
   {
-    "inputs": {"text": "懒羊羊这杯怎么样"},
-    "outputs": {
-      "answer": "懒洋洋以熟普搭配玫瑰，茶汤顺滑醇厚，既有陈香和糖香，又有柔和花香，整体非常温润。",
-      "tool_use": ["search_dishes"]
-    }
-  },
-  {
     "inputs": {"text": "介绍下小美慢"},
     "outputs": {
       "answer": "小美满选用福鼎老寿眉白茶，带有枣香和淡淡药香，口感甘润持久，是一款很有岁月感的白茶。",
@@ -164,7 +157,6 @@ try:
 except:
     dataset = cli.create_dataset(dataset_name=DATASET_NAME)
     logger.info("created dataset")
-
 cli.create_examples(
     dataset_id=dataset.id,
     examples=examples
