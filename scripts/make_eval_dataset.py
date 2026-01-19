@@ -120,14 +120,13 @@ examples = [
   {
     "inputs": {"text": "我今天很开心"},
     "outputs": {
-      "answer": "太棒啦！看到你开心，我的茶盖都忍不住轻轻晃起来啦",
-      "tool_use": ["search_dishes"]
+      "answer": "太棒啦！看到你开心",
     }
   },
   {
     "inputs": {"text": "你好可爱呀！"},
     "outputs": {
-      "answer": "谢谢你呀～我的小蓝鼻子都害羞得微微发烫啦！每次被夸可爱",
+      "answer": "谢谢你呀～",
     }
   },
   {
