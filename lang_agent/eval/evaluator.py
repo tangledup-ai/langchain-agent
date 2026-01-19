@@ -82,7 +82,7 @@ class Evaluator:
         logger.info(f"saving experiment results to: {exp_save_f}")
         df.to_csv(exp_save_f, index=False)
 
-        metric_col = [e for e in df.columns if "feedback" in e]
+        metric_col = [e for e in df.columns if "feedback" in e and not e.endswith(".comment")]
 
         df_curr_m = df[metric_col].mean().to_frame().T
         df_curr_m.index = [f'{osp.basename(head_path)}-{n_exp}']
@@ -114,5 +114,28 @@ class Evaluator:
         # outs = df["outputs.output"]
         # df["outputs.output"] = outs.apply(map_fnc)
         # df["tool_out"] = outs.apply(extract_tool_out)
-        
+
+        # Extract comments from raw results if enabled
+        # if self.config.save_explanation:
+        comments_map = {}  # example_id -> {evaluator_key: comment}
+        for res in self.result:
+            example_id = str(res.get("example").id) if res.get("example") else ""
+            eval_results = res.get("evaluation_results", {}).get("results", [])
+            for eval_res in eval_results:
+                key = eval_res.key if hasattr(eval_res, "key") else ""
+                comment = eval_res.comment if hasattr(eval_res, "comment") else ""
+                if comment and example_id:
+                    if example_id not in comments_map:
+                        comments_map[example_id] = {}
+                    comments_map[example_id][key] = comment
+
+        # Add comment columns to DataFrame
+        if comments_map and "example_id" in df.columns:
+            evaluator_keys = set(k for v in comments_map.values() for k in v.keys())
+            for key in evaluator_keys:
+                col_name = f"feedback.{key}.comment"
+                df[col_name] = df["example_id"].apply(
+                    lambda eid: comments_map.get(str(eid), {}).get(key, "")
+                )
+    
         return df
