@@ -82,7 +82,7 @@ class Evaluator:
         logger.info(f"saving experiment results to: {exp_save_f}")
         df.to_csv(exp_save_f, index=False)
 
-        metric_col = [e for e in df.columns if "feedback" in e and not e.endswith(".comment")]
+        metric_col = [e for e in df.columns if "feedback" in e and not e.endswith(".comment")] + ["execution_time"]
 
         df_curr_m = df[metric_col].mean().to_frame().T
         df_curr_m.index = [f'{osp.basename(head_path)}-{n_exp}']
