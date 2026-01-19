@@ -402,11 +402,11 @@ if __name__ == "__main__":
         print("-" * 80)
     
     ## Use the self_camera_capture_and_send tool
-    camera_tool = next((t for t in tools if t.name == "self_camera_take_photo"), None)
-    if camera_tool:
-        print("\n=== Using self_camera_capture_and_send tool ===")
-        result = camera_tool.invoke({"question": ""})
-        print(f"Result: {result}")
+    # camera_tool = next((t for t in tools if t.name == "self_camera_take_photo"), None)
+    # if camera_tool:
+    #     print("\n=== Using self_camera_capture_and_send tool ===")
+    #     result = camera_tool.invoke({"question": ""})
+    #     print(f"Result: {result}")
     
     # Use the self_screen_set_brightness tool
     # brightness_tool = next((t for t in tools if t.name == "self_screen_set_brightness"), None)
