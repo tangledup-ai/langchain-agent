@@ -27,7 +27,7 @@ class EvaluatorConfig(InstantiateConfig):
     experiment_desc:str = "testing if this works or not"
     """describe the experiment"""
 
-    dataset_name:Literal["Toxic Queries"] = "QA_xiaozhan"
+    dataset_name:Literal["Toxic Queries"] = "QA_xiaozhan_sub"
     """name of the dataset to evaluate"""
 
     log_dir:str = "logs"
