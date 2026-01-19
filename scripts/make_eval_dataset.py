@@ -15,37 +15,9 @@ if not osp.exists(ASSETS_DIR):
 
 examples = [
     {
-        "inputs": {"text": "请你介绍一些下这杯俯身于自然"},
-        "outputs": {
-            "answer": "伏身于自然是一款充满自然气息的茶饮，选用来自深山的茶叶，带有清新的草木香气和微微的甘甜。茶汤色泽清亮，口感细腻，仿佛与大自然融为一体。",
-            "tool_use": ["search_dishes"]
-        }
-    },
-    {
         "inputs": {"text": "请你介绍一下少年右这杯茶"},
         "outputs": {
             "answer": "这是一杯使用武夷肉桂为原料的茶，带有浓郁的肉桂香气和微微的辛辣感，茶汤醇厚，回味悠长，非常适合喜欢浓烈香气的茶友。",
-            "tool_use": ["search_dishes"]
-        }
-    },
-    {
-        "inputs": {"text": "小盏，介绍一下奶油椰椰这杯茶"},
-        "outputs": {
-            "answer": "你好呀，我是小盏，让我来给你介绍一下我们的奶油椰椰，它是由新鲜的椰果和浓郁的奶油搭配而成，口感顺滑，带有淡淡的椰香与奶香，犹如初夏的清风，轻盈愉悦。",
-            "tool_use": ["search_dishes"]
-        }
-    },
-    {
-        "inputs": {"text": "介绍一下这杯小确幸"},
-        "outputs": {
-            "answer": "好的，我们的小确幸是使用了云南墨红玫瑰花朵与清新的绿茶混合，呈现出花香与茶香交织的独特味道，香气悠长，回味如甜美的小幸福。",
-            "tool_use": ["search_dishes"]
-        }
-    },
-    {
-        "inputs": {"text": "请你介绍一下这杯我两最最好"},
-        "outputs": {
-            "answer": "这杯‘我俩最最好’是采用了精选的云南普洱茶和桂花为主料，带有淡淡的花香与普洱的醇厚味道，给人一种温暖的感觉，适合和最好的朋友共享。",
             "tool_use": ["search_dishes"]
         }
     },
@@ -140,13 +112,6 @@ examples = [
       "tool_use": ["search_dishes"]
     }
   },
-  {
-    "inputs": {"text": "玉兰仙仙是什么风味"},
-    "outputs": {
-      "answer": "玉兰仙仙以白玉兰和茉莉花窨制，花香高扬纯净，冷萃呈现出清透而优雅的花香口感。",
-      "tool_use": ["search_dishes"]
-    }
-  }
 ]
 
 cli = Client()
