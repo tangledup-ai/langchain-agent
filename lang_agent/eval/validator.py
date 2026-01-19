@@ -34,7 +34,7 @@ class Validator:
 
     def populate_modules(self):
         self.judge_llm = init_chat_model(
-            model="qwen-turbo",
+            model="qwen-plus",
             model_provider="openai",
             base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
             api_key=self.config.api_key
