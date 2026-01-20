@@ -3,7 +3,6 @@ from typing import Type, TypedDict, Literal, Dict, List, Tuple, Any, AsyncIterat
 import tyro
 from pydantic import BaseModel, Field
 from loguru import logger
-import jax
 import os.path as osp
 import commentjson
 import glob
