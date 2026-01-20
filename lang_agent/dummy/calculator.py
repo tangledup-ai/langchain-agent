@@ -50,20 +50,18 @@ class Calculator(LangToolBase):
         return [self.calculator]
 
 
-# Global calculator instance
-calculator = Calculator(CalculatorConfig())
-
-# FastMCP server setup
-from fastmcp import FastMCP
-
-mcp = FastMCP("Calculator Server")
-
-
-@mcp.tool()
-async def calculate(python_expression: str) -> dict:
-    """For mathematical calculation, always use this tool to calculate the result of a python expression. You can use 'math' or 'random' directly, without 'import'."""
-    return await calculator.calculator_async(python_expression)
-
-
 if __name__ == "__main__":
+    # Global calculator instance
+    calculator = Calculator(CalculatorConfig())
+
+    # FastMCP server setup
+    from fastmcp import FastMCP
+
+    mcp = FastMCP("Calculator Server")
+
+
+    @mcp.tool()
+    async def calculate(python_expression: str) -> dict:
+        """For mathematical calculation, always use this tool to calculate the result of a python expression. You can use 'math' or 'random' directly, without 'import'."""
+        return await calculator.calculator_async(python_expression)
     mcp.run(transport="streamable-http", host="0.0.0.0", port=9000)
