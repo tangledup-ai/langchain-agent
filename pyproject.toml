@@ -21,7 +21,6 @@ dependencies = [
     "fastapi",
     "matplotlib",
     "Pillow",
-    "jax",
     "commentjson",
     "pandas",
     "asgiref"
