@@ -1,20 +1,14 @@
 {
-    // "calculator": {
-    //     "url": "http://0.0.0.0:9000/mcp/",
-    //     "transport": "streamable_http"
-    // }//,
-    // "cart": {
-    //     "url": "http://6.6.6.36:8080/api/mcp/",
-    //     "transport": "streamable_http"
-    // },
-    // "cart": {
-    //     "url": "https://therianclouds.mynatapp.cc/api/mcp/",
-    //     "transport": "streamable_http"
-    // },
+    "cart": {
+            "url": "https://xiaoliang.quant-speed.com/api/mcp/",
+            "transport": "streamable_http"
+        },
+        
     "xiaozhi": {
-        "url": "http://127.0.0.1:8805/sse",
-        "transport": "sse",
-        // "device_id": "10:b4:1d:e9:9b:0c" //black
-        // "device_id": '10:b4:1d:e9:b3:88' //white
+      "url": "http://6.6.6.4:8805/sse",
+      "transport": "sse",
+        // "headers": {
+        //     "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjoiWWhNYU1fMTlBOWJlWkxjZVl0NHE4b09wN3pHa0x3SV95Y0NMWWFCTzFjMy15c09HWEg1TExUMFAtY09GLUQ5R29pc2Z1enJXdFFSTUQ4YjI2RDZwUGlWc3BMREpjQUpyQUNPNTVFX2VKMURIIn0.K4KIIfVvUXV46ai-MCeXIJSyYftHHjHu8rpTYmKUjFs"
+        // }
     }
 }
