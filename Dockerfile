@@ -47,4 +47,4 @@ conda activate base\n\
 exec "$@"' > /entrypoint.sh && chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["python", "fastapi_server/server_dashscope.py", "vision"]
+CMD ["python", "fastapi_server/server_dashscope.py", "route"]
