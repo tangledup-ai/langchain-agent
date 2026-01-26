@@ -23,8 +23,6 @@ COPY pyproject.toml ./
 COPY lang_agent/ ./lang_agent/
 COPY fastapi_server/ ./fastapi_server/
 
-
-
 # Install Python dependencies inside micromamba env
 RUN python -m pip install --upgrade pip \
     -i https://mirrors.aliyun.com/pypi/simple/ \
@@ -47,4 +45,9 @@ conda activate base\n\
 exec "$@"' > /entrypoint.sh && chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["python", "fastapi_server/server_dashscope.py", "route"]
+
+# Default command - will be overridden by docker-compose
+CMD ["python", "fastapi_server/server_dashscope.py"]
+
+
+# CMD ["python", "fastapi_server/server_dashscope.py", "route"]
