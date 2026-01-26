@@ -135,6 +135,7 @@ class RoutingGraph(GraphBase):
         for msg in msgs:
             if isinstance(msg, HumanMessage):
                 candidate_hum_msg = msg
+                break
                 
         assert isinstance(candidate_hum_msg, HumanMessage), "not a human message"
 
