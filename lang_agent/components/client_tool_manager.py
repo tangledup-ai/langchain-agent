@@ -269,6 +269,8 @@ class ClientToolManager:
                         logger.warning(f"{key} is not in mcp tools")
                     else:
                         to_load_config[key] = val
+            
+            return to_load_config
         
         to_load_config = get_to_load_configs()
         all_tools = []
