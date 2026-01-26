@@ -134,7 +134,6 @@ class GraphBase(ABC):
         print("\033[93m====================END INPUT HUMAN MESSAGES=============================\033[0m")
         print(f"\033[93m model used: {self.config.llm_name}\033[0m")
 
-        assert len(nargs[0]["messages"]) >= 2, "need at least 1 system and 1 human message"
         assert len(kwargs) == 0, "due to inp assumptions"
     
     def _agent_call_template(self, system_prompt:str,
