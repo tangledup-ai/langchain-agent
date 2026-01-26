@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Type
 import tyro
 import os.path as osp
+from loguru import logger
 
 from lang_agent.config import KeyConfig
 from lang_agent.components.tool_manager import ToolManager, ToolManagerConfig
@@ -37,6 +38,7 @@ class ReactGraphConfig(KeyConfig):
         super().__post_init__()
         err_msg = f"{self.sys_prompt_f} does not exist"
         assert osp.exists(self.sys_prompt_f), err_msg
+        logger.info(f"will be loading react sys promtp from {self.sys_prompt_f}")
 
 
 class ReactGraph(GraphBase):
@@ -73,11 +75,19 @@ class ReactGraph(GraphBase):
 
         return candidate_hum_msg
     
+    def _prep_inp(self, *nargs):
+        assert len(nargs) == 2, "should have 2 arguements"
+
+        human_msg = self._get_human_msg(*nargs)
+        conf = nargs[1]
+        return {"messages":[SystemMessage(self.sys_prompt), human_msg]}, conf
+
+    
     def invoke(self, *nargs, as_stream:bool=False, as_raw:bool=False, **kwargs):
         """
         as_stream (bool): for debug only, gets the agent to print its thoughts
         """
-
+        nargs = self._prep_inp(*nargs)
         if as_stream:
             for step in self.agent.stream(*nargs, stream_mode="values", **kwargs):
                 step["messages"][-1].pretty_print()
@@ -101,7 +111,7 @@ class ReactGraph(GraphBase):
         Async version of invoke using LangGraph's native async support.
         as_stream (bool): for debug only, gets the agent to print its thoughts
         """
-
+        nargs = self._prep_inp(*nargs)
         if as_stream:
             async for step in self.agent.astream(*nargs, stream_mode="values", **kwargs):
                 step["messages"][-1].pretty_print()
