@@ -235,7 +235,7 @@ class ClientToolManagerConfig(InstantiateConfig):
     mcp_config_f: str = osp.join(osp.dirname(osp.dirname(osp.dirname(__file__))), "configs", "mcp_config.json")
     """path to all mcp configurations; expect json file"""
 
-    tool_keys: List = None
+    tool_keys: Optional[List[str]] = field(default=None)
     """tool configs to use; the keys inside mcp_config; if None, use everything"""
 
     def __post_init__(self):
