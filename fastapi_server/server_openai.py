@@ -210,6 +210,7 @@ async def root():
         "message": "OpenAI-compatible Chat API",
         "endpoints": [
             "/v1/chat/completions",
+            "/v1/memory (DELETE)",
             "/health"
         ]
     }
@@ -218,6 +219,17 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
+
+
+@app.delete("/v1/memory")
+async def delete_memory():
+    """Delete all conversation memory/history."""
+    try:
+        await pipeline.aclear_memory()
+        return JSONResponse(content={"status": "success", "message": "Memory cleared"})
+    except Exception as e:
+        logger.error(f"Memory deletion error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":
