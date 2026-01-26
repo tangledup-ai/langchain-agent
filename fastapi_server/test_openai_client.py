@@ -7,7 +7,10 @@ Instructions:
     python fastapi_server/server_openai.py --llm_name qwen-plus --llm_provider openai --base_url https://dashscope.aliyuncs.com/compatible-mode/v1
 - Or with uvicorn:
     uvicorn fastapi_server.server_openai:app --host 0.0.0.0 --port 8589 --reload
-- Set BASE_URL below to the server base URL you started.
+- Set BASE_URL and API_KEY environment variables (or in .env file):
+    OPENAI_BASE_URL=http://127.0.0.1:8589/v1
+    API_KEY=sk-your-api-key-here
+- Make sure the API_KEY matches one of the keys in the server's API_KEYS environment variable
 """
 import os
 from dotenv import load_dotenv
@@ -26,6 +29,7 @@ except Exception as e:
 
 # <<< Paste your running FastAPI base url here >>>
 BASE_URL = os.getenv("OPENAI_BASE_URL", "http://127.0.0.1:8589/v1")
+API_KEY = os.getenv("FAST_AUTH_KEYS", None)
 
 # Test configuration matching the server setup
 # llm_name: "qwen-plus"
@@ -45,9 +49,13 @@ def test_streaming():
     print("Testing STREAMING chat completion...")
     print("="*60 + "\n")
     
+    if not API_KEY:
+        logger.warning("API_KEY not set. Set it in environment variable or .env file.")
+        raise ValueError("API_KEY environment variable is required for authentication")
+    
     client = OpenAI(
         base_url=BASE_URL,
-        api_key="test-key"  # Dummy key for testing
+        api_key=API_KEY
     )
     
     try:
@@ -55,7 +63,7 @@ def test_streaming():
             model="qwen-plus",  # Using qwen-plus as configured
             messages=messages,
             stream=True,
-            extra_body={"thread_id":2000}
+            extra_body={"thread_id":"2000"}
         )
         
         full_response = ""
@@ -82,9 +90,13 @@ def test_non_streaming():
     print("Testing NON-STREAMING chat completion...")
     print("="*60 + "\n")
     
+    if not API_KEY:
+        logger.warning("API_KEY not set. Set it in environment variable or .env file.")
+        raise ValueError("API_KEY environment variable is required for authentication")
+    
     client = OpenAI(
         base_url=BASE_URL,
-        api_key="test-key"  # Dummy key for testing
+        api_key=API_KEY
     )
     
     try:
@@ -92,7 +104,7 @@ def test_non_streaming():
             model="qwen-plus",  # Using qwen-plus as configured
             messages=messages,
             stream=False,
-            extra_body={"thread_id":2000}
+            extra_body={"thread_id":"2000"}
         )
         
         content = response.choices[0].message.content
@@ -110,7 +122,14 @@ def test_non_streaming():
 
 
 def main():
-    print(f"\nUsing base_url = {BASE_URL}\n")
+    print(f"\nUsing base_url = {BASE_URL}")
+    if API_KEY:
+        # Show only first 8 chars for security
+        masked_key = API_KEY[:8] + "..." if len(API_KEY) > 8 else API_KEY
+        print(f"Using API_KEY = {masked_key}")
+    else:
+        print("WARNING: API_KEY not set!")
+    print()
     
     # Test both streaming and non-streaming
     streaming_result = test_streaming()
