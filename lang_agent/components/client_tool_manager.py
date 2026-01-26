@@ -262,6 +262,10 @@ class ClientToolManager:
             if self.config.tool_keys is None:
                 to_load_config = self.mcp_configs
             else:
+                if len(self.config.tool_keys) == 0:
+                    logger.info("no tools will be loaded")
+                    return {}
+
                 to_load_config = {}
                 for key in self.config.tool_keys:
                     val = self.mcp_configs.get(key)
