@@ -30,6 +30,8 @@ services:
   blueberry:
     <<: *common-config
     container_name: blueberry
-    command: ["python", "fastapi_server/server_dashscope.py", "react", "--sys-prompt-f", "configs/prompts/blueberry.txt"]
+    command: ["python", "fastapi_server/server_openai.py", 
+              "react", "--sys-prompt-f", "configs/prompts/blueberry.txt",
+              "--tool-manager-config.client-tool-manager.tool-keys"]
     ports:
       - "8589:8588"
