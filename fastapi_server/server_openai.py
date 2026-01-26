@@ -249,6 +249,6 @@ if __name__ == "__main__":
     uvicorn.run(
         "server_openai:app",
         host="0.0.0.0",
-        port=8589,
+        port=8588,
         reload=True,
     )
