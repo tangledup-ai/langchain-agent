@@ -13,7 +13,7 @@ x-common-config: &common-config
     - ./scripts:/app/scripts
     - ./assets:/app/assets
   healthcheck:
-    test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8588/health')"]
+    test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://0.0.0.0:8588/health')"]
     interval: 30s
     timeout: 10s
     retries: 3
@@ -25,7 +25,7 @@ services:
     container_name: xiaozhan
     command: ["python", "fastapi_server/server_dashscope.py"]
     ports:
-      - "8590:8588"
+      - "8588:8588"
 
   blueberry:
     <<: *common-config
