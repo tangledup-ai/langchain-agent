@@ -47,9 +47,9 @@ class ReactGraph(GraphBase):
         
 
         self.tool_manager:ToolManager = self.config.tool_manager_config.setup()
-        memory = MemorySaver()
+        self.memory = MemorySaver()
         tools = self.tool_manager.get_langchain_tools()
-        self.agent = create_agent(self.llm, tools, checkpointer=memory)
+        self.agent = create_agent(self.llm, tools, checkpointer=self.memory)
     
     def invoke(self, *nargs, as_stream:bool=False, as_raw:bool=False, **kwargs):
         """
