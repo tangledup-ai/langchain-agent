@@ -130,7 +130,12 @@ class RoutingGraph(GraphBase):
         get user message of current invocation
         """
         msgs = state["inp"][0]["messages"]
-        candidate_hum_msg = msgs[1]
+
+        candidate_hum_msg = None
+        for msg in msgs:
+            if isinstance(msg, HumanMessage):
+                candidate_hum_msg = msg
+                
         assert isinstance(candidate_hum_msg, HumanMessage), "not a human message"
 
         return candidate_hum_msg
