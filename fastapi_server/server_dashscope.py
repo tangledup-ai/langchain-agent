@@ -1,6 +1,7 @@
-from fastapi import FastAPI, HTTPException, Path, Request
+from fastapi import FastAPI, HTTPException, Path, Request, Depends, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field
 from typing import List, Optional
 import os
@@ -20,6 +21,18 @@ from lang_agent.pipeline import Pipeline, PipelineConfig
 pipeline_config = tyro.cli(PipelineConfig)
 logger.info(f"starting agent with pipeline: \n{pipeline_config}")
 pipeline:Pipeline = pipeline_config.setup()
+
+# API Key Authentication
+API_KEY_HEADER = APIKeyHeader(name="Authorization", auto_error=True)
+VALID_API_KEYS = set(filter(None, os.environ.get("FAST_AUTH_KEYS", "").split(",")))
+
+
+async def verify_api_key(api_key: str = Security(API_KEY_HEADER)):
+    """Verify the API key from Authorization header (Bearer token format)."""
+    key = api_key[7:] if api_key.startswith("Bearer ") else api_key
+    if VALID_API_KEYS and key not in VALID_API_KEYS:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    return key
 
 
 class DSMessage(BaseModel):
@@ -136,6 +149,7 @@ async def application_responses(
     request: Request,
     app_id: str = Path(...),
     session_id: str = Path(...),
+    _: str = Depends(verify_api_key),
 ):
     try:
         body = await request.json()
@@ -220,6 +234,7 @@ async def application_responses(
 async def application_completion(
     request: Request,
     app_id: str = Path(...),
+    _: str = Depends(verify_api_key),
 ):
     try:
         body = await request.json()
