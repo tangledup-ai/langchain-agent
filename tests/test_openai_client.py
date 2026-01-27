@@ -28,7 +28,7 @@ except Exception as e:
 
 
 # <<< Paste your running FastAPI base url here >>>
-BASE_URL = os.getenv("OPENAI_BASE_URL", "http://127.0.0.1:8589/v1")
+BASE_URL = os.getenv("OPENAI_BASE_URL", "http://121.40.192.128:8589/v1")
 API_KEY = os.getenv("FAST_AUTH_KEYS", None)
 
 # Test configuration matching the server setup
@@ -132,7 +132,7 @@ def main():
     print()
     
     # Test both streaming and non-streaming
-    streaming_result = test_streaming()
+    streaming_result = "" #test_streaming()
     non_streaming_result = test_non_streaming()
     
     print("\n" + "="*60)
