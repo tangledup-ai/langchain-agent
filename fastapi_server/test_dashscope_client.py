@@ -30,7 +30,7 @@ except Exception as e:
 BASE_URL = os.getenv("DS_BASE_URL", "http://127.0.0.1:8588/api/")
 
 # Params
-API_KEY = "salkjhglakshfs" #os.getenv("ALI_API_KEY", "test-key")
+API_KEY = os.getenv("FAST_AUTH_KEYS", "test-key")
 APP_ID = os.getenv("ALI_APP_ID", "test-app")
 SESSION_ID = str(uuid.uuid4())
 
@@ -40,7 +40,7 @@ dialogue = [
 ]
 
 call_params = {
-    "api_key": "test_key",
+    "api_key": API_KEY,
     "app_id": "test_app",
     "session_id": "123",
     "messages": dialogue,
