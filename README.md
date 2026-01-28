@@ -93,3 +93,26 @@ they are in `configs/route_sys_prompts`
 - `route_prompt.txt`: controls `router_call`
 - `tool_prompt.txt`: controls `tool_model_call`
 - `chatty_prompt.txt`: controls how the model say random things when tool use is in progress. Ignore this for now as model architecture is not yet configurable
+
+## Stress Test results
+### Dashscope server summary
+
+#### Non-Streaming
+
+| Concurrency | Requests | Success % | Throughput (req/s) | Avg Latency (ms) | p95 (ms) | p99 (ms) |
+|-----------:|---------:|----------:|-------------------:|-----------------:|---------:|---------:|
+| 1          | 10       | 100.00%   | 0.77               | 1293.14          | 1460.48  | 1476.77  |
+| 5          | 25       | 100.00%   | 2.74               | 1369.23          | 1827.11  | 3336.25  |
+| 10         | 50       | 100.00%   | 6.72               | 1344.48          | 1964.75  | 2165.77  |
+| 20         | 100      | 100.00%   | 10.90              | 1688.06          | 2226.49  | 2747.19  |
+| 50         | 200      | 100.00%   | 11.75              | 3877.01          | 4855.45  | 5178.52  |
+
+#### Streaming
+
+| Concurrency | Requests | Success % | Throughput (req/s) | Avg Latency (ms) | p95 (ms) | p99 (ms) |
+|-----------:|---------:|----------:|-------------------:|-----------------:|---------:|---------:|
+| 1          | 10       | 100.00%   | 0.73               | 1374.08          | 1714.61  | 1715.82  |
+| 10         | 50       | 100.00%   | 5.97               | 1560.63          | 1925.01  | 2084.21  |
+| 20         | 100      | 100.00%   | 9.28               | 2012.03          | 2649.72  | 2934.84  |
+
+Interpretation - Handling concurrently 20 conversations should be ok
