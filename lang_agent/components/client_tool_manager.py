@@ -287,7 +287,13 @@ class ClientToolManager:
                 all_tools.extend(tools)
                 logger.info(f"Successfully connected to MCP server '{server_name}', retrieved {len(tools)} tools")
             except Exception as e:
-                logger.warning(f"Failed to connect to MCP server '{server_name}' at {server_config.get('url', 'unknown URL')}: {e}")
+                # Log full exception details including traceback
+                logger.exception(f"Failed to connect to MCP server '{server_name}' at {server_config.get('url', 'unknown URL')}")
+                # Also log nested exceptions if it's a TaskGroup error
+                if hasattr(e, 'exceptions'):
+                    for nested_exc in e.exceptions:
+                        logger.error(f"Nested exception: {type(nested_exc).__name__}: {nested_exc}")
+                        logger.exception("Nested exception traceback:")
                 continue
         
         return all_tools
