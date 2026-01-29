@@ -226,3 +226,15 @@ class Pipeline:
         """Async version: Clear all memory from the graph."""
         if hasattr(self.graph, "aclear_memory"):
             await self.graph.aclear_memory()
+
+
+if __name__ == "__main__":
+    from lang_agent.graphs import ReactGraphConfig
+    from dotenv import load_dotenv
+    load_dotenv()
+    # config = PipelineConfig(graph_config=ReactGraphConfig())
+    config = PipelineConfig()
+    pipeline: Pipeline = config.setup()
+    for out in pipeline.chat("use the calculator tool to calculate 92*55 and say the answer", as_stream=True):
+        # print(out)
+        continue
