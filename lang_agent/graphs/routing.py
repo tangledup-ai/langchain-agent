@@ -206,8 +206,8 @@ if __name__ == "__main__":
     from lang_agent.graphs.tool_nodes import AnnotatedToolNode, ToolNodeConfig, ChattyToolNodeConfig
     load_dotenv()
 
+    route:RoutingGraph = RoutingConfig().setup()
     # route:RoutingGraph = RoutingConfig(tool_node_config=ChattyToolNodeConfig()).setup()
-    route:RoutingGraph = RoutingConfig(tool_node_config=ChattyToolNodeConfig()).setup()
     graph = route.workflow
 
     nargs = {
@@ -215,16 +215,19 @@ if __name__ == "__main__":
                      HumanMessage("use calculator to calculate 926*84")]
     },{"configurable": {"thread_id": "3"}}
 
-    for chunk in route.invoke(*nargs, as_stream=True):
-        # print(f"\033[92m{chunk}\033[0m", end="", flush=True)
-        continue
+    # for chunk in route.invoke(*nargs, as_stream=True):
+    #     # print(f"\033[92m{chunk}\033[0m", end="", flush=True)
+    #     continue
 
     
-    # for chunk, metadata in graph.stream({"inp": nargs}, stream_mode="messages"):
-    #     node = metadata.get("langgraph_node")
-    #     if node not in ("model"):
-    #         continue  # skip router or other intermediate nodes
-
-    #     # Print only the final message content
-    #     if isinstance(chunk, (BaseMessageChunk, BaseMessage)) and getattr(chunk, "content", None):
-    #         print(chunk.content, end="", flush=True)
+    for _, mode, out in graph.stream({"inp": nargs}, 
+                                  subgraphs=True,
+                                  stream_mode=["messages", "values"]):
+        # print(mode)
+        if mode == "values":
+            msgs = out.get("messages")
+            l = len(msgs) if msgs is not None else -1
+            print(type(out), out.keys(), l)
+        else:
+            print(type(out), mode, "==================================================")
+            print(out[0].content)

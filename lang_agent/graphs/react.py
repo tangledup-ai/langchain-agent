@@ -146,16 +146,15 @@ if __name__ == "__main__":
                      HumanMessage("use the calculator tool to calculate 92*55 and say the answer")]
     },{"configurable": {"thread_id": "3"}}
 
-    out = route.invoke(*nargs)
-    assert 0
+    # out = route.invoke(*nargs)
+    # assert 0
     
-    # for chunk, metadata in graph.stream({"inp": nargs}, stream_mode="messages"):
-    #     node = metadata.get("langgraph_node")
-    #     if node not in ("model"):
-    #         print(node)
-    #         continue  # skip router or other intermediate nodes
+    # for mode, data in graph.stream(*nargs, stream_mode=["messages", "values"]):
+    #     print(data)
 
-    #     # Print only the final message content
-    #     if isinstance(chunk, (BaseMessageChunk, BaseMessage)) and getattr(chunk, "content", None):
-    #         print(chunk.content, end="", flush=True)
-    
+    for _, mode, out in graph.stream(*nargs, subgraphs=True,
+                                  stream_mode=["messages", "values"]):
+        if mode == "values":
+            msgs = out.get("messages")
+            l = len(msgs) if msgs is not None else -1
+            print(type(out), out.keys(), l)
