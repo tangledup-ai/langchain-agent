@@ -76,10 +76,13 @@ class TextReleaser:
         """Consumes text_iterator and stores chunks into buffer as they arrive."""
         for chunk in text_iterator:
             with self._lock:
-                start_pos = len(self._accumulated_text)
-                self._accumulated_text += chunk
-                end_pos = len(self._accumulated_text)
-                self._buffer.append((chunk, start_pos, end_pos))
+                if isinstance(chunk, str):
+                    start_pos = len(self._accumulated_text)
+                    self._accumulated_text += chunk
+                    end_pos = len(self._accumulated_text)
+                    self._buffer.append((chunk, start_pos, end_pos))
+                else:
+                    self._buffer.append((chunk, None, None))
         self._producer_done.set()
 
     def _chunk_overlaps_range(self, chunk_start: int, chunk_end: int, range_start: int, range_end: int) -> bool:
@@ -226,6 +229,14 @@ class TextReleaser:
                 else:
                     time.sleep(0.01)
                     continue
+            
+            # If it is not string; return the thing
+            item, start_pos, end_pos = chunk_data
+            if start_pos is None:  # Non-string item - yield immediately
+                state.read_idx += 1  # <-- ADD THIS LINE
+                state.yield_idx = state.read_idx  # Skip past this in yield tracking
+                yield item
+                continue
 
             state.read_idx += 1
             self._search_for_keys(state, len(accumulated))
