@@ -23,7 +23,8 @@ dependencies = [
     "Pillow",
     "commentjson",
     "pandas",
-    "asgiref"
+    "asgiref",
+    "psycopg[binary]"
 ]
 
 [tool.setuptools.packages.find]
