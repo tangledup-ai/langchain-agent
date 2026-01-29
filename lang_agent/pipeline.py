@@ -105,7 +105,7 @@ class Pipeline:
         else:
             logger.info(f"show graph not supported for {type(self.graph)}")
 
-    def invoke(self, *nargs, **kwargs):
+    def invoke(self, *nargs, **kwargs)->str:
         out = self.graph.invoke(*nargs, **kwargs)
 
         # If streaming, yield chunks from the generator
