@@ -58,7 +58,7 @@ class ReactGraph(GraphBase):
         self.tool_manager:ToolManager = self.config.tool_manager_config.setup()
         self.memory = MemorySaver()
         tools = self.tool_manager.get_langchain_tools()
-        self.agent = create_agent(self.llm, tools, checkpointer=self.memory)
+        self.workflow = create_agent(self.llm, tools, checkpointer=self.memory)
         
         with open(self.config.sys_prompt_f, "r") as f:
             self.sys_prompt = f.read()
@@ -90,11 +90,11 @@ class ReactGraph(GraphBase):
         """
         nargs = self._prep_inp(*nargs)
         if as_stream:
-            for step in self.agent.stream(*nargs, stream_mode="values", **kwargs):
+            for step in self.workflow.stream(*nargs, stream_mode="values", **kwargs):
                 step["messages"][-1].pretty_print()
             out = step
         else:
-            out = self.agent.invoke(*nargs, **kwargs)
+            out = self.workflow.invoke(*nargs, **kwargs)
 
         msgs_list = tree_leaves(out)
 
@@ -114,11 +114,11 @@ class ReactGraph(GraphBase):
         """
         nargs = self._prep_inp(*nargs)
         if as_stream:
-            async for step in self.agent.astream(*nargs, stream_mode="values", **kwargs):
+            async for step in self.workflow.astream(*nargs, stream_mode="values", **kwargs):
                 step["messages"][-1].pretty_print()
             out = step
         else:
-            out = await self.agent.ainvoke(*nargs, **kwargs)
+            out = await self.workflow.ainvoke(*nargs, **kwargs)
 
         msgs_list = tree_leaves(out)
 
@@ -139,7 +139,7 @@ if __name__ == "__main__":
     load_dotenv()
 
     route:ReactGraph = ReactGraphConfig().setup()
-    graph = route.agent
+    graph = route.workflow
 
     nargs = {
         "messages": [SystemMessage("you are a helpful bot named jarvis"),
