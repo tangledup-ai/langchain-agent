@@ -59,8 +59,6 @@ class GraphBase(ABC):
         text_releaser = TextReleaser(*self.textreleaser_delay_keys)
         logger.info("streaming output")
         for chunk in text_releaser.release(text_iterator()):
-            if isinstance(chunk, str):
-                print(f"\033[92m{chunk}\033[0m", end="", flush=True)
             yield chunk
     
     # NOTE: DEFAULT IMPLEMENTATION; Overide to support your class
@@ -133,8 +131,6 @@ class GraphBase(ABC):
         text_releaser = AsyncTextReleaser(*self.textreleaser_delay_keys)
         logger.info("streaming output")
         async for chunk in text_releaser.release(text_iterator()):
-            if isinstance(chunk, str):
-                print(f"\033[92m{chunk}\033[0m", end="", flush=True)
             yield chunk 
     
     def _validate_input(self, *nargs, **kwargs):
