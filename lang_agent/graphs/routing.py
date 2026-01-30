@@ -161,7 +161,7 @@ class RoutingGraph(GraphBase):
                         SystemMessage(
                             self.prompt_dict["chat_prompt"]
                         ),
-                        *state["inp"][0]["messages"][1:]
+                        *self._get_inp_msgs(state)
                     ]}, state["inp"][1]
 
 

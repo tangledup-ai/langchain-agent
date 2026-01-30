@@ -50,7 +50,7 @@ class ToolNode(ToolNodeBase):
             SystemMessage(
                 self.sys_prompt
             ),
-            *state["inp"][0]["messages"][1:]
+            *self._get_inp_msgs(state)
         ]}, state["inp"][1]
 
         out = self.tool_agent.invoke(*inp)
@@ -62,7 +62,7 @@ class ToolNode(ToolNodeBase):
             SystemMessage(
                 self.sys_prompt
             ),
-            *state["inp"][0]["messages"][1:]
+            *self._get_inp_msgs(state)
         ]}, state["inp"][1]
 
         out = await self.tool_agent.ainvoke(*inp)
@@ -160,7 +160,7 @@ class ChattyToolNode(ToolNodeBase):
         #     SystemMessage(
         #         self.tool_sys_prompt
         #     ),
-        #     *state["inp"][0]["messages"][1:]
+        #     *self._get_inp_msgs(state)
         # ]}, state["inp"][1]
 
         out = self.tool_agent.invoke(state)
@@ -176,7 +176,7 @@ class ChattyToolNode(ToolNodeBase):
                         SystemMessage(
                             f"回复的最开始应该是{self.chat_key}\n"+self.chatty_sys_prompt
                         ),
-                        *state["inp"][0]["messages"][1:]
+                        *self._get_inp_msgs(state)
                     ]}, state["inp"][1]
             outs.extend(self.chatty_agent.invoke(*inp)["messages"])
 
