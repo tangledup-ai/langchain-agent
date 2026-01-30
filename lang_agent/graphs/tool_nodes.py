@@ -156,12 +156,6 @@ class ChattyToolNode(ToolNodeBase):
         return {"messages": state_msgs + chat_msgs + tool_msgs}
     
     def _tool_node_call(self, state:ChattyToolState):
-        # inp = {"messages":[
-        #     SystemMessage(
-        #         self.tool_sys_prompt
-        #     ),
-        #     *self._get_inp_msgs(state)
-        # ]}, state["inp"][1]
 
         out = self.tool_agent.invoke(state)
 
