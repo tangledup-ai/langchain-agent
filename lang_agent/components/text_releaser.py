@@ -405,7 +405,7 @@ class AsyncTextReleaser:
         
         return "".join(result_parts) if result_parts else None
 
-    async def release(self, text_iterator: AsyncIterator[str]) -> AsyncIterator[str]:
+    async def release(self, text_iterator: AsyncIterator[Any]) -> AsyncIterator[Any]:
         """
         Async version of release that works with async generators.
         
@@ -426,10 +426,13 @@ class AsyncTextReleaser:
             nonlocal producer_done
             
             async for chunk in text_iterator:
-                start_pos = len(self._accumulated_text)
-                self._accumulated_text += chunk
-                end_pos = len(self._accumulated_text)
-                buffer.append((chunk, start_pos, end_pos))
+                if isinstance(chunk, str):
+                    start_pos = len(self._accumulated_text)
+                    self._accumulated_text += chunk
+                    end_pos = len(self._accumulated_text)
+                    buffer.append((chunk, start_pos, end_pos))
+                else:
+                    buffer.append((chunk, None, None))
                 
                 # Process available chunks
                 self._search_for_keys(state, len(self._accumulated_text))
@@ -438,6 +441,12 @@ class AsyncTextReleaser:
                 while state.yield_idx < len(buffer):
                     chunk_at_yield = buffer[state.yield_idx]
                     y_chunk, y_start, y_end = chunk_at_yield
+                    
+                    # If it is not string; return the thing
+                    if y_start is None:  # Non-string item - yield immediately
+                        state.yield_idx += 1
+                        yield y_chunk
+                        continue
                     
                     if y_end > safe_end_pos:
                         break
@@ -470,6 +479,12 @@ class AsyncTextReleaser:
             while state.yield_idx < len(buffer):
                 chunk_at_yield = buffer[state.yield_idx]
                 y_chunk, y_start, y_end = chunk_at_yield
+                
+                # If it is not string; return the thing
+                if y_start is None:  # Non-string item - yield immediately
+                    state.yield_idx += 1
+                    yield y_chunk
+                    continue
                 
                 self._update_delay_mode(state, y_start, y_end)
                 
