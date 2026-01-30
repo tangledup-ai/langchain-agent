@@ -47,7 +47,40 @@ python fastapi_server/server_dashscope.py route chatty_tool_node
 # this supports openai-api; 
 python fastapi_server/server_openai.py
 ```
-see sample usage in `fastapi_server/test_dashscope_client.py` to see how to communicate with `fake_stream_server_dashscopy.py` or `server_dashscope.py` service  
+see sample usage in `fastapi_server/test_dashscope_client.py` to see how to communicate with `fake_stream_server_dashscopy.py` or `server_dashscope.py` service
+
+## Conversation Viewer
+
+A web UI to visualize and browse conversations stored in the PostgreSQL database.
+
+### Setup
+
+1. Ensure your database is set up (see `scripts/init_user.sql` and `scripts/recreate_table.sql`)
+2. Set the `CONN_STR` environment variable:
+   ```bash
+   export CONN_STR="postgresql://myapp_user:secure_password_123@localhost/ai_conversations"
+   ```
+
+### Running the Viewer
+
+```bash
+python fastapi_server/server_viewer.py
+```
+
+Then open your browser and navigate to:
+```
+http://localhost:8590
+```
+
+### Features
+
+- **Left Sidebar**: Lists all conversations with message counts and last updated timestamps
+- **Main View**: Displays messages in a chat-style interface
+  - Human messages appear on the right (blue bubbles)
+  - AI messages appear on the left (green bubbles)
+  - Tool messages appear on the left (orange bubbles with border)
+
+The viewer automatically loads all conversations from the `messages` table and allows you to browse through them interactively.  
 
 ### Openai API differences
 For the python `openai` package it does not handle memory. Ours does, so each call remembers what happens previously. For managing memory, pass in a `thread_id` to manager the conversations
