@@ -62,7 +62,7 @@ class ConversationStore:
                 """, (conversation_id,))
                 return cur.fetchall()
     
-    def record_messages(self, conv_id:str, inp:List[BaseMessage]):
+    def record_message_list(self, conv_id:str, inp:List[BaseMessage]):
         inp = [e for e in inp if not isinstance(e, SystemMessage)]
         curr_len = self.get_conv_number(conv_id)
         to_add_msg = inp[curr_len:]
@@ -81,5 +81,12 @@ class ConversationStore:
             return MessageType.TOOL
         else:
             raise ValueError(f"Unknown message type: {type(msg)}")
+
+
+class ConversationPrinter:
+    def __init__(self):
+        self.id_dic = {}
+    
+    
 
 CONV_STORE = ConversationStore()

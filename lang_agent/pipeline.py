@@ -134,7 +134,7 @@ class Pipeline:
                 yield chunk
             else:
                 logger.info("logged message")
-                CONV_STORE.record_messages(conv_id, chunk)
+                CONV_STORE.record_message_list(conv_id, chunk)
 
     async def _astream_res(self, out):
         """Async version of _stream_res for async generators."""
