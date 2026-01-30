@@ -166,7 +166,7 @@ class RoutingGraph(GraphBase):
 
 
         out = self.chat_model.invoke(*inp)
-        return {"messages": out}
+        return {"messages": out["messages"]}
 
 
     def _tool_model_call(self, state:State):
