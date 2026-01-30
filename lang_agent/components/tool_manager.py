@@ -27,8 +27,6 @@ class ToolManagerConfig(InstantiateConfig):
     # tool configs here; MUST HAVE 'config' in name and must be dataclass
     # rag_config: SimpleRagConfig = field(default_factory=SimpleRagConfig)
 
-    # cart_config: CartToolConfig = field(default_factory=CartToolConfig)
-
     # calc_config: CalculatorConfig = field(default_factory=CalculatorConfig)
 
 
