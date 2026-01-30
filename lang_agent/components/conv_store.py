@@ -87,6 +87,17 @@ class ConversationPrinter:
     def __init__(self):
         self.id_dic = {}
     
-    
-
-CONV_STORE = ConversationStore()
+    def record_message_list(self, conv_id:str, inp:List[BaseMessage]):
+        inp = [e for e in inp if not isinstance(e, SystemMessage)]
+        curr_len = self.id_dic.get(conv_id, 0)
+        to_print_msg = inp[curr_len:]
+        for msg in to_print_msg:
+            msg.pretty_print()
+        
+        if curr_len == 0:
+            self.id_dic[conv_id] = len(inp)
+        else:
+            self.id_dic[conv_id] += len(to_print_msg)
+ 
+# CONV_STORE = ConversationStore()
+CONV_STORE = ConversationPrinter()
