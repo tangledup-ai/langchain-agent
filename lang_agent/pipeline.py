@@ -133,7 +133,6 @@ class Pipeline:
             if isinstance(chunk, str):
                 yield chunk
             else:
-                logger.info("logged message")
                 CONV_STORE.record_message_list(conv_id, chunk)
 
     async def _astream_res(self, out):
