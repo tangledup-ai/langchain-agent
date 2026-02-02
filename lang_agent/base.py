@@ -184,13 +184,25 @@ class GraphBase(ABC):
             plt.show()
         else:
             return img
-        
-    def clear_memory(self):
+    
+    def clear_all_memory(self):
+        # NOTE: self.memory = MemorySaver
+        for thread_id in self.memory.storage:
+            self.memory.delete_thread(thread_id)
+    
+    def clear_memory_device_id(self, device_id:str):
+        # NOTE: self.memory = MemorySaver
+        rm_threads = [th for th in self.memory.storage if (device_id in th)]
+        for thread_id in rm_threads:
+            self.memory.delete_thread(thread_id)
+
+    def clear_memory(self, device_id:str=None):
         # Clear the agent's (LangChain) memory if available
         if hasattr(self, "memory") and self.memory is not None:
-            if isinstance(self.memory, MemorySaver):
-                for thread_id in self.memory.storage:
-                    self.memory.delete_thread(thread_id)
+            if isinstance(self.memory, MemorySaver) and (device_id is None):
+                self.clear_all_memory()
+            else:
+                self.clear_memory_device_id(device_id)
     
     async def aclear_memory(self):
         # Clear the agent's (LangChain) memory if available (async version)
