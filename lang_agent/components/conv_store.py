@@ -99,5 +99,5 @@ class ConversationPrinter:
         else:
             self.id_dic[conv_id] += len(to_print_msg)
  
-# CONV_STORE = ConversationStore()
-CONV_STORE = ConversationPrinter()
+CONV_STORE = ConversationStore()
+# CONV_STORE = ConversationPrinter()
