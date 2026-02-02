@@ -204,12 +204,19 @@ class GraphBase(ABC):
             else:
                 self.clear_memory_device_id(device_id)
     
-    async def aclear_memory(self):
+    async def aclear_memory(self, device_id:str=None):
         # Clear the agent's (LangChain) memory if available (async version)
         if hasattr(self, "memory") and self.memory is not None:
             if isinstance(self.memory, MemorySaver):
-                for thread_id in self.memory.storage:
-                    await self.memory.adelete_thread(thread_id)
+                if device_id is None:
+                    # Clear all memory
+                    for thread_id in self.memory.storage:
+                        await self.memory.adelete_thread(thread_id)
+                else:
+                    # Clear memory for specific device_id
+                    rm_threads = [th for th in self.memory.storage if (device_id in th)]
+                    for thread_id in rm_threads:
+                        await self.memory.adelete_thread(thread_id)
             
 
 
