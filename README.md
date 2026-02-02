@@ -34,6 +34,14 @@ update the link to xiaozhi server in `configs/mcp_config.json`
 
 ## 运行服务
 
+#### API key setup
+`server_dashcop.py` and `server_openai.py` both require api key; generate one and set
+
+```bash
+FAST_AUTH_KEYS=API_KEY1,API_KEY2    # at least one
+```
+`FAST_AUTH_KEYS` will be used as the api-key for authentication when the api is requested.
+
 ```bash
 # for easy debug; streams full message internally for visibility
 python fastapi_server/fake_stream_server_dashscopy.py
@@ -89,7 +97,7 @@ from openai import OpenAI
 
 client = OpenAI(
         base_url=BASE_URL,
-        api_key="test-key"  # Dummy key for testing
+        api_key="test-key"  # see put a key in .env and put it here; see above
     )
 
 client.chat.completions.create(
