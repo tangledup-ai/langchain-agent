@@ -104,7 +104,7 @@ client.chat.completions.create(
             model="qwen-plus", 
             messages=messages,
             stream=True,
-            extra_body={"thread_id":2000}  # pass in a thread id
+            extra_body={"thread_id":"2000"}  # pass in a thread id; must be string
         )
 ```
 
