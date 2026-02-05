@@ -71,7 +71,7 @@ class ConversationStore:
             content = msg.content
             # Serialize dict/list content to JSON string
             if not isinstance(content, str):
-                content = json.dumps(content, ensure_ascii=False)
+                content = json.dumps(content, ensure_ascii=False, indent=4)
             self.add_message(conv_id, self._get_type(msg), content, curr_len + 1)
             curr_len += 1
         return curr_len
