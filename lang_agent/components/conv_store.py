@@ -1,3 +1,4 @@
+import json
 import psycopg
 from typing import List, Dict, Union
 from enum import Enum
@@ -67,7 +68,11 @@ class ConversationStore:
         curr_len = self.get_conv_number(conv_id)
         to_add_msg = inp[curr_len:]
         for msg in to_add_msg:
-            self.add_message(conv_id, self._get_type(msg), msg.content, curr_len + 1)
+            content = msg.content
+            # Serialize dict/list content to JSON string
+            if not isinstance(content, str):
+                content = json.dumps(content, ensure_ascii=False)
+            self.add_message(conv_id, self._get_type(msg), content, curr_len + 1)
             curr_len += 1
         return curr_len
     
