@@ -3,6 +3,7 @@ import psycopg
 from typing import List, Dict, Union
 from enum import Enum
 import os
+from loguru import logger
 
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage, SystemMessage, BaseMessage
 
@@ -96,6 +97,7 @@ class ConversationPrinter:
         inp = [e for e in inp if not isinstance(e, SystemMessage)]
         curr_len = self.id_dic.get(conv_id, 0)
         to_print_msg = inp[curr_len:]
+        print("\n")
         for msg in to_print_msg:
             msg.pretty_print()
         
@@ -110,3 +112,8 @@ CONV_STORE = ConversationStore()
 def use_printer():
     global CONV_STORE
     CONV_STORE = ConversationPrinter()
+
+
+def print_store_type():
+    global CONV_STORE
+    logger.info(CONV_STORE)
