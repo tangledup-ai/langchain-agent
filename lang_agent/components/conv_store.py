@@ -106,3 +106,7 @@ class ConversationPrinter:
  
 CONV_STORE = ConversationStore()
 # CONV_STORE = ConversationPrinter()
+
+def use_printer():
+    global CONV_STORE
+    CONV_STORE = ConversationPrinter()
