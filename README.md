@@ -16,8 +16,7 @@ make a `.env` with:
 ```bash
 ALI_API_KEY=<ALI API KEY>
 ALI_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
-MCP_ENDPOINT=<OBSOLETE>
-LANGSMITH_API_KEY=<LANG SMITH API KEY> # for testing only; location of where dataset is stored
+LANGSMITH_API_KEY=<LANG SMITH API KEY> # for testing only
 ```
 
 ### Hardware tools
