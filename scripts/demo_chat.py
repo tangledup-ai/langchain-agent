@@ -1,10 +1,11 @@
 import tyro
 from typing import Annotated
 import uuid
-
+from loguru import logger
 
 from lang_agent.pipeline import Pipeline, PipelineConfig
 from lang_agent.config import load_tyro_conf
+from lang_agent.components.conv_store import use_printer
 
 
 def main(
@@ -17,9 +18,11 @@ def main(
         conf: Pipeline configuration
         stream: Enable streaming mode for chat responses
     """
+    use_printer()
     if conf.config_f is not None:
         conf = load_tyro_conf(conf.config_f)
     
+    logger.info(conf)
     pipeline: Pipeline = conf.setup()
     thread_id = str(uuid.uuid4())
     while True:
