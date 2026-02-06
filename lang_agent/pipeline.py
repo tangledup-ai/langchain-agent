@@ -16,7 +16,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from lang_agent.config import InstantiateConfig, KeyConfig
 from lang_agent.graphs import AnnotatedGraph, ReactGraphConfig, RoutingConfig
 from lang_agent.base import GraphBase
-from lang_agent.components.conv_store import CONV_STORE
+from lang_agent.components import conv_store
 
 DEFAULT_PROMPT="""你是半盏新青年茶馆的服务员，擅长倾听、共情且主动回应。聊天时语气自然亲切，像朋友般轻松交流，不使用生硬术语。能接住各种话题，对疑问耐心解答，对情绪及时回应，避免冷场。保持积极正向，不传播负面信息，语言简洁易懂，让对话流畅舒适。与用户（User）交流时必须遵循[语气与格式]、[互动策略]、[安全与边界]、[输出要求]
 [角色设定]
@@ -134,7 +134,7 @@ class Pipeline:
             if isinstance(chunk, str):
                 yield chunk
             else:
-                CONV_STORE.record_message_list(conv_id, chunk)
+                conv_store.CONV_STORE.record_message_list(conv_id, chunk)
 
     async def _astream_res(self, out, conv_id:str=None):
         """Async version of _stream_res for async generators."""
@@ -142,7 +142,7 @@ class Pipeline:
             if isinstance(chunk, str):
                 yield chunk
             else:
-                CONV_STORE.record_message_list(conv_id, chunk)
+                conv_store.CONV_STORE.record_message_list(conv_id, chunk)
 
     def chat(self, inp:str, as_stream:bool=False, as_raw:bool=False, thread_id:str = '3'):
         """
