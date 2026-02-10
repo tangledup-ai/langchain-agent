@@ -70,7 +70,7 @@ class PipelineConfig(KeyConfig):
     host:str = "0.0.0.0"
     """where am I hosted"""
 
-    port:int = 23
+    port:int = 8588
     """what is my port"""
 
     pipeline_id: str = None

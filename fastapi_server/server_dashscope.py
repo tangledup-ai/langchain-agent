@@ -324,7 +324,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "server_dashscope:app",
         host="0.0.0.0",
-        port=8588,
+        port=pipeline_config.port,
         reload=True,
     )
 
