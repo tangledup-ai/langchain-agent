@@ -1,11 +1,12 @@
 from dataclasses import dataclass, field
-from typing import Type
+from typing import Type, Optional
 import tyro
 import os.path as osp
 from loguru import logger
 
 from lang_agent.config import KeyConfig
 from lang_agent.components.tool_manager import ToolManager, ToolManagerConfig
+from lang_agent.components.prompt_store import build_prompt_store
 from lang_agent.base import GraphBase
 from lang_agent.utils import tree_leaves
 from lang_agent.graphs.graph_states import State
@@ -33,6 +34,12 @@ class ReactGraphConfig(KeyConfig):
 
     base_url:str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     """base url; could be used to overwrite the baseurl in llm provider"""
+
+    pipeline_id: Optional[str] = None
+    """If set, load prompts from database (with file fallback)"""
+
+    prompt_set_id: Optional[str] = None
+    """If set, load from this specific prompt set instead of the active one"""
 
     tool_manager_config: ToolManagerConfig = field(default_factory=ToolManagerConfig)
 
@@ -65,8 +72,13 @@ class ReactGraph(GraphBase):
         tools = self.tool_manager.get_langchain_tools()
         self.agent = create_agent(self.llm, tools, checkpointer=self.memory)
         
-        with open(self.config.sys_prompt_f, "r") as f:
-            self.sys_prompt = f.read()
+        self.prompt_store = build_prompt_store(
+            pipeline_id=self.config.pipeline_id,
+            prompt_set_id=self.config.prompt_set_id,
+            file_path=self.config.sys_prompt_f,
+            default_key="sys_prompt",
+        )
+        self.sys_prompt = self.prompt_store.get("sys_prompt")
     
     def _agent_call(self, state:State):
         if state.get("messages") is not None:

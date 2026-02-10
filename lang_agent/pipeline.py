@@ -73,6 +73,12 @@ class PipelineConfig(KeyConfig):
     port:int = 23
     """what is my port"""
 
+    pipeline_id: str = None
+    """If set, load prompts from database (with file fallback)"""
+
+    prompt_set_id: str = None
+    """If set, load from this specific prompt set instead of the active one"""
+
     # graph_config: AnnotatedGraph = field(default_factory=ReactGraphConfig)
     graph_config: AnnotatedGraph = field(default_factory=RoutingConfig)
 
@@ -96,6 +102,12 @@ class Pipeline:
             self.config.graph_config.llm_provider = self.config.llm_provider
             self.config.graph_config.base_url = self.config.base_url if self.config.base_url is not None else self.config.graph_config.base_url
             self.config.graph_config.api_key = self.config.api_key
+        
+        # Propagate pipeline_id and prompt_set_id to graph config for DB prompt loading
+        if self.config.pipeline_id is not None and hasattr(self.config.graph_config, 'pipeline_id'):
+            self.config.graph_config.pipeline_id = self.config.pipeline_id
+        if self.config.prompt_set_id is not None and hasattr(self.config.graph_config, 'prompt_set_id'):
+            self.config.graph_config.prompt_set_id = self.config.prompt_set_id
         
         self.graph:GraphBase = self.config.graph_config.setup()
 

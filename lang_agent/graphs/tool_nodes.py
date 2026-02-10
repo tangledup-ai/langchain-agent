@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field, is_dataclass
-from typing import Type, TypedDict, Literal, Dict, List, Tuple
+from typing import Type, TypedDict, Literal, Dict, List, Tuple, Optional
 import tyro
 import os.path as osp
 import time
@@ -8,6 +8,7 @@ from loguru import logger
 
 from lang_agent.config import InstantiateConfig, KeyConfig
 from lang_agent.components.tool_manager import ToolManager
+from lang_agent.components.prompt_store import build_prompt_store
 from lang_agent.components.reit_llm import ReitLLM
 from lang_agent.base import ToolNodeBase
 from lang_agent.graphs.graph_states import State, ChattyToolState
@@ -27,6 +28,12 @@ class ToolNodeConfig(InstantiateConfig):
 
     tool_prompt_f:str = osp.join(osp.dirname(osp.dirname(osp.dirname(__file__))), "configs", "route_sys_prompts", "tool_prompt.txt")
 
+    pipeline_id: Optional[str] = None
+    """If set, load prompts from database (with file fallback)"""
+
+    prompt_set_id: Optional[str] = None
+    """If set, load from this specific prompt set instead of the active one"""
+
 
 class ToolNode(ToolNodeBase):
     def __init__(self, config: ToolNodeConfig, 
@@ -42,8 +49,13 @@ class ToolNode(ToolNodeBase):
         self.llm = make_llm(tags=["tool_llm"])
 
         self.tool_agent = create_agent(self.llm, self.tool_manager.get_langchain_tools(), checkpointer=self.mem)
-        with open(self.config.tool_prompt_f, "r") as f:
-            self.sys_prompt = f.read()
+        self.prompt_store = build_prompt_store(
+            pipeline_id=self.config.pipeline_id,
+            prompt_set_id=self.config.prompt_set_id,
+            file_path=self.config.tool_prompt_f,
+            default_key="tool_prompt",
+        )
+        self.sys_prompt = self.prompt_store.get("tool_prompt")
 
     def invoke(self, state:State):
         inp = {"messages":[
@@ -88,6 +100,8 @@ class ChattyToolNodeConfig(KeyConfig, ToolNodeConfig):
     chatty_sys_prompt_f:str = osp.join(osp.dirname(osp.dirname(osp.dirname(__file__))), "configs", "route_sys_prompts", "chatty_prompt.txt")
     """path to chatty system prompt"""
 
+    # pipeline_id and prompt_set_id are inherited from ToolNodeConfig
+
     tool_node_conf:ToolNodeConfig = field(default_factory=ToolNodeConfig)
 
 
@@ -124,14 +138,31 @@ class ChattyToolNode(ToolNodeBase):
         
         self.chatty_agent = create_agent(self.chatty_llm, [], checkpointer=self.mem)
         # self.tool_agent = create_agent(self.tool_llm, self.tool_manager.get_list_langchain_tools(), checkpointer=self.mem)
+
+        # Propagate pipeline_id and prompt_set_id to inner tool_node_conf
+        if self.config.pipeline_id and hasattr(self.config.tool_node_conf, 'pipeline_id'):
+            self.config.tool_node_conf.pipeline_id = self.config.pipeline_id
+        if self.config.prompt_set_id and hasattr(self.config.tool_node_conf, 'prompt_set_id'):
+            self.config.tool_node_conf.prompt_set_id = self.config.prompt_set_id
+
         self.tool_agent = self.config.tool_node_conf.setup(tool_manager=self.tool_manager, 
                                                            memory=self.mem)
 
-        with open(self.config.chatty_sys_prompt_f, "r") as f:
-            self.chatty_sys_prompt = f.read()
-        
-        with open(self.config.tool_prompt_f, "r") as f:
-            self.tool_sys_prompt = f.read()
+        self.chatty_prompt_store = build_prompt_store(
+            pipeline_id=self.config.pipeline_id,
+            prompt_set_id=self.config.prompt_set_id,
+            file_path=self.config.chatty_sys_prompt_f,
+            default_key="chatty_prompt",
+        )
+        self.chatty_sys_prompt = self.chatty_prompt_store.get("chatty_prompt")
+
+        self.tool_prompt_store = build_prompt_store(
+            pipeline_id=self.config.pipeline_id,
+            prompt_set_id=self.config.prompt_set_id,
+            file_path=self.config.tool_prompt_f,
+            default_key="tool_prompt",
+        )
+        self.tool_sys_prompt = self.tool_prompt_store.get("tool_prompt")
     
     def get_streamable_tags(self):
         return [["chatty_llm"], ["reit_llm"]]
