@@ -91,12 +91,6 @@ class RoutingGraph(GraphBase):
         tool_manager:ToolManager = self.config.tool_manager_config.setup()
         self.chat_model = create_agent(self.chat_llm, [], checkpointer=self.memory)
 
-        # Propagate pipeline_id and prompt_set_id to tool node config
-        if self.config.pipeline_id and hasattr(self.config.tool_node_config, 'pipeline_id'):
-            self.config.tool_node_config.pipeline_id = self.config.pipeline_id
-        if self.config.prompt_set_id and hasattr(self.config.tool_node_config, 'prompt_set_id'):
-            self.config.tool_node_config.prompt_set_id = self.config.prompt_set_id
-
         self.tool_node:ToolNodeBase = self.config.tool_node_config.setup(tool_manager=tool_manager,
                                                                          memory=self.memory)
 

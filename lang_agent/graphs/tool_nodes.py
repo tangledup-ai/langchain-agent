@@ -139,12 +139,6 @@ class ChattyToolNode(ToolNodeBase):
         self.chatty_agent = create_agent(self.chatty_llm, [], checkpointer=self.mem)
         # self.tool_agent = create_agent(self.tool_llm, self.tool_manager.get_list_langchain_tools(), checkpointer=self.mem)
 
-        # Propagate pipeline_id and prompt_set_id to inner tool_node_conf
-        if self.config.pipeline_id and hasattr(self.config.tool_node_conf, 'pipeline_id'):
-            self.config.tool_node_conf.pipeline_id = self.config.pipeline_id
-        if self.config.prompt_set_id and hasattr(self.config.tool_node_conf, 'prompt_set_id'):
-            self.config.tool_node_conf.prompt_set_id = self.config.prompt_set_id
-
         self.tool_agent = self.config.tool_node_conf.setup(tool_manager=self.tool_manager, 
                                                            memory=self.mem)
 
