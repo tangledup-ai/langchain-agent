@@ -16,24 +16,28 @@ from lang_agent.config.db_config_manager import DBConfigManager
 from lang_agent.front_api.build_server import GRAPH_BUILD_FNCS
 
 class GraphConfigUpsertRequest(BaseModel):
+    graph_id: str
     pipeline_id: str
     prompt_set_id: Optional[str] = Field(default=None)
     tool_keys: List[str] = Field(default_factory=list)
     prompt_dict: Dict[str, str] = Field(default_factory=dict)
 
 class GraphConfigUpsertResponse(BaseModel):
+    graph_id: str
     pipeline_id: str
     prompt_set_id: str
     tool_keys: List[str]
     prompt_keys: List[str]
 
 class GraphConfigReadResponse(BaseModel):
+    graph_id: Optional[str] = Field(default=None)
     pipeline_id: str
     prompt_set_id: str
     tool_keys: List[str]
     prompt_dict: Dict[str, str]
 
 class GraphConfigListItem(BaseModel):
+    graph_id: Optional[str] = Field(default=None)
     pipeline_id: str
     prompt_set_id: str
     name: str
@@ -124,6 +128,7 @@ async def root():
             "/v1/graph-configs (POST)",
             "/v1/graph-configs (GET)",
             "/v1/graph-configs/default/{pipeline_id} (GET)",
+            "/v1/graphs/{graph_id}/default-config (GET)",
             "/v1/graph-configs/{pipeline_id}/{prompt_set_id} (GET)",
             "/v1/graph-configs/{pipeline_id}/{prompt_set_id} (DELETE)",
             "/v1/pipelines/graphs (GET)",
@@ -138,6 +143,7 @@ async def root():
 async def upsert_graph_config(body: GraphConfigUpsertRequest):
     try:
         resolved_prompt_set_id = _db.set_config(
+            graph_id=body.graph_id,
             pipeline_id=body.pipeline_id,
             prompt_set_id=body.prompt_set_id,
             tool_list=body.tool_keys,
@@ -149,6 +155,7 @@ async def upsert_graph_config(body: GraphConfigUpsertRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
     return GraphConfigUpsertResponse(
+        graph_id=body.graph_id,
         pipeline_id=body.pipeline_id,
         prompt_set_id=resolved_prompt_set_id,
         tool_keys=body.tool_keys,
@@ -157,9 +164,8 @@ async def upsert_graph_config(body: GraphConfigUpsertRequest):
 
 @app.get("/v1/graph-configs", response_model=GraphConfigListResponse)
 async def list_graph_configs(pipeline_id: Optional[str] = None, graph_id: Optional[str] = None):
-    resolved_pipeline_id = pipeline_id or graph_id
     try:
-        rows = _db.list_prompt_sets(pipeline_id=resolved_pipeline_id)
+        rows = _db.list_prompt_sets(pipeline_id=pipeline_id, graph_id=graph_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -190,11 +196,16 @@ async def get_default_graph_config(pipeline_id: str):
         )
 
     return GraphConfigReadResponse(
+        graph_id=active.get("graph_id"),
         pipeline_id=pipeline_id,
         prompt_set_id=active["prompt_set_id"],
         tool_keys=tool_keys,
         prompt_dict=prompt_dict,
     )
+
+@app.get("/v1/graphs/{graph_id}/default-config", response_model=GraphConfigReadResponse)
+async def get_graph_default_config_by_graph(graph_id: str):
+    return await get_default_graph_config(pipeline_id=graph_id)
 
 @app.get("/v1/graph-configs/{pipeline_id}/{prompt_set_id}", response_model=GraphConfigReadResponse)
 async def get_graph_config(pipeline_id: str, prompt_set_id: str):
@@ -217,6 +228,7 @@ async def get_graph_config(pipeline_id: str, prompt_set_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
     return GraphConfigReadResponse(
+        graph_id=meta.get("graph_id"),
         pipeline_id=pipeline_id,
         prompt_set_id=prompt_set_id,
         tool_keys=tool_keys,
