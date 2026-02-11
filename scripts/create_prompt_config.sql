@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS prompt_sets (
     description TEXT DEFAULT '',
     is_active BOOLEAN DEFAULT false,
     created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now()
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    list Varchar(255) DEFAULT ''   -- tool_set list for client_tool_manager
 );
 
 -- Fast lookup of the active set for a pipeline
