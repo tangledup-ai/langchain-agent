@@ -134,6 +134,38 @@ they are in `configs/route_sys_prompts`
 - `tool_prompt.txt`: controls `tool_model_call`
 - `chatty_prompt.txt`: controls how the model say random things when tool use is in progress. Ignore this for now as model architecture is not yet configurable
 
+## Frontend (Conversation Viewer UI)
+
+The React-based frontend for browsing conversations lives in the `frontend` directory.
+
+### Install dependencies
+
+```bash
+cd frontend
+npm install
+```
+
+### Start the `front_apis` server
+
+The frontend talks to the `front_apis` FastAPI service, which by default listens on `http://127.0.0.1:8001`.
+
+From the project root:
+
+```bash
+uvicorn fastapi_server.front_apis:app --reload --host 0.0.0.0 --port 8001
+```
+
+You can change the URL by setting `VITE_FRONT_API_BASE_URL` in `frontend/.env` (defaults to `http://127.0.0.1:8001`).
+
+### Start the development server
+
+```bash
+cd frontend
+npm run dev
+```
+
+By default, Vite will start the app on `http://localhost:5173` (or the next available port).
+
 ## Stress Test results
 ### Dashscope server summary
 
