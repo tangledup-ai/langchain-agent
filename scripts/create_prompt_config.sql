@@ -4,6 +4,7 @@
 CREATE TABLE IF NOT EXISTS prompt_sets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     pipeline_id VARCHAR(64) NOT NULL,
+    graph_id VARCHAR(64),
     name VARCHAR(128) NOT NULL,
     description TEXT DEFAULT '',
     is_active BOOLEAN DEFAULT false,
@@ -11,6 +12,13 @@ CREATE TABLE IF NOT EXISTS prompt_sets (
     updated_at TIMESTAMPTZ DEFAULT now(),
     list Varchar(255) DEFAULT ''   -- tool_set list for client_tool_manager
 );
+
+-- Backward-compatible migration for existing deployments.
+ALTER TABLE prompt_sets
+ADD COLUMN IF NOT EXISTS graph_id VARCHAR(64);
+UPDATE prompt_sets
+SET graph_id = pipeline_id
+WHERE graph_id IS NULL;
 
 -- Fast lookup of the active set for a pipeline
 CREATE INDEX IF NOT EXISTS idx_prompt_sets_pipeline_active
@@ -32,8 +40,9 @@ CREATE INDEX IF NOT EXISTS idx_prompt_templates_set_id
 
 -- Seed: initial prompt set for lang_agent/graphs/routing.py
 -- The pipeline_id can be used by RoutingConfig.pipeline_id to load these prompts.
-INSERT INTO prompt_sets (pipeline_id, name, description, is_active, list)
+INSERT INTO prompt_sets (pipeline_id, graph_id, name, description, is_active, list)
 SELECT
+    'routing',
     'routing',
     'default',
     'Initial prompt set for RoutingGraph nodes',
@@ -65,8 +74,9 @@ DO UPDATE SET
 
 -- Seed: initial prompt set for lang_agent/graphs/react.py
 -- ReactGraph uses prompt key "sys_prompt" (see default_key in build_prompt_store).
-INSERT INTO prompt_sets (pipeline_id, name, description, is_active, list)
+INSERT INTO prompt_sets (pipeline_id, graph_id, name, description, is_active, list)
 SELECT
+    'react',
     'react',
     'default',
     'Initial prompt set for ReactGraph',
