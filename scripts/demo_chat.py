@@ -4,7 +4,7 @@ import uuid
 from loguru import logger
 
 from lang_agent.pipeline import Pipeline, PipelineConfig
-from lang_agent.config import load_tyro_conf
+from lang_agent.config.core_config import load_tyro_conf
 from lang_agent.components.conv_store import use_printer
 
 import os
