@@ -1,0 +1,162 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  line-height: 1.4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f6f8fb;
+  color: #1c2430;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  border-right: 1px solid #dbe2ea;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.sidebar-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.sidebar-header h2 {
+  font-size: 18px;
+  margin: 0;
+}
+
+button {
+  border: 1px solid #c9d4e2;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  padding: 8px 10px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.agent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.agent-item {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  width: 100%;
+}
+
+.agent-item.selected {
+  border-color: #4d7ef3;
+  background: #edf3ff;
+}
+
+.agent-item small {
+  color: #5f6f82;
+}
+
+.content {
+  padding: 20px;
+}
+
+.content-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.content-header h1 {
+  font-size: 24px;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.status {
+  background: #eaf2ff;
+  border: 1px solid #bdd3ff;
+  border-radius: 8px;
+  color: #163f87;
+  margin-top: 12px;
+  padding: 10px;
+}
+
+.empty-panel {
+  margin-top: 30px;
+}
+
+.form-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(250px, 1fr));
+  margin-top: 16px;
+}
+
+.form-grid label {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  gap: 6px;
+}
+
+.form-grid input,
+.form-grid select,
+.form-grid textarea {
+  border: 1px solid #c9d4e2;
+  border-radius: 8px;
+  font-size: 14px;
+  padding: 8px;
+}
+
+.prompt-section,
+.run-info {
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+  grid-column: 1 / -1;
+  padding: 12px;
+}
+
+.prompt-section h3,
+.run-info h3 {
+  margin-top: 0;
+}
+
+.run-card {
+  border: 1px solid #dbe2ea;
+  border-radius: 8px;
+  margin-top: 8px;
+  padding: 10px;
+}
+
+.empty {
+  color: #687788;
+  margin: 6px 0;
+}
+
