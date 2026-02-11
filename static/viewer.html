@@ -39,6 +39,34 @@
             font-weight: 600;
         }
 
+        .connection-status {
+            font-size: 11px;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-indicator.connected {
+            background-color: #2ecc71;
+            box-shadow: 0 0 4px #2ecc71;
+        }
+
+        .status-indicator.disconnected {
+            background-color: #e74c3c;
+        }
+
+        .status-indicator.connecting {
+            background-color: #f39c12;
+        }
+
         .conversation-list {
             flex: 1;
             overflow-y: auto;
@@ -252,6 +280,10 @@
     <div class="sidebar">
         <div class="sidebar-header">
             <h1>💬 Conversations</h1>
+            <div class="connection-status">
+                <span class="status-indicator" id="statusIndicator"></span>
+                <span id="statusText">Connecting...</span>
+            </div>
         </div>
         <div class="conversation-list" id="conversationList">
             <div class="loading">Loading conversations...</div>
@@ -275,6 +307,147 @@
     <script>
         const API_BASE = window.location.origin;
         let currentConversationId = null;
+        let eventSource = null;
+        let conversationsMap = new Map(); // Track conversations for efficient updates
+
+        // Update connection status UI
+        function updateConnectionStatus(status, text) {
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            indicator.className = 'status-indicator ' + status;
+            statusText.textContent = text;
+        }
+
+        // Connect to SSE endpoint
+        function connectSSE() {
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            updateConnectionStatus('connecting', 'Connecting...');
+            
+            eventSource = new EventSource(`${API_BASE}/api/events`);
+            
+            eventSource.onopen = () => {
+                updateConnectionStatus('connected', 'Live updates active');
+            };
+            
+            eventSource.onerror = () => {
+                updateConnectionStatus('disconnected', 'Connection lost - reconnecting...');
+                // EventSource will automatically try to reconnect
+            };
+            
+            eventSource.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    handleSSEEvent(data);
+                } catch (error) {
+                    console.error('Error parsing SSE event:', error);
+                }
+            };
+        }
+
+        // Handle SSE events
+        function handleSSEEvent(data) {
+            if (data.type === 'error') {
+                console.error('SSE error:', data.message);
+                return;
+            }
+
+            if (data.type === 'conversation_new') {
+                // Add new conversation to the list
+                addConversationToList(data.conversation);
+            } else if (data.type === 'conversation_updated') {
+                // Update existing conversation
+                updateConversationInList(data.conversation);
+                
+                // If this is the currently viewed conversation, refresh messages
+                if (currentConversationId === data.conversation.conversation_id) {
+                    selectConversation(data.conversation.conversation_id, true); // true = silent refresh
+                }
+            } else if (data.type === 'conversation_deleted') {
+                // Remove conversation from list
+                removeConversationFromList(data.conversation_id);
+            }
+        }
+
+        // Add a new conversation to the list
+        function addConversationToList(conversation) {
+            const listEl = document.getElementById('conversationList');
+            const existingItem = listEl.querySelector(`[data-id="${conversation.conversation_id}"]`);
+            
+            if (existingItem) {
+                // Already exists, just update it
+                updateConversationInList(conversation);
+                return;
+            }
+
+            conversationsMap.set(conversation.conversation_id, conversation);
+            
+            // Create new item
+            const item = document.createElement('div');
+            item.className = 'conversation-item';
+            item.dataset.id = conversation.conversation_id;
+            item.innerHTML = `
+                <div class="conversation-id">${conversation.conversation_id}</div>
+                <div class="conversation-meta">
+                    <span>${formatDate(conversation.last_updated)}</span>
+                    <span class="message-count">${conversation.message_count} msgs</span>
+                </div>
+            `;
+            
+            item.addEventListener('click', () => {
+                selectConversation(conversation.conversation_id);
+            });
+            
+            // Insert at the top (most recent first)
+            if (listEl.firstChild) {
+                listEl.insertBefore(item, listEl.firstChild);
+            } else {
+                listEl.appendChild(item);
+            }
+        }
+
+        // Update an existing conversation in the list
+        function updateConversationInList(conversation) {
+            conversationsMap.set(conversation.conversation_id, conversation);
+            
+            const listEl = document.getElementById('conversationList');
+            const item = listEl.querySelector(`[data-id="${conversation.conversation_id}"]`);
+            
+            if (item) {
+                item.querySelector('.conversation-meta span:first-child').textContent = formatDate(conversation.last_updated);
+                item.querySelector('.message-count').textContent = `${conversation.message_count} msgs`;
+                
+                // Move to top if it was updated
+                if (item !== listEl.firstChild) {
+                    listEl.insertBefore(item, listEl.firstChild);
+                }
+            } else {
+                // Doesn't exist yet, add it
+                addConversationToList(conversation);
+            }
+        }
+
+        // Remove a conversation from the list
+        function removeConversationFromList(conversationId) {
+            conversationsMap.delete(conversationId);
+            
+            const listEl = document.getElementById('conversationList');
+            const item = listEl.querySelector(`[data-id="${conversationId}"]`);
+            
+            if (item) {
+                item.remove();
+                
+                // If this was the current conversation, clear the view
+                if (currentConversationId === conversationId) {
+                    currentConversationId = null;
+                    document.getElementById('conversationIdDisplay').textContent = 'Select a conversation to view messages';
+                    document.getElementById('messagesContainer').innerHTML = '<div class="empty-state"><div>Select a conversation from the left to view messages</div></div>';
+                }
+            }
+        }
 
         // Load conversations on page load
         async function loadConversations() {
@@ -284,6 +457,12 @@
                 if (!response.ok) throw new Error('Failed to load conversations');
                 
                 const conversations = await response.json();
+                
+                // Store conversations in map
+                conversationsMap.clear();
+                conversations.forEach(conv => {
+                    conversationsMap.set(conv.conversation_id, conv);
+                });
                 
                 if (conversations.length === 0) {
                     listEl.innerHTML = '<div class="loading">No conversations found</div>';
@@ -319,7 +498,7 @@
         }
 
         // Select a conversation and load its messages
-        async function selectConversation(conversationId) {
+        async function selectConversation(conversationId, silentRefresh = false) {
             currentConversationId = conversationId;
             
             // Update UI
@@ -330,7 +509,11 @@
             document.getElementById('conversationIdDisplay').textContent = conversationId;
             
             const container = document.getElementById('messagesContainer');
-            container.innerHTML = '<div class="loading">Loading messages...</div>';
+            
+            // Only show loading if not a silent refresh
+            if (!silentRefresh) {
+                container.innerHTML = '<div class="loading">Loading messages...</div>';
+            }
 
             try {
                 const response = await fetch(`${API_BASE}/api/conversations/${conversationId}/messages`);
@@ -342,6 +525,10 @@
                     container.innerHTML = '<div class="empty-state"><div>No messages in this conversation</div></div>';
                     return;
                 }
+
+                // Check if we need to preserve scroll position (for silent refresh)
+                const wasAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
+                const oldScrollHeight = container.scrollHeight;
 
                 container.innerHTML = messages.map(msg => {
                     const isHuman = msg.message_type === 'human';
@@ -360,8 +547,15 @@
                     `;
                 }).join('');
 
-                // Scroll to bottom
-                container.scrollTop = container.scrollHeight;
+                // Scroll to bottom if user was at bottom, or if it's a new selection
+                if (wasAtBottom || !silentRefresh) {
+                    container.scrollTop = container.scrollHeight;
+                } else {
+                    // Preserve scroll position relative to bottom
+                    const newScrollHeight = container.scrollHeight;
+                    const scrollDiff = newScrollHeight - oldScrollHeight;
+                    container.scrollTop = container.scrollTop + scrollDiff;
+                }
             } catch (error) {
                 container.innerHTML = `<div class="error">Error loading messages: ${error.message}</div>`;
                 console.error('Error loading messages:', error);
@@ -388,6 +582,16 @@
 
         // Initialize on page load
         loadConversations();
+        
+        // Connect to SSE for live updates
+        connectSSE();
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (eventSource) {
+                eventSource.close();
+            }
+        });
     </script>
 </body>
 </html>
