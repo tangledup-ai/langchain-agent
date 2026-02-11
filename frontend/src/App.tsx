@@ -25,13 +25,22 @@ type EditableAgent = {
   toolKeys: string[];
   prompts: Record<string, string>;
   port: number;
-  entryPoint: string;
   llmName: string;
 };
 
 const DEFAULT_ENTRY_POINT = "fastapi_server/server_dashscope.py";
 const DEFAULT_LLM_NAME = "qwen-plus";
 const DEFAULT_PORT = 8100;
+const FALLBACK_PROMPTS_BY_GRAPH: Record<string, Record<string, string>> = {
+  routing: {
+    route_prompt: "",
+    chat_prompt: "",
+    tool_prompt: "",
+  },
+  react: {
+    sys_prompt: "",
+  },
+};
 
 function makeAgentKey(pipelineId: string, promptSetId: string): string {
   return `${pipelineId}::${promptSetId}`;
@@ -66,7 +75,6 @@ function toEditable(
     toolKeys: config.tool_keys || [],
     prompts: config.prompt_dict || {},
     port: DEFAULT_PORT,
-    entryPoint: DEFAULT_ENTRY_POINT,
     llmName: DEFAULT_LLM_NAME,
   };
 }
@@ -83,6 +91,21 @@ export default function App() {
 
   const configKeySet = useMemo(
     () => new Set(configItems.map((x) => makeAgentKey(x.pipeline_id, x.prompt_set_id))),
+    [configItems]
+  );
+  const visibleConfigItems = useMemo(
+    () =>
+      configItems.filter((item) => {
+        // Hide the pre-seeded template entries (pipeline_id === graph_id, name "default")
+        if (
+          item.name.toLowerCase() === "default" &&
+          item.graph_id &&
+          item.pipeline_id === item.graph_id
+        ) {
+          return false;
+        }
+        return true;
+      }),
     [configItems]
   );
 
@@ -156,8 +179,6 @@ export default function App() {
       const editable = toEditable(detail, false);
       editable.id = id;
       editable.port = editor?.pipelineId === editable.pipelineId ? editor.port : DEFAULT_PORT;
-      editable.entryPoint =
-        editor?.pipelineId === editable.pipelineId ? editor.entryPoint : DEFAULT_ENTRY_POINT;
       editable.llmName = editor?.pipelineId === editable.pipelineId ? editor.llmName : DEFAULT_LLM_NAME;
       setEditor(editable);
       setStatusMessage("");
@@ -173,7 +194,7 @@ export default function App() {
     setBusy(true);
     setStatusMessage("Preparing new agent draft...");
     try {
-      const defaults = await getGraphDefaultConfig(graphId);
+      const defaults = await loadPromptDefaults(graphId);
       const editable = toEditable(defaults, true);
       editable.graphId = graphId;
       editable.pipelineId = "";
@@ -197,7 +218,7 @@ export default function App() {
     setBusy(true);
     setStatusMessage("Loading default prompts for selected graph...");
     try {
-      const defaults = await getGraphDefaultConfig(graphId);
+      const defaults = await loadPromptDefaults(graphId);
       setEditorAndSyncDraft((prev) => ({
         ...prev,
         graphId,
@@ -241,6 +262,24 @@ export default function App() {
     }));
   }
 
+  async function loadPromptDefaults(graphId: string): Promise<GraphConfigReadResponse> {
+    try {
+      return await getGraphDefaultConfig(graphId);
+    } catch {
+      const fallbackPrompts = FALLBACK_PROMPTS_BY_GRAPH[graphId] || { sys_prompt: "" };
+      setStatusMessage(
+        `No backend default config found for '${graphId}'. Using built-in fallback fields.`
+      );
+      return {
+        graph_id: graphId,
+        pipeline_id: graphId,
+        prompt_set_id: "default",
+        tool_keys: [],
+        prompt_dict: fallbackPrompts,
+      };
+    }
+  }
+
   async function saveConfig(): Promise<void> {
     if (!editor) {
       return;
@@ -279,7 +318,6 @@ export default function App() {
       const saved = toEditable(detail, false);
       saved.id = makeAgentKey(upsertResp.pipeline_id, upsertResp.prompt_set_id);
       saved.port = editor.port;
-      saved.entryPoint = editor.entryPoint;
       saved.llmName = editor.llmName;
       setEditor(saved);
       setSelectedId(saved.id);
@@ -345,7 +383,7 @@ export default function App() {
         prompt_set_id: editor.promptSetId,
         tool_keys: editor.toolKeys,
         port: editor.port,
-        entry_point: editor.entryPoint,
+        entry_point: DEFAULT_ENTRY_POINT,
         llm_name: editor.llmName,
       });
       await refreshRunning();
@@ -387,7 +425,7 @@ export default function App() {
       graphId: d.graphId,
       isDraft: true,
     })),
-    ...configItems.map((item) => ({
+    ...visibleConfigItems.map((item) => ({
       id: makeAgentKey(item.pipeline_id, item.prompt_set_id),
       label: item.pipeline_id,
       graphId: item.graph_id || item.pipeline_id,
@@ -416,7 +454,7 @@ export default function App() {
                   setEditor(selectedDraft);
                   return;
                 }
-                const item = configItems.find(
+                const item = visibleConfigItems.find(
                   (x) => makeAgentKey(x.pipeline_id, x.prompt_set_id) === row.id
                 );
                 if (item) {
@@ -506,15 +544,6 @@ export default function App() {
                 min={1}
                 value={editor.port}
                 onChange={(e) => updateEditor("port", Number(e.target.value))}
-                disabled={busy}
-              />
-            </label>
-
-            <label>
-              entry_point
-              <input
-                value={editor.entryPoint}
-                onChange={(e) => updateEditor("entryPoint", e.target.value)}
                 disabled={busy}
               />
             </label>
