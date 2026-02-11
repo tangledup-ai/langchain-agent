@@ -17,6 +17,76 @@ class DBConfigManager:
                 cur.execute("DELETE FROM prompt_sets WHERE pipeline_id = %s AND id = %s", (pipeline_id, prompt_set_id))
                 conn.commit()
 
+    def list_prompt_sets(self, pipeline_id: Optional[str] = None) -> List[Dict[str, object]]:
+        """
+        List prompt_set metadata for UI listing.
+        """
+        with psycopg.connect(self.conn_str) as conn:
+            with conn.cursor(row_factory=dict_row) as cur:
+                if pipeline_id:
+                    cur.execute(
+                        """
+                        SELECT id, pipeline_id, name, description, is_active, created_at, updated_at, list
+                        FROM prompt_sets
+                        WHERE pipeline_id = %s
+                        ORDER BY updated_at DESC, created_at DESC
+                        """,
+                        (pipeline_id,),
+                    )
+                else:
+                    cur.execute(
+                        """
+                        SELECT id, pipeline_id, name, description, is_active, created_at, updated_at, list
+                        FROM prompt_sets
+                        ORDER BY updated_at DESC, created_at DESC
+                        """
+                    )
+                rows = cur.fetchall()
+
+        return [
+            {
+                "prompt_set_id": str(row["id"]),
+                "pipeline_id": row["pipeline_id"],
+                "name": row["name"],
+                "description": row["description"] or "",
+                "is_active": bool(row["is_active"]),
+                "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+                "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+                "tool_keys": self._parse_tool_list(row.get("list")),
+            }
+            for row in rows
+        ]
+
+    def get_prompt_set(self, pipeline_id: str, prompt_set_id: str) -> Optional[Dict[str, object]]:
+        """
+        Return prompt_set metadata by id within a pipeline.
+        """
+        with psycopg.connect(self.conn_str) as conn:
+            with conn.cursor(row_factory=dict_row) as cur:
+                cur.execute(
+                    """
+                    SELECT id, pipeline_id, name, description, is_active, created_at, updated_at, list
+                    FROM prompt_sets
+                    WHERE id = %s AND pipeline_id = %s
+                    """,
+                    (prompt_set_id, pipeline_id),
+                )
+                row = cur.fetchone()
+
+        if row is None:
+            return None
+
+        return {
+            "prompt_set_id": str(row["id"]),
+            "pipeline_id": row["pipeline_id"],
+            "name": row["name"],
+            "description": row["description"] or "",
+            "is_active": bool(row["is_active"]),
+            "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+            "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+            "tool_keys": self._parse_tool_list(row.get("list")),
+        }
+
     def get_config(
         self, pipeline_id: str, prompt_set_id: Optional[str] = None
     ) -> Tuple[Dict[str, str], List[str]]:
