@@ -148,6 +148,30 @@ button:disabled {
   margin-top: 0;
 }
 
+.graph-arch-section {
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+  grid-column: 1 / -1;
+  padding: 12px;
+}
+
+.graph-arch-section h3 {
+  margin-top: 0;
+}
+
+.graph-arch-image-container {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  overflow: auto;
+}
+
+.graph-arch-image {
+  border-radius: 8px;
+  border: 1px solid #dbe2ea;
+  max-width: 100%;
+}
+
 .run-card {
   border: 1px solid #dbe2ea;
   border-radius: 8px;

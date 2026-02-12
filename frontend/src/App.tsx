@@ -31,6 +31,10 @@ type EditableAgent = {
 const DEFAULT_ENTRY_POINT = "fastapi_server/server_dashscope.py";
 const DEFAULT_LLM_NAME = "qwen-plus";
 const DEFAULT_PORT = 8100;
+const GRAPH_ARCH_IMAGE_MODULES = import.meta.glob(
+  "../assets/images/graph_arch/*.{png,jpg,jpeg,webp,gif}",
+  { eager: true, import: "default" }
+) as Record<string, string>;
 const FALLBACK_PROMPTS_BY_GRAPH: Record<string, Record<string, string>> = {
   routing: {
     route_prompt: "",
@@ -58,6 +62,18 @@ function parseToolCsv(value: string): string[] {
     out.push(trimmed);
   }
   return out;
+}
+
+function getGraphArchImage(graphId: string): string | null {
+  const normalizedGraphId = graphId.trim().toLowerCase();
+  for (const [path, source] of Object.entries(GRAPH_ARCH_IMAGE_MODULES)) {
+    const fileName = path.split("/").pop() || "";
+    const baseName = fileName.split(".")[0]?.toLowerCase() || "";
+    if (baseName === normalizedGraphId) {
+      return source;
+    }
+  }
+  return null;
 }
 
 function toEditable(
@@ -432,6 +448,7 @@ export default function App() {
       isDraft: false,
     })),
   ];
+  const graphArchImage = editor ? getGraphArchImage(editor.graphId) : null;
 
   return (
     <div className="app">
@@ -511,6 +528,19 @@ export default function App() {
                 ))}
               </select>
             </label>
+
+            {graphArchImage && (
+              <div className="graph-arch-section">
+                <h3>Graph Architecture</h3>
+                <div className="graph-arch-image-container">
+                  <img
+                    src={graphArchImage}
+                    alt={`${editor.graphId} architecture diagram`}
+                    className="graph-arch-image"
+                  />
+                </div>
+              </div>
+            )}
 
             <label>
               pipeline_id
