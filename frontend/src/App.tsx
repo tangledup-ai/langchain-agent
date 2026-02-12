@@ -74,6 +74,17 @@ function parseToolCsv(value: string): string[] {
   return out;
 }
 
+function maskSecretPreview(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "";
+  }
+  if (trimmed.length <= 10) {
+    return trimmed;
+  }
+  return `${trimmed.slice(0, 5)}...${trimmed.slice(-5)}`;
+}
+
 function getGraphArchImage(graphId: string): string | null {
   const normalizedGraphId = graphId.trim().toLowerCase();
   for (const [path, source] of Object.entries(GRAPH_ARCH_IMAGE_MODULES)) {
@@ -674,6 +685,9 @@ export default function App() {
                 placeholder="Enter provider API key"
                 disabled={busy}
               />
+              {editor.apiKey ? (
+                <small className="empty">Preview: {maskSecretPreview(editor.apiKey)}</small>
+              ) : null}
             </label>
 
             <label>

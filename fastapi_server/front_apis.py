@@ -128,7 +128,7 @@ def _mask_auth_key(value: str) -> str:
         return ""
     if len(value) <= 10:
         return value
-    return f"{value[:6]}...{value[-4:]}"
+    return f"{value[:5]}...{value[-5:]}"
 
 def _prune_stopped_pipelines() -> None:
     stale_ids: List[str] = []
