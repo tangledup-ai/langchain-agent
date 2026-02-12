@@ -2,7 +2,7 @@ import tyro
 
 from lang_agent.graphs.react import ReactGraphConfig, ReactGraph
 from lang_agent.graphs.routing import RoutingConfig, RoutingGraph
-from lang_agent.graphs.dual_path import DualConfig, DualPathGraph
+from lang_agent.graphs.dual_path import DualConfig, Dual
 from lang_agent.graphs.vision_routing import VisionRoutingConfig, VisionRoutingGraph
 
 graph_dict = {
