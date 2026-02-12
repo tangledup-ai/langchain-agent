@@ -119,13 +119,6 @@ everything in scripts:
 ## Registering MCP service
 put the links in `configs/mcp_config.json`
 
-
-## Graph structure
-Graph structure:
-
-![Graph overview](./graph.png)  
-We choose this structure to overcome a limitation in xiaozhi. Specifically, both normal chatting and tool use prompts are deligated to one model. That leads to degregation in quality of generated conversation and tool use. By splitting into two model, we effectively increase the prompt limit size while preserving model quality.
-
 ## Modifying LLM prompts
 Refer to model above when modifying the prompts.  
 they are in `configs/route_sys_prompts`
