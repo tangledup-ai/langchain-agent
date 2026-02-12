@@ -125,11 +125,17 @@ class InstantiateConfig(PrintableConfig):
     def get_name(self):
         return self.__class__.__name__
 
-            
-
 
 @dataclass
-class KeyConfig(InstantiateConfig):
+class LLMKeyConfig(InstantiateConfig):
+    llm_name: str = "qwen-plus"
+    """name of llm"""
+
+    llm_provider:str = "openai"
+    """provider of the llm"""
+
+    base_url:str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    """base url; could be used to overwrite the baseurl in llm provider"""
 
     api_key:str = None
     """api key for llm"""
@@ -141,18 +147,6 @@ class KeyConfig(InstantiateConfig):
                 logger.error(f"no ALI_API_KEY provided for embedding")
             else:
                 logger.info("ALI_API_KEY loaded from environ")
-
-
-@dataclass
-class LLMKeyConfig(KeyConfig):
-    llm_name: str = "qwen-plus"
-    """name of llm"""
-
-    llm_provider:str = "openai"
-    """provider of the llm"""
-
-    base_url:str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    """base url; could be used to overwrite the baseurl in llm provider"""
 
 
 @dataclass
