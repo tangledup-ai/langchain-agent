@@ -77,10 +77,12 @@ def main():
                 # 避免偶发回退
                 delta = current_text
             if delta:
-                u =  delta
+                u = delta
             last_text = current_text
 
-            logger.info(f"from stream: {u}")
+            # For streaming responses, print incrementally to stdout and flush
+            # so the user can see tokens as they arrive.
+            print(u, end="", flush=True)
     except TypeError:
         # 非流式回落（一次性返回）
         if responses.status_code != HTTPStatus.OK:
