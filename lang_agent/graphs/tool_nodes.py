@@ -6,7 +6,7 @@ import time
 import asyncio
 from loguru import logger
 
-from lang_agent.config import InstantiateConfig, LLMKeyConfig
+from lang_agent.config import InstantiateConfig, LLMNodeConfig
 from lang_agent.components.tool_manager import ToolManager
 from lang_agent.components.prompt_store import build_prompt_store
 from lang_agent.components.reit_llm import ReitLLM
@@ -85,7 +85,7 @@ class ToolNode(ToolNodeBase):
 
     
 @dataclass
-class ChattyToolNodeConfig(LLMKeyConfig, ToolNodeConfig):
+class ChattyToolNodeConfig(LLMNodeConfig, ToolNodeConfig):
     _target: Type = field(default_factory=lambda: ChattyToolNode)
 
     chatty_sys_prompt_f:str = osp.join(osp.dirname(osp.dirname(osp.dirname(__file__))), "configs", "route_sys_prompts", "chatty_prompt.txt")

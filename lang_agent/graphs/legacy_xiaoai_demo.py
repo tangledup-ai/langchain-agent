@@ -8,7 +8,7 @@ import time
 
 from langchain.chat_models import init_chat_model
 
-from lang_agent.config import LLMKeyConfig
+from lang_agent.config import LLMNodeConfig
 from lang_agent.base import GraphBase
 from lang_agent.components.tool_manager import ToolManager, ToolManagerConfig
 from lang_agent.graphs.graph_states import State
@@ -45,7 +45,7 @@ TOOL_SYS_PROMPT = """You are a helpful helper and will use the self_led_control 
 
 
 @dataclass
-class XiaoAiConfig(LLMKeyConfig):
+class XiaoAiConfig(LLMNodeConfig):
     _target: Type = field(default_factory=lambda:XiaoAi)
 
     tool_manager_config: ToolManagerConfig = field(default_factory=ToolManagerConfig)

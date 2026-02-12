@@ -6,7 +6,7 @@ from loguru import logger
 
 from langchain.chat_models import init_chat_model
 
-from lang_agent.config import LLMKeyConfig
+from lang_agent.config import LLMNodeConfig
 from lang_agent.base import GraphBase
 from lang_agent.components.tool_manager import ToolManager, ToolManagerConfig
 from lang_agent.components.prompt_store import build_prompt_store
@@ -48,7 +48,7 @@ TOOL_SYS_PROMPT = """根据用户的心情使用self_led_control改变灯的颜�
                           用户在描述梦境的时候用紫色。"""
 
 @dataclass
-class DualConfig(LLMKeyConfig):
+class DualConfig(LLMNodeConfig):
     _target: Type = field(default_factory=lambda:Dual)
 
     pipeline_id: Optional[str] = None

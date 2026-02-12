@@ -4,7 +4,7 @@ import tyro
 import os.path as osp
 from loguru import logger
 
-from lang_agent.config import LLMKeyConfig
+from lang_agent.config import LLMNodeConfig
 from lang_agent.components.tool_manager import ToolManager, ToolManagerConfig
 from lang_agent.components.prompt_store import build_prompt_store
 from lang_agent.base import GraphBase
@@ -20,7 +20,7 @@ from langgraph.graph import StateGraph, START, END
 # NOTE: maybe make this into a base_graph_config?
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
-class ReactGraphConfig(LLMKeyConfig):
+class ReactGraphConfig(LLMNodeConfig):
     _target: Type = field(default_factory=lambda: ReactGraph)
 
     sys_prompt_f:str = osp.join(osp.dirname(osp.dirname(osp.dirname(__file__))), "configs", "prompts", "blueberry.txt")

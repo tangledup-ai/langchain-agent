@@ -8,7 +8,7 @@ import commentjson
 import glob
 import time
 
-from lang_agent.config import LLMKeyConfig
+from lang_agent.config import LLMNodeConfig
 from lang_agent.components.tool_manager import ToolManager, ToolManagerConfig
 from lang_agent.components.prompt_store import build_prompt_store
 from lang_agent.base import GraphBase, ToolNodeBase
@@ -27,7 +27,7 @@ from langgraph.checkpoint.memory import MemorySaver
 
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
-class RoutingConfig(LLMKeyConfig):
+class RoutingConfig(LLMNodeConfig):
     _target: Type = field(default_factory=lambda: RoutingGraph)
 
     llm_name: str = "qwen-plus"

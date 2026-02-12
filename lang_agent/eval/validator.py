@@ -3,7 +3,7 @@ from typing import Type, Callable, List
 import tyro
 import random
 
-from lang_agent.config import LLMKeyConfig
+from lang_agent.config import LLMNodeConfig
 from lang_agent.pipeline import Pipeline, PipelineConfig
 
 from langchain.chat_models import init_chat_model
@@ -11,7 +11,7 @@ from langchain_core.messages import BaseMessage, ToolMessage
 
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
-class ValidatorConfig(LLMKeyConfig):
+class ValidatorConfig(LLMNodeConfig):
     _target: Type = field(default_factory=lambda:Validator)
 
 
