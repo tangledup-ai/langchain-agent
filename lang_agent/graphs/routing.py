@@ -30,23 +30,8 @@ from langgraph.checkpoint.memory import MemorySaver
 class RoutingConfig(LLMNodeConfig):
     _target: Type = field(default_factory=lambda: RoutingGraph)
 
-    llm_name: str = "qwen-plus"
-    """name of llm"""
-
-    llm_provider:str = "openai"
-    """provider of the llm"""
-
-    base_url:str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    """base url; could be used to overwrite the baseurl in llm provider"""
-
     sys_promp_dir: str = osp.join(osp.dirname(osp.dirname(osp.dirname(__file__))), "configs", "route_sys_prompts")
     """path to directory or json contantaining system prompt for graphs; Will overwrite systemprompt from xiaozhi if 'chat_prompt' is provided"""
-
-    pipeline_id: Optional[str] = None
-    """If set, load prompts from database (with file fallback)"""
-
-    prompt_set_id: Optional[str] = None
-    """If set, load from this specific prompt set instead of the active one"""
 
     tool_manager_config: ToolManagerConfig = field(default_factory=ToolManagerConfig)
 

@@ -64,12 +64,6 @@ class PipelineConfig(LLMNodeConfig):
     port:int = 8588
     """what is my port"""
 
-    pipeline_id: str = None
-    """If set, load prompts from database (with file fallback)"""
-
-    prompt_set_id: str = None
-    """If set, load from this specific prompt set instead of the active one"""
-
     # graph_config: AnnotatedGraph = field(default_factory=ReactGraphConfig)
     graph_config: AnnotatedGraph = field(default_factory=RoutingConfig)
 

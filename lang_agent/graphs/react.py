@@ -26,12 +26,6 @@ class ReactGraphConfig(LLMNodeConfig):
     sys_prompt_f:str = osp.join(osp.dirname(osp.dirname(osp.dirname(__file__))), "configs", "prompts", "blueberry.txt")
     """path to system prompt"""
 
-    pipeline_id: Optional[str] = None
-    """If set, load prompts from database (with file fallback)"""
-
-    prompt_set_id: Optional[str] = None
-    """If set, load from this specific prompt set instead of the active one"""
-
     tool_manager_config: ToolManagerConfig = field(default_factory=ToolManagerConfig)
 
     def __post_init__(self):

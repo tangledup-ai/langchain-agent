@@ -99,18 +99,6 @@ class VisionRoutingConfig(LLMNodeConfig):
     vision_llm_name: str = "qwen-vl-max"
     """LLM for vision/image analysis"""
 
-    llm_provider: str = "openai"
-    """provider of the llm"""
-
-    base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    """base url for API"""
-
-    pipeline_id: Optional[str] = None
-    """If set, load prompts from database (with hardcoded fallback)"""
-
-    prompt_set_id: Optional[str] = None
-    """If set, load from this specific prompt set instead of the active one"""
-
     tool_manager_config: ToolManagerConfig = field(default_factory=ClientToolManagerConfig)
 
 
