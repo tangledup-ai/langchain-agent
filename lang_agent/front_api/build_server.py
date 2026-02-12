@@ -33,7 +33,7 @@ def build_route(pipeline_id:str,
         env["FAST_AUTH_KEYS"] = fast_auth_keys
     sv_prc = subprocess.Popen(cmd, env=env)
 
-    return sv_prc, f"http://0.0.0.0:{port}"
+    return sv_prc, f"http://127.0.0.1:{port}/api/"
 
 
 def build_react(pipeline_id:str,
@@ -62,7 +62,7 @@ def build_react(pipeline_id:str,
         env["FAST_AUTH_KEYS"] = fast_auth_keys
     sv_prc = subprocess.Popen(cmd, env=env)
 
-    return sv_prc, f"http://0.0.0.0:{port}"
+    return sv_prc, f"http://127.0.0.1:{port}/api/"
 
 # {pipeline_id: build_function}
 GRAPH_BUILD_FNCS = {
