@@ -254,21 +254,3 @@ def ovewrite_config(loaded_conf, inp_conf):
             setattr(loaded_conf, field_name, new_value)
 
     return loaded_conf
-
-
-def mcp_langchain_to_ws_config(conf:Dict[str, Dict[str, str]]):
-    serv_conf = {}
-
-    for k, v in conf.items():
-
-        if v["transport"] == "stdio":
-            serv_conf[k] = {
-                "type" : v["transport"],
-                "command": v["command"],
-                "args": v["args"],
-            }
-        else:
-            logger.warning(f"Unsupported transport {v['transport']} for MCP {k}. Skipping...")
-            continue
-
-    return {"mcpServers":serv_conf}
