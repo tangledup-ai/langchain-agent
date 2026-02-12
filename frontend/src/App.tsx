@@ -29,6 +29,14 @@ type EditableAgent = {
   llmName: string;
 };
 
+type LaunchCredentials = {
+  url: string;
+  authType: string;
+  authHeaderName: string;
+  authKey: string;
+  authKeyMasked: string;
+};
+
 const DEFAULT_ENTRY_POINT = "fastapi_server/server_dashscope.py";
 const DEFAULT_LLM_NAME = "qwen-plus";
 const DEFAULT_PORT = 8100;
@@ -106,6 +114,7 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editor, setEditor] = useState<EditableAgent | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>("");
+  const [launchCredentials, setLaunchCredentials] = useState<LaunchCredentials | null>(null);
   const [busy, setBusy] = useState(false);
 
   const configKeySet = useMemo(
@@ -401,6 +410,7 @@ export default function App() {
 
     setBusy(true);
     setStatusMessage("Starting agent...");
+    setLaunchCredentials(null);
     try {
       const resp = await createPipeline({
         graph_id: editor.graphId,
@@ -414,6 +424,13 @@ export default function App() {
       });
       await refreshRunning();
       setStatusMessage(`Agent started. URL: ${resp.url}`);
+      setLaunchCredentials({
+        url: resp.url,
+        authType: resp.auth_type,
+        authHeaderName: resp.auth_header_name,
+        authKey: resp.auth_key_once,
+        authKeyMasked: resp.auth_key_masked,
+      });
     } catch (error) {
       setStatusMessage((error as Error).message);
     } finally {
@@ -459,6 +476,23 @@ export default function App() {
     })),
   ];
   const graphArchImage = editor ? getGraphArchImage(editor.graphId) : null;
+  const authHeaderValue = launchCredentials
+    ? `${launchCredentials.authHeaderName}: Bearer ${launchCredentials.authKey}`
+    : "";
+  const canUseClipboard = typeof navigator !== "undefined" && Boolean(navigator.clipboard);
+
+  async function copyText(text: string, label: string): Promise<void> {
+    if (!canUseClipboard) {
+      setStatusMessage(`Clipboard is not available. Please copy ${label} manually.`);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      setStatusMessage(`${label} copied.`);
+    } catch {
+      setStatusMessage(`Failed to copy ${label}.`);
+    }
+  }
 
   return (
     <div className="app">
@@ -517,6 +551,47 @@ export default function App() {
         </header>
 
         {statusMessage ? <p className="status">{statusMessage}</p> : null}
+        {launchCredentials ? (
+          <div className="launch-credentials">
+            <h3>Access Credentials (shown once)</h3>
+            <div>
+              <strong>URL:</strong>{" "}
+              <a href={launchCredentials.url} target="_blank" rel="noreferrer">
+                {launchCredentials.url}
+              </a>
+              <button
+                type="button"
+                onClick={() => copyText(launchCredentials.url, "URL")}
+                disabled={busy}
+              >
+                Copy URL
+              </button>
+            </div>
+            <div>
+              <strong>{launchCredentials.authType} key:</strong> {launchCredentials.authKey}
+              <button
+                type="button"
+                onClick={() => copyText(launchCredentials.authKey, "auth key")}
+                disabled={busy}
+              >
+                Copy Key
+              </button>
+            </div>
+            <div>
+              <strong>Header:</strong> <code>{authHeaderValue}</code>
+              <button
+                type="button"
+                onClick={() => copyText(authHeaderValue, "auth header")}
+                disabled={busy}
+              >
+                Copy Header
+              </button>
+            </div>
+            <p className="empty">
+              Stored after launch as masked value: {launchCredentials.authKeyMasked}
+            </p>
+          </div>
+        ) : null}
 
         {!editor ? (
           <div className="empty-panel">
@@ -645,6 +720,9 @@ export default function App() {
                       <a href={run.url} target="_blank" rel="noreferrer">
                         {run.url}
                       </a>
+                    </div>
+                    <div>
+                      <strong>auth:</strong> {run.auth_header_name} Bearer {run.auth_key_masked}
                     </div>
                   </div>
                 ))

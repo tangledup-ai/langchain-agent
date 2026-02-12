@@ -62,9 +62,14 @@ export type PipelineRunInfo = {
   prompt_set_id: string;
   url: string;
   port: number;
+  auth_type: string;
+  auth_header_name: string;
+  auth_key_masked: string;
 };
 
-export type PipelineCreateResponse = PipelineRunInfo;
+export type PipelineCreateResponse = PipelineRunInfo & {
+  auth_key_once: string;
+};
 
 export type PipelineListResponse = {
   items: PipelineRunInfo[];
