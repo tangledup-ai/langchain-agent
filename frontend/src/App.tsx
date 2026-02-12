@@ -101,7 +101,7 @@ function toEditable(
     toolKeys: config.tool_keys || [],
     prompts: config.prompt_dict || {},
     port: DEFAULT_PORT,
-    apiKey: DEFAULT_API_KEY,
+    apiKey: config.api_key || DEFAULT_API_KEY,
     llmName: DEFAULT_LLM_NAME,
   };
 }
@@ -207,8 +207,8 @@ export default function App() {
       const editable = toEditable(detail, false);
       editable.id = id;
       editable.port = editor?.pipelineId === editable.pipelineId ? editor.port : DEFAULT_PORT;
-      editable.apiKey = editor?.pipelineId === editable.pipelineId ? editor.apiKey : DEFAULT_API_KEY;
       editable.llmName = editor?.pipelineId === editable.pipelineId ? editor.llmName : DEFAULT_LLM_NAME;
+      // apiKey is loaded from backend (persisted in DB) — don't override with default
       setEditor(editable);
       setStatusMessage("");
     } catch (error) {
@@ -305,6 +305,7 @@ export default function App() {
         prompt_set_id: "default",
         tool_keys: [],
         prompt_dict: fallbackPrompts,
+        api_key: "",
       };
     }
   }
@@ -340,6 +341,7 @@ export default function App() {
         prompt_set_id: editor.promptSetId,
         tool_keys: editor.toolKeys,
         prompt_dict: editor.prompts,
+        api_key: editor.apiKey.trim(),
       });
 
       await refreshConfigs();
@@ -347,7 +349,7 @@ export default function App() {
       const saved = toEditable(detail, false);
       saved.id = makeAgentKey(upsertResp.pipeline_id, upsertResp.prompt_set_id);
       saved.port = editor.port;
-      saved.apiKey = editor.apiKey;
+      // apiKey is loaded from backend (persisted in DB) — don't override
       saved.llmName = editor.llmName;
       setEditor(saved);
       setSelectedId(saved.id);

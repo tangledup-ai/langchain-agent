@@ -6,6 +6,7 @@ export type GraphConfigListItem = {
   description: string;
   is_active: boolean;
   tool_keys: string[];
+  api_key: string;
   created_at?: string | null;
   updated_at?: string | null;
 };
@@ -21,6 +22,7 @@ export type GraphConfigReadResponse = {
   prompt_set_id: string;
   tool_keys: string[];
   prompt_dict: Record<string, string>;
+  api_key: string;
 };
 
 export type GraphConfigUpsertRequest = {
@@ -29,6 +31,7 @@ export type GraphConfigUpsertRequest = {
   prompt_set_id?: string;
   tool_keys: string[];
   prompt_dict: Record<string, string>;
+  api_key?: string;
 };
 
 export type GraphConfigUpsertResponse = {
@@ -37,6 +40,7 @@ export type GraphConfigUpsertResponse = {
   prompt_set_id: string;
   tool_keys: string[];
   prompt_keys: string[];
+  api_key: string;
 };
 
 export type AvailableGraphsResponse = {

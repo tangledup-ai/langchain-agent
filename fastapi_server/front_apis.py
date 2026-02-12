@@ -22,6 +22,7 @@ class GraphConfigUpsertRequest(BaseModel):
     prompt_set_id: Optional[str] = Field(default=None)
     tool_keys: List[str] = Field(default_factory=list)
     prompt_dict: Dict[str, str] = Field(default_factory=dict)
+    api_key: Optional[str] = Field(default=None)
 
 class GraphConfigUpsertResponse(BaseModel):
     graph_id: str
@@ -29,6 +30,7 @@ class GraphConfigUpsertResponse(BaseModel):
     prompt_set_id: str
     tool_keys: List[str]
     prompt_keys: List[str]
+    api_key: str
 
 class GraphConfigReadResponse(BaseModel):
     graph_id: Optional[str] = Field(default=None)
@@ -36,6 +38,7 @@ class GraphConfigReadResponse(BaseModel):
     prompt_set_id: str
     tool_keys: List[str]
     prompt_dict: Dict[str, str]
+    api_key: str = Field(default="")
 
 class GraphConfigListItem(BaseModel):
     graph_id: Optional[str] = Field(default=None)
@@ -45,6 +48,7 @@ class GraphConfigListItem(BaseModel):
     description: str
     is_active: bool
     tool_keys: List[str]
+    api_key: str = Field(default="")
     created_at: Optional[str] = Field(default=None)
     updated_at: Optional[str] = Field(default=None)
 
@@ -169,6 +173,7 @@ async def upsert_graph_config(body: GraphConfigUpsertRequest):
             prompt_set_id=body.prompt_set_id,
             tool_list=body.tool_keys,
             prompt_dict=body.prompt_dict,
+            api_key=body.api_key,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -181,6 +186,7 @@ async def upsert_graph_config(body: GraphConfigUpsertRequest):
         prompt_set_id=resolved_prompt_set_id,
         tool_keys=body.tool_keys,
         prompt_keys=list(body.prompt_dict.keys()),
+        api_key=(body.api_key or "").strip(),
     )
 
 @app.get("/v1/graph-configs", response_model=GraphConfigListResponse)
@@ -222,6 +228,7 @@ async def get_default_graph_config(pipeline_id: str):
         prompt_set_id=active["prompt_set_id"],
         tool_keys=tool_keys,
         prompt_dict=prompt_dict,
+        api_key=(active.get("api_key") or ""),
     )
 
 @app.get("/v1/graphs/{graph_id}/default-config", response_model=GraphConfigReadResponse)
@@ -254,6 +261,7 @@ async def get_graph_config(pipeline_id: str, prompt_set_id: str):
         prompt_set_id=prompt_set_id,
         tool_keys=tool_keys,
         prompt_dict=prompt_dict,
+        api_key=(meta.get("api_key") or ""),
     )
 
 

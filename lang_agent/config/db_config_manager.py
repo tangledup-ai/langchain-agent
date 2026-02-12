@@ -28,7 +28,7 @@ class DBConfigManager:
                 if pipeline_id and graph_id:
                     cur.execute(
                         """
-                        SELECT id, pipeline_id, graph_id, name, description, is_active, created_at, updated_at, list
+                        SELECT id, pipeline_id, graph_id, name, description, is_active, created_at, updated_at, list, api_key
                         FROM prompt_sets
                         WHERE pipeline_id = %s AND graph_id = %s
                         ORDER BY updated_at DESC, created_at DESC
@@ -38,7 +38,7 @@ class DBConfigManager:
                 elif pipeline_id:
                     cur.execute(
                         """
-                        SELECT id, pipeline_id, graph_id, name, description, is_active, created_at, updated_at, list
+                        SELECT id, pipeline_id, graph_id, name, description, is_active, created_at, updated_at, list, api_key
                         FROM prompt_sets
                         WHERE pipeline_id = %s
                         ORDER BY updated_at DESC, created_at DESC
@@ -48,7 +48,7 @@ class DBConfigManager:
                 elif graph_id:
                     cur.execute(
                         """
-                        SELECT id, pipeline_id, graph_id, name, description, is_active, created_at, updated_at, list
+                        SELECT id, pipeline_id, graph_id, name, description, is_active, created_at, updated_at, list, api_key
                         FROM prompt_sets
                         WHERE graph_id = %s
                         ORDER BY updated_at DESC, created_at DESC
@@ -58,7 +58,7 @@ class DBConfigManager:
                 else:
                     cur.execute(
                         """
-                        SELECT id, pipeline_id, graph_id, name, description, is_active, created_at, updated_at, list
+                        SELECT id, pipeline_id, graph_id, name, description, is_active, created_at, updated_at, list, api_key
                         FROM prompt_sets
                         ORDER BY updated_at DESC, created_at DESC
                         """
@@ -76,6 +76,7 @@ class DBConfigManager:
                 "created_at": row["created_at"].isoformat() if row["created_at"] else None,
                 "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
                 "tool_keys": self._parse_tool_list(row.get("list")),
+                "api_key": row.get("api_key") or "",
             }
             for row in rows
         ]
@@ -88,7 +89,7 @@ class DBConfigManager:
             with conn.cursor(row_factory=dict_row) as cur:
                 cur.execute(
                     """
-                    SELECT id, pipeline_id, graph_id, name, description, is_active, created_at, updated_at, list
+                    SELECT id, pipeline_id, graph_id, name, description, is_active, created_at, updated_at, list, api_key
                     FROM prompt_sets
                     WHERE id = %s AND pipeline_id = %s
                     """,
@@ -109,6 +110,7 @@ class DBConfigManager:
             "created_at": row["created_at"].isoformat() if row["created_at"] else None,
             "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
             "tool_keys": self._parse_tool_list(row.get("list")),
+            "api_key": row.get("api_key") or "",
         }
 
     def get_config(
@@ -160,6 +162,7 @@ class DBConfigManager:
         prompt_set_id: Optional[str],
         tool_list: Optional[Sequence[str]],
         prompt_dict: Optional[Mapping[str, str]],
+        api_key: Optional[str] = None,
     ) -> str:
         """
         Persist prompt + tool configuration.
@@ -182,6 +185,7 @@ class DBConfigManager:
 
         normalized_prompt_dict = self._normalize_prompt_dict(prompt_dict)
         tool_csv = self._join_tool_list(tool_list)
+        normalized_api_key = self._normalize_api_key(api_key)
 
         with psycopg.connect(self.conn_str) as conn:
             resolved_set_id, _ = self._resolve_prompt_set(
@@ -200,10 +204,13 @@ class DBConfigManager:
                 cur.execute(
                     """
                     UPDATE prompt_sets
-                    SET list = %s, graph_id = COALESCE(%s, graph_id), updated_at = now()
+                    SET list = %s,
+                        graph_id = COALESCE(%s, graph_id),
+                        api_key = COALESCE(%s, api_key),
+                        updated_at = now()
                     WHERE id = %s
                     """,
-                    (tool_csv, normalized_graph_id, resolved_set_id),
+                    (tool_csv, normalized_graph_id, normalized_api_key, resolved_set_id),
                 )
 
                 keys = list(normalized_prompt_dict.keys())
@@ -341,3 +348,8 @@ class DBConfigManager:
             return None
         value = str(graph_id).strip()
         return value or None
+
+    def _normalize_api_key(self, api_key: Optional[str]) -> Optional[str]:
+        if api_key is None:
+            return None
+        return str(api_key).strip()
