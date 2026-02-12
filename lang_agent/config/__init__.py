@@ -1,1 +1,4 @@
-from lang_agent.config.core_config import InstantiateConfig, ToolConfig, LLMKeyConfig
+from lang_agent.config.core_config import (InstantiateConfig, 
+                                           ToolConfig, 
+                                           LLMKeyConfig,
+                                           LLMNodeConfig)

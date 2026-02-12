@@ -1,5 +1,5 @@
 from dataclasses import dataclass, is_dataclass, fields, MISSING
-from typing import Any, Tuple, Type
+from typing import Any, Tuple, Type, Optional
 import yaml
 from pathlib import Path
 from typing import Dict
@@ -147,6 +147,19 @@ class LLMKeyConfig(InstantiateConfig):
                 logger.error(f"no ALI_API_KEY provided for embedding")
             else:
                 logger.info("ALI_API_KEY loaded from environ")
+
+
+@dataclass
+class LLMNodeConfig(LLMKeyConfig):
+    """
+    class is for LLM nodes that has system prompt config
+    """
+
+    pipeline_id: Optional[str] = None
+    """If set, load prompts from database (with file fallback)"""
+
+    prompt_set_id: Optional[str] = None
+    """If set, load from this specific prompt set instead of the active one"""
 
 
 @dataclass
