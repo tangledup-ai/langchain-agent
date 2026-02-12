@@ -4,7 +4,7 @@ import tyro
 import os.path as osp
 from loguru import logger
 
-from lang_agent.config import KeyConfig
+from lang_agent.config import LLMKeyConfig
 from lang_agent.components.tool_manager import ToolManager, ToolManagerConfig
 from lang_agent.components.prompt_store import build_prompt_store
 from lang_agent.base import GraphBase
@@ -20,20 +20,11 @@ from langgraph.graph import StateGraph, START, END
 # NOTE: maybe make this into a base_graph_config?
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
-class ReactGraphConfig(KeyConfig):
+class ReactGraphConfig(LLMKeyConfig):
     _target: Type = field(default_factory=lambda: ReactGraph)
-
-    llm_name: str = "qwen-plus"
-    """name of llm"""
-
-    llm_provider:str = "openai"
-    """provider of the llm"""
 
     sys_prompt_f:str = osp.join(osp.dirname(osp.dirname(osp.dirname(__file__))), "configs", "prompts", "blueberry.txt")
     """path to system prompt"""
-
-    base_url:str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    """base url; could be used to overwrite the baseurl in llm provider"""
 
     pipeline_id: Optional[str] = None
     """If set, load prompts from database (with file fallback)"""

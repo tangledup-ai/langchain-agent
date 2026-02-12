@@ -9,13 +9,13 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.documents.base import Document
 
 from lang_agent.rag.emb import QwenEmbeddings
-from lang_agent.config import ToolConfig, KeyConfig
+from lang_agent.config import ToolConfig, LLMKeyConfig
 from lang_agent.base import LangToolBase
 
 
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
-class SimpleRagConfig(ToolConfig, KeyConfig):
+class SimpleRagConfig(ToolConfig, LLMKeyConfig):
     _target: Type = field(default_factory=lambda: SimpleRag)
 
     model_name:str = "text-embedding-v4"

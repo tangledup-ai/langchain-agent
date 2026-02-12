@@ -6,7 +6,7 @@ import time
 import asyncio
 from loguru import logger
 
-from lang_agent.config import InstantiateConfig, KeyConfig
+from lang_agent.config import InstantiateConfig, LLMKeyConfig
 from lang_agent.components.tool_manager import ToolManager
 from lang_agent.components.prompt_store import build_prompt_store
 from lang_agent.components.reit_llm import ReitLLM
@@ -85,17 +85,8 @@ class ToolNode(ToolNodeBase):
 
     
 @dataclass
-class ChattyToolNodeConfig(KeyConfig, ToolNodeConfig):
+class ChattyToolNodeConfig(LLMKeyConfig, ToolNodeConfig):
     _target: Type = field(default_factory=lambda: ChattyToolNode)
-
-    llm_name: str = "qwen-plus"
-    """name of llm"""
-
-    llm_provider:str = "openai"
-    """provider of the llm"""
-
-    base_url:str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    """base url; could be used to overwrite the baseurl in llm provider"""
 
     chatty_sys_prompt_f:str = osp.join(osp.dirname(osp.dirname(osp.dirname(__file__))), "configs", "route_sys_prompts", "chatty_prompt.txt")
     """path to chatty system prompt"""

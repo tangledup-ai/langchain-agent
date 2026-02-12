@@ -3,7 +3,7 @@ from typing import Type, Callable, List
 import tyro
 import random
 
-from lang_agent.config import KeyConfig
+from lang_agent.config import LLMKeyConfig
 from lang_agent.pipeline import Pipeline, PipelineConfig
 
 from langchain.chat_models import init_chat_model
@@ -11,7 +11,7 @@ from langchain_core.messages import BaseMessage, ToolMessage
 
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
-class ValidatorConfig(KeyConfig):
+class ValidatorConfig(LLMKeyConfig):
     _target: Type = field(default_factory=lambda:Validator)
 
 
@@ -34,9 +34,9 @@ class Validator:
 
     def populate_modules(self):
         self.judge_llm = init_chat_model(
-            model="qwen-plus",
-            model_provider="openai",
-            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+            model=self.config.llm_name,
+            model_provider=self.config.llm_provider,
+            base_url=self.config.base_url,
             api_key=self.config.api_key
         )
 

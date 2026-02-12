@@ -13,7 +13,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, BaseMessage
 from langchain.agents import create_agent
 from langgraph.checkpoint.memory import MemorySaver
         
-from lang_agent.config import InstantiateConfig, KeyConfig
+from lang_agent.config import LLMKeyConfig
 from lang_agent.graphs import AnnotatedGraph, ReactGraphConfig, RoutingConfig
 from lang_agent.base import GraphBase
 from lang_agent.components import conv_store
@@ -52,20 +52,11 @@ DEFAULT_PROMPT="""你是半盏新青年茶馆的服务员，擅长倾听、共�
 
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
-class PipelineConfig(KeyConfig):
+class PipelineConfig(LLMKeyConfig):
     _target: Type = field(default_factory=lambda: Pipeline)
 
     config_f: str = None
     """path to config file"""
-
-    llm_name: str = "qwen-plus"
-    """name of llm; use default for qwen-plus"""
-
-    llm_provider:str = "openai"
-    """provider of the llm; use default for openai"""
-
-    base_url:str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    """base url; could be used to overwrite the baseurl in llm provider"""
 
     host:str = "0.0.0.0"
     """where am I hosted"""
