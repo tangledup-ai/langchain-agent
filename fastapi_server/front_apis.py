@@ -1,6 +1,7 @@
 from typing import Dict, List, Optional
 import os
 import os.path as osp
+import secrets
 import subprocess
 import sys
 import uuid
@@ -71,6 +72,10 @@ class PipelineCreateResponse(BaseModel):
     prompt_set_id: str
     url: str
     port: int
+    auth_type: str
+    auth_header_name: str
+    auth_key_once: str
+    auth_key_masked: str
 
 class PipelineRunInfo(BaseModel):
     run_id: str
@@ -80,6 +85,9 @@ class PipelineRunInfo(BaseModel):
     prompt_set_id: str
     url: str
     port: int
+    auth_type: str
+    auth_header_name: str
+    auth_key_masked: str
 
 class PipelineListResponse(BaseModel):
     items: List[PipelineRunInfo]
@@ -105,6 +113,18 @@ app.add_middleware(
 
 _db = DBConfigManager()
 _running_pipelines: Dict[str, Dict[str, object]] = {}
+
+
+def _generate_auth_key() -> str:
+    return f"agk_{secrets.token_urlsafe(24)}"
+
+
+def _mask_auth_key(value: str) -> str:
+    if not value:
+        return ""
+    if len(value) <= 10:
+        return value
+    return f"{value[:6]}...{value[-4:]}"
 
 def _prune_stopped_pipelines() -> None:
     stale_ids: List[str] = []
@@ -269,6 +289,9 @@ async def list_running_pipelines():
             prompt_set_id=info["prompt_set_id"],
             url=info["url"],
             port=info["port"],
+            auth_type="bearer",
+            auth_header_name="Authorization",
+            auth_key_masked=info.get("auth_key_masked", ""),
         )
         for run_id, info in _running_pipelines.items()
     ]
@@ -284,6 +307,8 @@ async def create_pipeline(body: PipelineCreateRequest):
             detail=f"Unknown graph_id '{body.graph_id}'. Valid options: {sorted(GRAPH_BUILD_FNCS.keys())}",
         )
 
+    auth_key = _generate_auth_key()
+    auth_key_masked = _mask_auth_key(auth_key)
     try:
         proc, url = build_fn(
             pipeline_id=body.pipeline_id,
@@ -291,6 +316,7 @@ async def create_pipeline(body: PipelineCreateRequest):
             tool_keys=body.tool_keys,
             port=str(body.port),
             api_key=body.api_key,
+            fast_auth_keys=auth_key,
             entry_pnt=body.entry_point,
             llm_name=body.llm_name,
         )
@@ -305,6 +331,7 @@ async def create_pipeline(body: PipelineCreateRequest):
         "prompt_set_id": body.prompt_set_id,
         "url": url,
         "port": body.port,
+        "auth_key_masked": auth_key_masked,
     }
 
     return PipelineCreateResponse(
@@ -315,6 +342,10 @@ async def create_pipeline(body: PipelineCreateRequest):
         prompt_set_id=body.prompt_set_id,
         url=url,
         port=body.port,
+        auth_type="bearer",
+        auth_header_name="Authorization",
+        auth_key_once=auth_key,
+        auth_key_masked=auth_key_masked,
     )
 
 @app.delete("/v1/pipelines/{run_id}", response_model=PipelineStopResponse)
