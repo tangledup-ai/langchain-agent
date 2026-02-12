@@ -25,12 +25,14 @@ type EditableAgent = {
   toolKeys: string[];
   prompts: Record<string, string>;
   port: number;
+  apiKey: string;
   llmName: string;
 };
 
 const DEFAULT_ENTRY_POINT = "fastapi_server/server_dashscope.py";
 const DEFAULT_LLM_NAME = "qwen-plus";
 const DEFAULT_PORT = 8100;
+const DEFAULT_API_KEY = "";
 const GRAPH_ARCH_IMAGE_MODULES = import.meta.glob(
   "../assets/images/graph_arch/*.{png,jpg,jpeg,webp,gif}",
   { eager: true, import: "default" }
@@ -91,6 +93,7 @@ function toEditable(
     toolKeys: config.tool_keys || [],
     prompts: config.prompt_dict || {},
     port: DEFAULT_PORT,
+    apiKey: DEFAULT_API_KEY,
     llmName: DEFAULT_LLM_NAME,
   };
 }
@@ -195,6 +198,7 @@ export default function App() {
       const editable = toEditable(detail, false);
       editable.id = id;
       editable.port = editor?.pipelineId === editable.pipelineId ? editor.port : DEFAULT_PORT;
+      editable.apiKey = editor?.pipelineId === editable.pipelineId ? editor.apiKey : DEFAULT_API_KEY;
       editable.llmName = editor?.pipelineId === editable.pipelineId ? editor.llmName : DEFAULT_LLM_NAME;
       setEditor(editable);
       setStatusMessage("");
@@ -334,6 +338,7 @@ export default function App() {
       const saved = toEditable(detail, false);
       saved.id = makeAgentKey(upsertResp.pipeline_id, upsertResp.prompt_set_id);
       saved.port = editor.port;
+      saved.apiKey = editor.apiKey;
       saved.llmName = editor.llmName;
       setEditor(saved);
       setSelectedId(saved.id);
@@ -389,6 +394,10 @@ export default function App() {
       setStatusMessage("port must be a positive integer.");
       return;
     }
+    if (!editor.apiKey.trim()) {
+      setStatusMessage("api_key is required before run.");
+      return;
+    }
 
     setBusy(true);
     setStatusMessage("Starting agent...");
@@ -399,6 +408,7 @@ export default function App() {
         prompt_set_id: editor.promptSetId,
         tool_keys: editor.toolKeys,
         port: editor.port,
+        api_key: editor.apiKey.trim(),
         entry_point: DEFAULT_ENTRY_POINT,
         llm_name: editor.llmName,
       });
@@ -574,6 +584,17 @@ export default function App() {
                 min={1}
                 value={editor.port}
                 onChange={(e) => updateEditor("port", Number(e.target.value))}
+                disabled={busy}
+              />
+            </label>
+
+            <label>
+              api_key
+              <input
+                type="password"
+                value={editor.apiKey}
+                onChange={(e) => updateEditor("apiKey", e.target.value)}
+                placeholder="Enter provider API key"
                 disabled={busy}
               />
             </label>

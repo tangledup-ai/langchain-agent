@@ -49,6 +49,7 @@ export type PipelineCreateRequest = {
   prompt_set_id: string;
   tool_keys: string[];
   port: number;
+  api_key: string;
   entry_point: string;
   llm_name: string;
 };

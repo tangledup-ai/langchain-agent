@@ -59,6 +59,7 @@ class PipelineCreateRequest(BaseModel):
     prompt_set_id: str
     tool_keys: List[str] = Field(default_factory=list)
     port: int
+    api_key: str
     entry_point: str = Field(default="fastapi_server/server_dashscope.py")
     llm_name: str = Field(default="qwen-plus")
 
@@ -289,6 +290,7 @@ async def create_pipeline(body: PipelineCreateRequest):
             prompt_set=body.prompt_set_id,
             tool_keys=body.tool_keys,
             port=str(body.port),
+            api_key=body.api_key,
             entry_pnt=body.entry_point,
             llm_name=body.llm_name,
         )
