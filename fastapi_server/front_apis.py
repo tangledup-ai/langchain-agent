@@ -1,4 +1,5 @@
 from typing import Dict, List, Optional
+import commentjson
 import os
 import os.path as osp
 import secrets
@@ -15,6 +16,10 @@ sys.path.append(osp.dirname(osp.dirname(osp.abspath(__file__))))
 
 from lang_agent.config.db_config_manager import DBConfigManager
 from lang_agent.front_api.build_server import GRAPH_BUILD_FNCS
+
+_PROJECT_ROOT = osp.dirname(osp.dirname(osp.abspath(__file__)))
+_MCP_CONFIG_PATH = osp.join(_PROJECT_ROOT, "configs", "mcp_config.json")
+_MCP_CONFIG_DEFAULT_CONTENT = "{\n}\n"
 
 class GraphConfigUpsertRequest(BaseModel):
     graph_id: str
@@ -101,6 +106,19 @@ class PipelineStopResponse(BaseModel):
     run_id: str
     status: str
 
+class McpConfigReadResponse(BaseModel):
+    path: str
+    raw_content: str
+    tool_keys: List[str]
+
+class McpConfigUpdateRequest(BaseModel):
+    raw_content: str
+
+class McpConfigUpdateResponse(BaseModel):
+    status: str
+    path: str
+    tool_keys: List[str]
+
 
 app = FastAPI(
     title="Front APIs",
@@ -160,8 +178,26 @@ async def root():
             "/v1/pipelines (POST)",
             "/v1/pipelines (GET)",
             "/v1/pipelines/{run_id} (DELETE)",
+            "/v1/tool-configs/mcp (GET)",
+            "/v1/tool-configs/mcp (PUT)",
         ],
     }
+
+
+def _parse_mcp_tool_keys(raw_content: str) -> List[str]:
+    parsed = commentjson.loads(raw_content or "{}")
+    if not isinstance(parsed, dict):
+        raise ValueError("mcp_config must be a JSON object at top level")
+    return sorted(str(key) for key in parsed.keys())
+
+
+def _read_mcp_config_raw() -> str:
+    if not osp.exists(_MCP_CONFIG_PATH):
+        os.makedirs(osp.dirname(_MCP_CONFIG_PATH), exist_ok=True)
+        with open(_MCP_CONFIG_PATH, "w", encoding="utf-8") as f:
+            f.write(_MCP_CONFIG_DEFAULT_CONTENT)
+    with open(_MCP_CONFIG_PATH, "r", encoding="utf-8") as f:
+        return f.read()
 
 
 @app.post("/v1/graph-configs", response_model=GraphConfigUpsertResponse)
@@ -284,6 +320,40 @@ async def delete_graph_config(pipeline_id: str, prompt_set_id: str):
 @app.get("/v1/pipelines/graphs")
 async def available_graphs():
     return {"available_graphs": sorted(GRAPH_BUILD_FNCS.keys())}
+
+@app.get("/v1/tool-configs/mcp", response_model=McpConfigReadResponse)
+async def get_mcp_tool_config():
+    try:
+        raw_content = _read_mcp_config_raw()
+        tool_keys = _parse_mcp_tool_keys(raw_content)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    return McpConfigReadResponse(
+        path=_MCP_CONFIG_PATH,
+        raw_content=raw_content,
+        tool_keys=tool_keys,
+    )
+
+
+@app.put("/v1/tool-configs/mcp", response_model=McpConfigUpdateResponse)
+async def update_mcp_tool_config(body: McpConfigUpdateRequest):
+    try:
+        tool_keys = _parse_mcp_tool_keys(body.raw_content)
+        os.makedirs(osp.dirname(_MCP_CONFIG_PATH), exist_ok=True)
+        with open(_MCP_CONFIG_PATH, "w", encoding="utf-8") as f:
+            # Keep user formatting/comments as entered while ensuring trailing newline.
+            f.write(body.raw_content.rstrip() + "\n")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    return McpConfigUpdateResponse(
+        status="updated",
+        path=_MCP_CONFIG_PATH,
+        tool_keys=tool_keys,
+    )
 
 @app.get("/v1/pipelines", response_model=PipelineListResponse)
 async def list_running_pipelines():
