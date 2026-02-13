@@ -10,12 +10,15 @@ CREATE TABLE IF NOT EXISTS prompt_sets (
     is_active BOOLEAN DEFAULT false,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),
-    list Varchar(255) DEFAULT ''   -- tool_set list for client_tool_manager
+    list Varchar(255) DEFAULT '',  -- tool_set list for client_tool_manager
+    api_key TEXT DEFAULT ''        -- provider api key used to run pipeline
 );
 
 -- Backward-compatible migration for existing deployments.
 ALTER TABLE prompt_sets
 ADD COLUMN IF NOT EXISTS graph_id VARCHAR(64);
+ALTER TABLE prompt_sets
+ADD COLUMN IF NOT EXISTS api_key TEXT DEFAULT '';
 UPDATE prompt_sets
 SET graph_id = pipeline_id
 WHERE graph_id IS NULL;
