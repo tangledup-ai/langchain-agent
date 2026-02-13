@@ -4,10 +4,12 @@ import {
   deleteGraphConfig,
   getGraphConfig,
   getGraphDefaultConfig,
+  getMcpToolConfig,
   listAvailableGraphs,
   listGraphConfigs,
   listPipelines,
   stopPipeline,
+  updateMcpToolConfig,
   upsertGraphConfig,
 } from "./api/frontApis";
 import type {
@@ -36,6 +38,8 @@ type LaunchCredentials = {
   authKey: string;
   authKeyMasked: string;
 };
+
+type ActiveTab = "agents" | "mcp";
 
 const DEFAULT_ENTRY_POINT = "fastapi_server/server_dashscope.py";
 const DEFAULT_LLM_NAME = "qwen-plus";
@@ -118,6 +122,7 @@ function toEditable(
 }
 
 export default function App() {
+  const [activeTab, setActiveTab] = useState<ActiveTab>("agents");
   const [graphs, setGraphs] = useState<string[]>([]);
   const [configItems, setConfigItems] = useState<GraphConfigListItem[]>([]);
   const [running, setRunning] = useState<PipelineRunInfo[]>([]);
@@ -126,6 +131,9 @@ export default function App() {
   const [editor, setEditor] = useState<EditableAgent | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [launchCredentials, setLaunchCredentials] = useState<LaunchCredentials | null>(null);
+  const [mcpConfigPath, setMcpConfigPath] = useState<string>("");
+  const [mcpConfigRaw, setMcpConfigRaw] = useState<string>("");
+  const [mcpToolKeys, setMcpToolKeys] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
 
   const configKeySet = useMemo(
@@ -207,6 +215,16 @@ export default function App() {
       setEditor(null);
     }
   }, [selectedId, configKeySet]);
+
+  useEffect(() => {
+    if (activeTab !== "mcp") {
+      return;
+    }
+    if (mcpConfigRaw) {
+      return;
+    }
+    reloadMcpConfig().catch(() => undefined);
+  }, [activeTab]);
 
   async function selectExisting(item: GraphConfigListItem): Promise<void> {
     const id = makeAgentKey(item.pipeline_id, item.prompt_set_id);
@@ -318,6 +336,37 @@ export default function App() {
         prompt_dict: fallbackPrompts,
         api_key: "",
       };
+    }
+  }
+
+  async function reloadMcpConfig(): Promise<void> {
+    setBusy(true);
+    setStatusMessage("Loading MCP config...");
+    try {
+      const resp = await getMcpToolConfig();
+      setMcpConfigPath(resp.path || "");
+      setMcpConfigRaw(resp.raw_content || "");
+      setMcpToolKeys(resp.tool_keys || []);
+      setStatusMessage("MCP config loaded.");
+    } catch (error) {
+      setStatusMessage((error as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveMcpConfig(): Promise<void> {
+    setBusy(true);
+    setStatusMessage("Saving MCP config...");
+    try {
+      const resp = await updateMcpToolConfig({ raw_content: mcpConfigRaw });
+      setMcpConfigPath(resp.path || "");
+      setMcpToolKeys(resp.tool_keys || []);
+      setStatusMessage("MCP config saved.");
+    } catch (error) {
+      setStatusMessage((error as Error).message);
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -507,243 +556,303 @@ export default function App() {
     }
   }
 
+  const showSidebar = activeTab === "agents";
+
   return (
-    <div className="app">
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <h2>Agents</h2>
-          <button onClick={addDraftAgent} disabled={busy}>
-            + New
-          </button>
-        </div>
-        <div className="agent-list">
-          {rows.map((row) => (
-            <button
-              key={row.id}
-              className={`agent-item ${selectedId === row.id ? "selected" : ""}`}
-              onClick={() => {
-                if (row.isDraft) {
-                  const selectedDraft = draftAgents.find((d) => d.id === row.id) || null;
-                  setSelectedId(row.id);
-                  setEditor(selectedDraft);
-                  return;
-                }
-                const item = visibleConfigItems.find(
-                  (x) => makeAgentKey(x.pipeline_id, x.prompt_set_id) === row.id
-                );
-                if (item) {
-                  selectExisting(item);
-                }
-              }}
-            >
-              <span>{row.label}</span>
-              <small>{row.graphId}</small>
+    <div className={`app ${showSidebar ? "" : "full-width"}`}>
+      {showSidebar ? (
+        <aside className="sidebar">
+          <div className="sidebar-header">
+            <h2>Agents</h2>
+            <button onClick={addDraftAgent} disabled={busy}>
+              + New
             </button>
-          ))}
-          {rows.length === 0 ? <p className="empty">No agents configured yet.</p> : null}
-        </div>
-      </aside>
+          </div>
+          <div className="agent-list">
+            {rows.map((row) => (
+              <button
+                key={row.id}
+                className={`agent-item ${selectedId === row.id ? "selected" : ""}`}
+                onClick={() => {
+                  if (row.isDraft) {
+                    const selectedDraft = draftAgents.find((d) => d.id === row.id) || null;
+                    setSelectedId(row.id);
+                    setEditor(selectedDraft);
+                    return;
+                  }
+                  const item = visibleConfigItems.find(
+                    (x) => makeAgentKey(x.pipeline_id, x.prompt_set_id) === row.id
+                  );
+                  if (item) {
+                    selectExisting(item);
+                  }
+                }}
+              >
+                <span>{row.label}</span>
+                <small>{row.graphId}</small>
+              </button>
+            ))}
+            {rows.length === 0 ? <p className="empty">No agents configured yet.</p> : null}
+          </div>
+        </aside>
+      ) : null}
 
       <main className="content">
         <header className="content-header">
-          <h1>Agent Configuration</h1>
-          <div className="header-actions">
-            <button onClick={saveConfig} disabled={busy || !editor}>
-              Save
+          <h1>Agent Manager</h1>
+          <div className="tabs">
+            <button
+              type="button"
+              className={`tab-button ${activeTab === "agents" ? "active" : ""}`}
+              onClick={() => setActiveTab("agents")}
+              disabled={busy}
+            >
+              Agents
             </button>
-            <button onClick={runSelected} disabled={busy || !editor}>
-              Run
-            </button>
-            <button onClick={stopSelected} disabled={busy || !editor}>
-              Stop
-            </button>
-            <button onClick={deleteSelected} disabled={busy || !editor}>
-              Delete
+            <button
+              type="button"
+              className={`tab-button ${activeTab === "mcp" ? "active" : ""}`}
+              onClick={() => setActiveTab("mcp")}
+              disabled={busy}
+            >
+              MCP Config
             </button>
           </div>
         </header>
 
         {statusMessage ? <p className="status">{statusMessage}</p> : null}
-        {launchCredentials ? (
-          <div className="launch-credentials">
-            <h3>Access Credentials (shown once)</h3>
-            <div>
-              <strong>URL:</strong>{" "}
-              <a href={launchCredentials.url} target="_blank" rel="noreferrer">
-                {launchCredentials.url}
-              </a>
-              <button
-                type="button"
-                onClick={() => copyText(launchCredentials.url, "URL")}
-                disabled={busy}
-              >
-                Copy URL
+        {activeTab === "agents" ? (
+          <div className="tab-pane">
+            <div className="header-actions">
+              <button onClick={saveConfig} disabled={busy || !editor}>
+                Save
+              </button>
+              <button onClick={runSelected} disabled={busy || !editor}>
+                Run
+              </button>
+              <button onClick={stopSelected} disabled={busy || !editor}>
+                Stop
+              </button>
+              <button onClick={deleteSelected} disabled={busy || !editor}>
+                Delete
               </button>
             </div>
-            <div>
-              <strong>{launchCredentials.authType} key:</strong> {launchCredentials.authKey}
-              <button
-                type="button"
-                onClick={() => copyText(launchCredentials.authKey, "auth key")}
-                disabled={busy}
-              >
-                Copy Key
-              </button>
-            </div>
-            <div>
-              <strong>Header:</strong> <code>{authHeaderValue}</code>
-              <button
-                type="button"
-                onClick={() => copyText(authHeaderValue, "auth header")}
-                disabled={busy}
-              >
-                Copy Header
-              </button>
-            </div>
-            <p className="empty">
-              Stored after launch as masked value: {launchCredentials.authKeyMasked}
-            </p>
-          </div>
-        ) : null}
 
-        {!editor ? (
-          <div className="empty-panel">
-            <p>Select an agent from the left or create a new one.</p>
-          </div>
-        ) : (
-          <section className="form-grid">
-            <label>
-              Agent Type (graph_id)
-              <select
-                value={editor.graphId}
-                onChange={(e) => changeGraph(e.target.value)}
-                disabled={busy}
-              >
-                {graphs.map((graph) => (
-                  <option key={graph} value={graph}>
-                    {graph}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            {graphArchImage && (
-              <div className="graph-arch-section">
-                <h3>Graph Architecture</h3>
-                <div className="graph-arch-image-container">
-                  <img
-                    src={graphArchImage}
-                    alt={`${editor.graphId} architecture diagram`}
-                    className="graph-arch-image"
-                  />
+            {launchCredentials ? (
+              <div className="launch-credentials">
+                <h3>Access Credentials (shown once)</h3>
+                <div>
+                  <strong>URL:</strong>{" "}
+                  <a href={launchCredentials.url} target="_blank" rel="noreferrer">
+                    {launchCredentials.url}
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => copyText(launchCredentials.url, "URL")}
+                    disabled={busy}
+                  >
+                    Copy URL
+                  </button>
                 </div>
+                <div>
+                  <strong>{launchCredentials.authType} key:</strong> {launchCredentials.authKey}
+                  <button
+                    type="button"
+                    onClick={() => copyText(launchCredentials.authKey, "auth key")}
+                    disabled={busy}
+                  >
+                    Copy Key
+                  </button>
+                </div>
+                <div>
+                  <strong>Header:</strong> <code>{authHeaderValue}</code>
+                  <button
+                    type="button"
+                    onClick={() => copyText(authHeaderValue, "auth header")}
+                    disabled={busy}
+                  >
+                    Copy Header
+                  </button>
+                </div>
+                <p className="empty">
+                  Stored after launch as masked value: {launchCredentials.authKeyMasked}
+                </p>
               </div>
-            )}
+            ) : null}
 
-            <label>
-              pipeline_id
-              <input
-                value={editor.pipelineId}
-                onChange={(e) => updateEditor("pipelineId", e.target.value)}
-                placeholder="example: routing-agent-1"
-                disabled={busy}
-              />
-            </label>
+            {!editor ? (
+              <div className="empty-panel">
+                <p>Select an agent from the left or create a new one.</p>
+              </div>
+            ) : (
+              <section className="form-grid">
+                <label>
+                  Agent Type (graph_id)
+                  <select
+                    value={editor.graphId}
+                    onChange={(e) => changeGraph(e.target.value)}
+                    disabled={busy}
+                  >
+                    {graphs.map((graph) => (
+                      <option key={graph} value={graph}>
+                        {graph}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-            <label>
-              prompt_set_id
-              <input value={editor.promptSetId || "(assigned on save)"} readOnly />
-            </label>
-
-            <label>
-              tool_keys (comma separated)
-              <input
-                value={editor.toolKeys.join(", ")}
-                onChange={(e) => updateEditor("toolKeys", parseToolCsv(e.target.value))}
-                placeholder="tool_a, tool_b"
-                disabled={busy}
-              />
-            </label>
-
-            <label>
-              port
-              <input
-                type="number"
-                min={1}
-                value={editor.port}
-                onChange={(e) => updateEditor("port", Number(e.target.value))}
-                disabled={busy}
-              />
-            </label>
-
-            <label>
-              api_key
-              <input
-                type="password"
-                value={editor.apiKey}
-                onChange={(e) => updateEditor("apiKey", e.target.value)}
-                placeholder="Enter provider API key"
-                disabled={busy}
-              />
-              {editor.apiKey ? (
-                <small className="empty">Preview: {maskSecretPreview(editor.apiKey)}</small>
-              ) : null}
-            </label>
-
-            <label>
-              llm_name
-              <input
-                value={editor.llmName}
-                onChange={(e) => updateEditor("llmName", e.target.value)}
-                disabled={busy}
-              />
-            </label>
-
-            <div className="prompt-section">
-              <h3>Prompts</h3>
-              {Object.keys(editor.prompts).length === 0 ? (
-                <p className="empty">No prompt keys returned from backend.</p>
-              ) : (
-                Object.entries(editor.prompts).map(([key, value]) => (
-                  <label key={key}>
-                    {key}
-                    <textarea
-                      value={value}
-                      onChange={(e) => updatePrompt(key, e.target.value)}
-                      rows={4}
-                      disabled={busy}
-                    />
-                  </label>
-                ))
-              )}
-            </div>
-
-            <div className="run-info">
-              <h3>Running Instances</h3>
-              {selectedRuns.length === 0 ? (
-                <p className="empty">No active runs for this agent.</p>
-              ) : (
-                selectedRuns.map((run) => (
-                  <div key={run.run_id} className="run-card">
-                    <div>
-                      <strong>run_id:</strong> {run.run_id}
-                    </div>
-                    <div>
-                      <strong>pid:</strong> {run.pid}
-                    </div>
-                    <div>
-                      <strong>url:</strong>{" "}
-                      <a href={run.url} target="_blank" rel="noreferrer">
-                        {run.url}
-                      </a>
-                    </div>
-                    <div>
-                      <strong>auth:</strong> {run.auth_header_name} Bearer {run.auth_key_masked}
+                {graphArchImage && (
+                  <div className="graph-arch-section">
+                    <h3>Graph Architecture</h3>
+                    <div className="graph-arch-image-container">
+                      <img
+                        src={graphArchImage}
+                        alt={`${editor.graphId} architecture diagram`}
+                        className="graph-arch-image"
+                      />
                     </div>
                   </div>
-                ))
-              )}
+                )}
+
+                <label>
+                  pipeline_id
+                  <input
+                    value={editor.pipelineId}
+                    onChange={(e) => updateEditor("pipelineId", e.target.value)}
+                    placeholder="example: routing-agent-1"
+                    disabled={busy}
+                  />
+                </label>
+
+                <label>
+                  prompt_set_id
+                  <input value={editor.promptSetId || "(assigned on save)"} readOnly />
+                </label>
+
+                <label>
+                  tool_keys (comma separated)
+                  <input
+                    value={editor.toolKeys.join(", ")}
+                    onChange={(e) => updateEditor("toolKeys", parseToolCsv(e.target.value))}
+                    placeholder="tool_a, tool_b"
+                    disabled={busy}
+                  />
+                </label>
+
+                <label>
+                  port
+                  <input
+                    type="number"
+                    min={1}
+                    value={editor.port}
+                    onChange={(e) => updateEditor("port", Number(e.target.value))}
+                    disabled={busy}
+                  />
+                </label>
+
+                <label>
+                  api_key
+                  <input
+                    type="password"
+                    value={editor.apiKey}
+                    onChange={(e) => updateEditor("apiKey", e.target.value)}
+                    placeholder="Enter provider API key"
+                    disabled={busy}
+                  />
+                  {editor.apiKey ? (
+                    <small className="empty">Preview: {maskSecretPreview(editor.apiKey)}</small>
+                  ) : null}
+                </label>
+
+                <label>
+                  llm_name
+                  <input
+                    value={editor.llmName}
+                    onChange={(e) => updateEditor("llmName", e.target.value)}
+                    disabled={busy}
+                  />
+                </label>
+
+                <div className="prompt-section">
+                  <h3>Prompts</h3>
+                  {Object.keys(editor.prompts).length === 0 ? (
+                    <p className="empty">No prompt keys returned from backend.</p>
+                  ) : (
+                    Object.entries(editor.prompts).map(([key, value]) => (
+                      <label key={key}>
+                        {key}
+                        <textarea
+                          value={value}
+                          onChange={(e) => updatePrompt(key, e.target.value)}
+                          rows={4}
+                          disabled={busy}
+                        />
+                      </label>
+                    ))
+                  )}
+                </div>
+
+                <div className="run-info">
+                  <h3>Running Instances</h3>
+                  {selectedRuns.length === 0 ? (
+                    <p className="empty">No active runs for this agent.</p>
+                  ) : (
+                    selectedRuns.map((run) => (
+                      <div key={run.run_id} className="run-card">
+                        <div>
+                          <strong>run_id:</strong> {run.run_id}
+                        </div>
+                        <div>
+                          <strong>pid:</strong> {run.pid}
+                        </div>
+                        <div>
+                          <strong>url:</strong>{" "}
+                          <a href={run.url} target="_blank" rel="noreferrer">
+                            {run.url}
+                          </a>
+                        </div>
+                        <div>
+                          <strong>auth:</strong> {run.auth_header_name} Bearer {run.auth_key_masked}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </section>
+            )}
+          </div>
+        ) : (
+          <section className="mcp-config-section tab-pane">
+            <div className="mcp-config-header">
+              <h3>Edit MCP Tool Options</h3>
+              <div className="header-actions">
+                <button type="button" onClick={reloadMcpConfig} disabled={busy}>
+                  Reload
+                </button>
+                <button type="button" onClick={saveMcpConfig} disabled={busy}>
+                  Save
+                </button>
+              </div>
             </div>
+            <p className="empty">
+              This tab edits <code>configs/mcp_config.json</code> directly (comments supported).
+            </p>
+            {mcpConfigPath ? (
+              <p className="empty">
+                File: <code>{mcpConfigPath}</code>
+              </p>
+            ) : null}
+            <p className="empty">
+              Tool options detected: {mcpToolKeys.length ? mcpToolKeys.join(", ") : "(none)"}
+            </p>
+            <textarea
+              className="mcp-config-editor"
+              value={mcpConfigRaw}
+              onChange={(e) => setMcpConfigRaw(e.target.value)}
+              rows={18}
+              spellCheck={false}
+              disabled={busy}
+            />
           </section>
         )}
       </main>

@@ -85,3 +85,19 @@ export type PipelineStopResponse = {
   status: string;
 };
 
+export type McpToolConfigResponse = {
+  path: string;
+  raw_content: string;
+  tool_keys: string[];
+};
+
+export type McpToolConfigUpdateRequest = {
+  raw_content: string;
+};
+
+export type McpToolConfigUpdateResponse = {
+  status: string;
+  path: string;
+  tool_keys: string[];
+};
+

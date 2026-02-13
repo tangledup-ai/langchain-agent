@@ -24,6 +24,10 @@ body {
   min-height: 100vh;
 }
 
+.app.full-width {
+  grid-template-columns: 1fr;
+}
+
 .sidebar {
   border-right: 1px solid #dbe2ea;
   background: #ffffff;
@@ -94,6 +98,21 @@ button:disabled {
   margin: 0;
 }
 
+.tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.tab-button {
+  min-width: 120px;
+}
+
+.tab-button.active {
+  background: #edf3ff;
+  border-color: #4d7ef3;
+  color: #1a4fc5;
+}
+
 .header-actions {
   display: flex;
   gap: 8px;
@@ -137,6 +156,10 @@ button:disabled {
 
 .empty-panel {
   margin-top: 30px;
+}
+
+.tab-pane {
+  margin-top: 12px;
 }
 
 .form-grid {
@@ -204,6 +227,35 @@ button:disabled {
   border-radius: 8px;
   margin-top: 8px;
   padding: 10px;
+}
+
+.mcp-config-section {
+  background: #f7fbff;
+  border: 1px solid #d7e6f6;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.mcp-config-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mcp-config-header h3 {
+  margin: 0;
+}
+
+.mcp-config-editor {
+  border: 1px solid #c9d4e2;
+  border-radius: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  margin-top: 8px;
+  padding: 10px;
+  resize: vertical;
+  width: 100%;
 }
 
 .empty {

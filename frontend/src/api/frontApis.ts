@@ -4,6 +4,9 @@ import type {
   GraphConfigReadResponse,
   GraphConfigUpsertRequest,
   GraphConfigUpsertResponse,
+  McpToolConfigResponse,
+  McpToolConfigUpdateRequest,
+  McpToolConfigUpdateResponse,
   PipelineCreateRequest,
   PipelineCreateResponse,
   PipelineListResponse,
@@ -82,6 +85,19 @@ export function deleteGraphConfig(
 ): Promise<{ status: string; pipeline_id: string; prompt_set_id: string }> {
   return fetchJson(`/v1/graph-configs/${pipelineId}/${promptSetId}`, {
     method: "DELETE",
+  });
+}
+
+export function getMcpToolConfig(): Promise<McpToolConfigResponse> {
+  return fetchJson("/v1/tool-configs/mcp");
+}
+
+export function updateMcpToolConfig(
+  payload: McpToolConfigUpdateRequest
+): Promise<McpToolConfigUpdateResponse> {
+  return fetchJson("/v1/tool-configs/mcp", {
+    method: "PUT",
+    body: JSON.stringify(payload),
   });
 }
 
