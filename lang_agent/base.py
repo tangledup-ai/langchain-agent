@@ -39,9 +39,9 @@ class GraphBase(ABC):
 
         def text_iterator():
             for _, mode, out in self.workflow.stream({"inp": nargs}, 
-                                                        stream_mode=["messages", "values"], 
-                                                        subgraphs=True,
-                                                        **kwargs):
+                                                     stream_mode=["messages", "values"], 
+                                                     subgraphs=True,
+                                                     **kwargs):
                 if mode == "values":
                     val = out.get("messages")
                     if val is not None:
