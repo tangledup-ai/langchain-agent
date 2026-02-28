@@ -32,7 +32,7 @@ class LangToolBase(ABC):
 
 class GraphBase(ABC):
     workflow: CompiledStateGraph     # the main workflow
-    streamable_tags: List[List[str]] # which llm to stream outputs; see routing.py for complex usage
+    streamable_tags: List[List[str]] = [["main_llm"]] # which llm to stream outputs; see routing.py for complex usage
     textreleaser_delay_keys: List[str] = (None, None)  # use to control when to start streaming; see routing.py for complex usage
 
     def _build_modules(self):
