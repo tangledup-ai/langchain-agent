@@ -30,10 +30,12 @@ class LocalShellConfig(InstantiateConfig):
 
 class LocalShell(BaseFilesystemBackend):
     def __init__(self, config:LocalShellConfig):
+        logger.warning("Caution: The LocalShell backend grants direct access to the local system shell. Improper use can pose significant security and safety risks, including unintended code execution and file access. Use this backend with extreme care.")
         self.config = config
         self._build_backend()
     
     def _build_backend(self):
         self.backend = LocalShellBackend(root_dir=self.config.workspace_dir,
                                          virtual_mode=True,
-                                         env={"PATH": "/usr/bin:/bin"})
+                                        #  env={"PATH": "/usr/bin:/bin"}
+                                         inherit_env=True)
