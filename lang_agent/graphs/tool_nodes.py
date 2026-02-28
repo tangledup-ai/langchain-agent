@@ -102,7 +102,7 @@ class ChattyToolNode(ToolNodeBase):
         self.tool_key = "[TOOL_OUT]"
 
         self.populate_modules()
-        self.build_graph()
+        self.workflow = self.build_graph()
     
     
     def populate_modules(self):
@@ -218,7 +218,7 @@ class ChattyToolNode(ToolNodeBase):
         builder.add_edge("chatty_tool_call", "chatty_handoff_node")
         builder.add_edge("chatty_handoff_node", END)
 
-        self.workflow = builder.compile()
+        return builder.compile()
 
     def get_delay_keys(self):
         return self.chat_key, self.tool_key
