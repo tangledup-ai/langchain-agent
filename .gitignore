@@ -2,6 +2,7 @@
 .vscode/
 logs/
 *.egg-info/ 
+workspace/
 
 *.pyc
 *.zip
