@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 
 class BaseFilesystemBackend(ABC):
     backend: Any
+    config: Any
 
     @abstractmethod
     def _build_backend(self):
@@ -21,4 +22,7 @@ class BaseFilesystemBackend(ABC):
 
     def get_deepagent_params(self):
         """extra params to pass into the creation of deepagents"""
-        return {}
+        if hasattr(self.config, "rt_skills_dir"):
+            return {"skills" : [self.config.rt_skills_dir]}
+        else:
+            return {}

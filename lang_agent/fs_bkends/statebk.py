@@ -54,17 +54,7 @@ class StateBk(BaseFilesystemBackend):
     def _build_backend(self):
         self.skills_dict = build_skill_fs_dict(self.config.skills_dir)
         self.backend = lambda rt : StateBackend(rt)
-
-    def get_backend(self):
-        return self.backend
     
-    def _get_rt_skill_dir(self)->List[str]:
-        """get runtime skill dir"""
-        return [self.config.rt_skills_dir]
-
     def get_inf_inp(self):
         """get inference input for deepagent"""
         return {"files":self.skills_dict}
-
-    def get_deepagent_params(self):
-        return {"skills" : self._get_rt_skill_dir()}
