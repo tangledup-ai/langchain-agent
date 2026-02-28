@@ -2,6 +2,7 @@ import tyro
 
 from lang_agent.fs_bkends.base import BaseFilesystemBackend
 from lang_agent.fs_bkends.statebk import StateBk, StateBkConfig
+from lang_agent.fs_bkends.localshell import LocalShell, LocalShellConfig
 
 statebk_dict = {
     "statebk": StateBkConfig(),
