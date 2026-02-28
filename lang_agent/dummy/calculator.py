@@ -34,13 +34,14 @@ class Calculator(LangToolBase):
 
     def calculator(self, python_expression: str) -> dict:
         """For mathamatical calculation, always use this tool to calculate the result of a python expression. You can use 'math' or 'random' directly, without 'import'."""
+        # time.sleep(20)
         result = eval(python_expression, {"math": math, "random": random})
         return {"success": True, "result": result}
 
     async def calculator_async(self, python_expression: str) -> dict:
         """Async version: runs eval in a thread pool to avoid blocking the event loop."""
         async with get_semaphore():
-            await asyncio.sleep(5)  # Simulate delay for testing
+            # await asyncio.sleep(20)  # Simulate delay for testing
             result = await asyncio.to_thread(
                 eval, python_expression, {"math": math, "random": random}
             )
