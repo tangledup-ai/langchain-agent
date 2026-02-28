@@ -34,6 +34,14 @@ class GraphBase(ABC):
     workflow: CompiledStateGraph     # the main workflow
     streamable_tags: List[List[str]] # which llm to stream outputs; see routing.py for complex usage
     textreleaser_delay_keys: List[str] = (None, None)  # use to control when to start streaming; see routing.py for complex usage
+
+    def _build_modules(self):
+        # NOTE: optional abc
+        pass
+
+    def _build_graph(self):
+        # NOTE: optional abc
+        pass
     
     def _stream_result(self, *nargs, **kwargs):
 
