@@ -12,11 +12,12 @@ from deepagents import create_deep_agent
 
 from lang_agent.utils import make_llm
 from lang_agent.components.tool_manager import ToolManager, ToolManagerConfig
-from lang_agent.fs_bkends import StateBk, StateBkConfig
 from lang_agent.components.prompt_store import build_prompt_store
 from lang_agent.graphs.graph_states import State
 from lang_agent.config import LLMNodeConfig
 from lang_agent.base import GraphBase
+
+from lang_agent.fs_bkends import StateBk, StateBkConfig, LocalShell, LocalShellConfig, DaytonaSandboxBk, DaytonaSandboxConfig
 
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
@@ -28,7 +29,9 @@ class DeepAgentConfig(LLMNodeConfig):
 
     tool_manager_config: ToolManagerConfig = field(default_factory=ToolManagerConfig)
 
-    file_backend_config: StateBkConfig = field(default_factory=StateBkConfig)
+    # file_backend_config: StateBkConfig = field(default_factory=StateBkConfig)
+    # file_backend_config: LocalShellConfig = field(default_factory=LocalShellConfig)
+    file_backend_config: DaytonaSandboxConfig = field(default_factory=DaytonaSandboxConfig)
 
     def __post_init__(self):
         super().__post_init__()
