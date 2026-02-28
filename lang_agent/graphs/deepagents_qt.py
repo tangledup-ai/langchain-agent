@@ -17,7 +17,8 @@ from lang_agent.graphs.graph_states import State
 from lang_agent.config import LLMNodeConfig
 from lang_agent.base import GraphBase
 
-from lang_agent.fs_bkends import StateBk, StateBkConfig, LocalShell, LocalShellConfig, DaytonaSandboxBk, DaytonaSandboxConfig
+# from lang_agent.fs_bkends import StateBk, StateBkConfig, LocalShell, LocalShellConfig, DaytonaSandboxBk, DaytonaSandboxConfig
+from lang_agent.fs_bkends import BaseFilesystemBackend, StateBkConfig, AnnotatedStateBk
 
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
@@ -31,7 +32,7 @@ class DeepAgentConfig(LLMNodeConfig):
 
     # file_backend_config: StateBkConfig = field(default_factory=StateBkConfig)
     # file_backend_config: LocalShellConfig = field(default_factory=LocalShellConfig)
-    file_backend_config: DaytonaSandboxConfig = field(default_factory=DaytonaSandboxConfig)
+    file_backend_config: AnnotatedStateBk = field(default_factory=StateBkConfig)
 
     def __post_init__(self):
         super().__post_init__()
@@ -50,7 +51,7 @@ class DeepAgent(GraphBase):
                        tags=["main_llm"])
         
         self.tool_man: ToolManager = self.config.tool_manager_config.setup()
-        self.file_backend: StateBk = self.config.file_backend_config.setup()
+        self.file_backend: BaseFilesystemBackend = self.config.file_backend_config.setup()
         bkend_agent_params = self.file_backend.get_deepagent_params()
 
         self.mem = MemorySaver()
