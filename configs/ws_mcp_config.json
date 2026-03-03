@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "remote-http-server": {
-      "type": "https",
-      "url": "https://xiaoliang.quant-speed.com/api/mcp/"
-    }
-  }
-}
