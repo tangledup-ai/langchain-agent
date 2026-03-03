@@ -1,0 +1,32 @@
+{
+  "routes": {
+    "default": {
+      "enabled": true,
+      "config_file": null,
+      "prompt_pipeline_id": "xiaozhan"
+    },
+    "xiaozhan": {
+      "enabled": true,
+      "config_file": "configs/pipelines/xiaozhan.yaml",
+      "prompt_pipeline_id": "xiaozhan"
+    },
+    "blueberry": {
+      "enabled": true,
+      "config_file": "configs/pipelines/blueberry.yaml",
+      "prompt_pipeline_id": "react",
+      "overrides": {
+        "llm_name": "qwen-plus"
+      }
+    }
+  },
+  "api_keys": {
+    "example-key-1": {
+      "default_route_id": "default",
+      "allowed_route_ids": [
+        "default",
+        "xiaozhan"
+      ]
+    }
+  }
+}
+
