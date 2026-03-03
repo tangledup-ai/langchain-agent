@@ -70,7 +70,11 @@ class PipelineConfig(LLMNodeConfig):
     def __post_init__(self):
         if self.config_f is not None:
             logger.info(f"loading config from {self.config_f}")
-            self.config = load_tyro_conf(self.config_f)
+            loaded_conf = load_tyro_conf(self.config_f)# NOTE: We are not merging with self , self)
+            if not hasattr(loaded_conf, "__dict__"):
+                raise TypeError(f"config_f {self.config_f} did not load into a config object")
+            # Apply loaded
+            self.__dict__.update(vars(loaded_conf))
 
         super().__post_init__()
 
