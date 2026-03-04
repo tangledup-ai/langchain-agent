@@ -18,29 +18,18 @@ sys.path.append(osp.dirname(osp.dirname(osp.abspath(__file__))))
 
 from lang_agent.pipeline import PipelineConfig
 from lang_agent.components.server_pipeline_manager import ServerPipelineManager
+from lang_agent.config.constants import PIPELINE_REGISTRY_PATH, API_KEY_HEADER, VALID_API_KEYS
 
 # Load base config for route-level overrides (pipelines are lazy-loaded from registry)
 pipeline_config = tyro.cli(PipelineConfig)
 logger.info(f"starting agent with base pipeline config: \n{pipeline_config}")
-
-# API Key Authentication
-API_KEY_HEADER = APIKeyHeader(name="Authorization", auto_error=True)
-VALID_API_KEYS = set(filter(None, os.environ.get("FAST_AUTH_KEYS", "").split(",")))
-REGISTRY_FILE = os.environ.get(
-    "FAST_PIPELINE_REGISTRY_FILE",
-    osp.join(
-        osp.dirname(osp.dirname(osp.abspath(__file__))),
-        "configs",
-        "pipeline_registry.json",
-    ),
-)
 
 
 PIPELINE_MANAGER = ServerPipelineManager(
     default_pipeline_id=os.environ.get("FAST_DEFAULT_PIPELINE_ID", "default"),
     default_config=pipeline_config,
 )
-PIPELINE_MANAGER.load_registry(REGISTRY_FILE)
+PIPELINE_MANAGER.load_registry(PIPELINE_REGISTRY_PATH)
 
 
 async def verify_api_key(api_key: str = Security(API_KEY_HEADER)):

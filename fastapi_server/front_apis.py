@@ -13,15 +13,16 @@ from pydantic import BaseModel, Field
 sys.path.append(osp.dirname(osp.dirname(osp.abspath(__file__))))
 
 from lang_agent.config.db_config_manager import DBConfigManager
+from lang_agent.config.constants import (
+    _PROJECT_ROOT,
+    MCP_CONFIG_PATH,
+    MCP_CONFIG_DEFAULT_CONTENT,
+    PIPELINE_REGISTRY_PATH,
+)
 from lang_agent.front_api.build_server_utils import (
     GRAPH_BUILD_FNCS,
     update_pipeline_registry,
 )
-
-_PROJECT_ROOT = osp.dirname(osp.dirname(osp.abspath(__file__)))
-_MCP_CONFIG_PATH = osp.join(_PROJECT_ROOT, "configs", "mcp_config.json")
-_MCP_CONFIG_DEFAULT_CONTENT = "{\n}\n"
-_PIPELINE_REGISTRY_PATH = osp.join(_PROJECT_ROOT, "configs", "pipeline_registry.json")
 
 
 class GraphConfigUpsertRequest(BaseModel):
@@ -206,20 +207,20 @@ def _parse_mcp_tool_keys(raw_content: str) -> List[str]:
 
 
 def _read_mcp_config_raw() -> str:
-    if not osp.exists(_MCP_CONFIG_PATH):
-        os.makedirs(osp.dirname(_MCP_CONFIG_PATH), exist_ok=True)
-        with open(_MCP_CONFIG_PATH, "w", encoding="utf-8") as f:
-            f.write(_MCP_CONFIG_DEFAULT_CONTENT)
-    with open(_MCP_CONFIG_PATH, "r", encoding="utf-8") as f:
+    if not osp.exists(MCP_CONFIG_PATH):
+        os.makedirs(osp.dirname(MCP_CONFIG_PATH), exist_ok=True)
+        with open(MCP_CONFIG_PATH, "w", encoding="utf-8") as f:
+            f.write(MCP_CONFIG_DEFAULT_CONTENT)
+    with open(MCP_CONFIG_PATH, "r", encoding="utf-8") as f:
         return f.read()
 
 
 def _read_pipeline_registry() -> Dict[str, Any]:
-    if not osp.exists(_PIPELINE_REGISTRY_PATH):
-        os.makedirs(osp.dirname(_PIPELINE_REGISTRY_PATH), exist_ok=True)
-        with open(_PIPELINE_REGISTRY_PATH, "w", encoding="utf-8") as f:
+    if not osp.exists(PIPELINE_REGISTRY_PATH):
+        os.makedirs(osp.dirname(PIPELINE_REGISTRY_PATH), exist_ok=True)
+        with open(PIPELINE_REGISTRY_PATH, "w", encoding="utf-8") as f:
             json.dump({"pipelines": {}, "api_keys": {}}, f, indent=2)
-    with open(_PIPELINE_REGISTRY_PATH, "r", encoding="utf-8") as f:
+    with open(PIPELINE_REGISTRY_PATH, "r", encoding="utf-8") as f:
         registry = json.load(f)
     pipelines = registry.get("pipelines")
     if not isinstance(pipelines, dict):
@@ -233,8 +234,8 @@ def _read_pipeline_registry() -> Dict[str, Any]:
 
 
 def _write_pipeline_registry(registry: Dict[str, Any]) -> None:
-    os.makedirs(osp.dirname(_PIPELINE_REGISTRY_PATH), exist_ok=True)
-    with open(_PIPELINE_REGISTRY_PATH, "w", encoding="utf-8") as f:
+    os.makedirs(osp.dirname(PIPELINE_REGISTRY_PATH), exist_ok=True)
+    with open(PIPELINE_REGISTRY_PATH, "w", encoding="utf-8") as f:
         json.dump(registry, f, indent=2)
         f.write("\n")
 
@@ -433,7 +434,7 @@ async def get_mcp_tool_config():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     return McpConfigReadResponse(
-        path=_MCP_CONFIG_PATH,
+        path=MCP_CONFIG_PATH,
         raw_content=raw_content,
         tool_keys=tool_keys,
     )
@@ -443,8 +444,8 @@ async def get_mcp_tool_config():
 async def update_mcp_tool_config(body: McpConfigUpdateRequest):
     try:
         tool_keys = _parse_mcp_tool_keys(body.raw_content)
-        os.makedirs(osp.dirname(_MCP_CONFIG_PATH), exist_ok=True)
-        with open(_MCP_CONFIG_PATH, "w", encoding="utf-8") as f:
+        os.makedirs(osp.dirname(MCP_CONFIG_PATH), exist_ok=True)
+        with open(MCP_CONFIG_PATH, "w", encoding="utf-8") as f:
             # Keep user formatting/comments as entered while ensuring trailing newline.
             f.write(body.raw_content.rstrip() + "\n")
     except ValueError as e:
@@ -453,7 +454,7 @@ async def update_mcp_tool_config(body: McpConfigUpdateRequest):
         raise HTTPException(status_code=500, detail=str(e))
     return McpConfigUpdateResponse(
         status="updated",
-        path=_MCP_CONFIG_PATH,
+        path=MCP_CONFIG_PATH,
         tool_keys=tool_keys,
     )
 
@@ -528,7 +529,7 @@ async def create_pipeline(body: PipelineCreateRequest):
             config_file=config_file,
             llm_name=body.llm_name,
             enabled=body.enabled,
-            registry_f=_PIPELINE_REGISTRY_PATH,
+            registry_f=PIPELINE_REGISTRY_PATH,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to register pipeline: {e}")
@@ -543,7 +544,8 @@ async def create_pipeline(body: PipelineCreateRequest):
         normalized = _normalize_pipeline_spec(pipeline_id, pipeline_spec)
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to read pipeline registry after update: {e}"
+            status_code=500,
+            detail=f"Failed to read pipeline registry after update: {e}",
         )
 
     return PipelineCreateResponse(
@@ -554,7 +556,7 @@ async def create_pipeline(body: PipelineCreateRequest):
         llm_name=normalized.llm_name,
         enabled=normalized.enabled,
         reload_required=True,
-        registry_path=_PIPELINE_REGISTRY_PATH,
+        registry_path=PIPELINE_REGISTRY_PATH,
     )
 
 
@@ -608,7 +610,9 @@ async def list_pipeline_api_keys():
 async def upsert_pipeline_api_key_policy(api_key: str, body: ApiKeyPolicyUpsertRequest):
     normalized_key = api_key.strip()
     if not normalized_key:
-        raise HTTPException(status_code=400, detail="api_key path parameter is required")
+        raise HTTPException(
+            status_code=400, detail="api_key path parameter is required"
+        )
     try:
         registry = _read_pipeline_registry()
         pipelines = registry.get("pipelines", {})
@@ -662,7 +666,9 @@ async def upsert_pipeline_api_key_policy(api_key: str, body: ApiKeyPolicyUpsertR
 async def delete_pipeline_api_key_policy(api_key: str):
     normalized_key = api_key.strip()
     if not normalized_key:
-        raise HTTPException(status_code=400, detail="api_key path parameter is required")
+        raise HTTPException(
+            status_code=400, detail="api_key path parameter is required"
+        )
     try:
         registry = _read_pipeline_registry()
         api_keys = registry.get("api_keys", {})

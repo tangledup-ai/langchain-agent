@@ -6,20 +6,26 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-def make_llm(model="qwen-plus",
-             model_provider="openai",
-             api_key=None,
-             base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
-             **kwargs)->BaseChatModel:
+
+def make_llm(
+    model="qwen-plus",
+    model_provider="openai",
+    api_key=None,
+    base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+    **kwargs,
+) -> BaseChatModel:
     api_key = os.environ.get("ALI_API_KEY") if api_key is None else api_key
 
-    llm = init_chat_model(model=model,
-                          model_provider=model_provider,
-                          api_key=api_key,
-                          base_url=base_url,
-                          **kwargs)
-    
+    llm = init_chat_model(
+        model=model,
+        model_provider=model_provider,
+        api_key=api_key,
+        base_url=base_url,
+        **kwargs,
+    )
+
     return llm
+
 
 def tree_leaves(tree):
     """
@@ -28,7 +34,7 @@ def tree_leaves(tree):
     """
     leaves = []
     stack = [tree]
-    
+
     while stack:
         node = stack.pop()
         if isinstance(node, dict):
@@ -39,11 +45,10 @@ def tree_leaves(tree):
             stack.extend(reversed(node))
         else:
             leaves.append(node)
-    
+
     return leaves
 
 
-NON_WORD_PATTERN = re.compile(r'[^\u4e00-\u9fffA-Za-z0-9_\s]')
 def words_only(text):
     """
     Keep only:
@@ -53,8 +58,9 @@ def words_only(text):
     Strip punctuation, emojis, etc.
     Return a list of tokens (Chinese blocks or Latin word blocks).
     """
+    NON_WORD_PATTERN = re.compile(r"[^\u4e00-\u9fffA-Za-z0-9_\s]")
     # 1. Replace all non-allowed characters with a space
-    cleaned = NON_WORD_PATTERN.sub(' ', text)
+    cleaned = NON_WORD_PATTERN.sub(" ", text)
 
     # 2. Normalize multiple spaces and split into tokens
     tokens = cleaned.split()

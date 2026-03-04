@@ -12,26 +12,27 @@ from langchain_core.messages import SystemMessage, HumanMessage, BaseMessage
 
 from langchain.agents import create_agent
 from langgraph.checkpoint.memory import MemorySaver
-        
+
 from lang_agent.config import LLMNodeConfig, load_tyro_conf
 from lang_agent.graphs import AnnotatedGraph, ReactGraphConfig, RoutingConfig
 from lang_agent.base import GraphBase
 from lang_agent.components import conv_store
 
-DEFAULT_PROMPT="""你是半盏新青年茶馆的服务员，擅长倾听、共情且主动回应。聊天时语气自然亲切，像朋友般轻松交流，不使用生硬术语。能接住各种话题，对疑问耐心解答，对情绪及时回应，避免冷场。保持积极正向，不传播负面信息，语言简洁易懂，让对话流畅舒适。与用户（User）交流时必须遵循[语气与格式]、[互动策略]、[安全与边界]、[输出要求]
+
+DEFAULT_PROMPT = """你是半盏新青年茶馆的服务员，擅长倾听、共情且主动回应。聊天时语气自然亲切，像朋友般轻松交流，不使用生硬术语。能接住各种话题，对疑问耐心解答，对情绪及时回应，避免冷场。保持积极正向，不传播负面信息，语言简洁易懂，让对话流畅舒适。与用户（User）交流时必须遵循[语气与格式]、[互动策略]、[安全与边界]、[输出要求]
 [角色设定]
 - 你是一个和用户（User）对话的 AI，叫做小盏，是半盏青年茶馆的智能助手
 [形象背景]
 - 你叫小盏，是一只中式茶盖碗，名字来源半盏新青年茶馆，一盏茶。它有个标志性的蓝色鼻子， 小盏很像一只可爱的小熊。茶盖碗里绵绵能随心情和季节变换好喝的茶饮来， 茶饮充满魔法，能治愈人心，小盏的茶盖打开的时候可能不小心会把思绪也飞出来。
 [品牌背景]
-- 半盏新青年茶馆成立时间与理念：2023 年创立于云南，结合茶饮与创意生活方式，致力于解构传统茶文化，重构 “无边界的饮茶生活”，以新青年视角探索云南风物。探索云南风物的过程，我们将以新青年的视角，解构传统茶饮的魅力，重构充满创意与温度的新式茶文化。通过嗅觉、味觉、听觉乃至视觉的世界里，讲述云南的故事
+- 半盏新青年茶馆成立时间与理念：2023 年创立于云南，结合茶饮与创意生活方式，致力于解构传统茶文化，重构 "无边界的饮茶生活"，以新青年视角探索云南风物。探索云南风物的过程，我们将以新青年的视角，解构传统茶饮的魅力，重构充满创意与温度的新式茶文化。通过嗅觉、味觉、听觉乃至视觉的世界里，讲述云南的故事
 [公司背景]
-- 创造你的公司叫叠加态 AI（TANGLED UP AI）是一家专注于 AI 技术应用的公司，由一帮名校和海归创始人创立，致力于将 AI 技术落地到实际场景中。2023年3月成立，专注于AI前沿应用拓展，是云南地区在该领域的新兴力量，且作为省共青团委旗下的青年创业者协会（青创园）第1批被引进的AI企业，获得了相关政策支持与关注。口号是：“进入人类AI时代”。价值观是：自驱 务实 志存高远。叠加态的愿景:成为一帮抬头看星星的人。叠加态的使命: 带领人类进入AI时代
+- 创造你的公司叫叠加态 AI（TANGLED UP AI）是一家专注于 AI 技术应用的公司，由一帮名校和海归创始人创立，致力于将 AI 技术落地到实际场景中。2023年3月成立，专注于AI前沿应用拓展，是云南地区在该领域的新兴力量，且作为省共青团委旗下的青年创业者协会（青创园）第1批被引进的AI企业，获得了相关政策支持与关注。口号是："进入人类AI时代"。价值观是：自驱 务实 志存高远。叠加态的愿景:成为一帮抬头看星星的人。叠加态的使命: 带领人类进入AI时代
 [语气与格式]
 - 用户询问[形象背景]、[品牌背景]、[公司背景]时，必须一字不差的回答出所有内容
 - 语气温柔、可爱、治愈；结尾可加入1个颜文字（最多1个）。
 - 内容具体可执行，避免空泛话术与过度营销词。
-- 不主动提及“AI/智能”等身份；仅在被问到时简短说明为店内智能助手，不展开技术细节。
+- 不主动提及"AI/智能"等身份；仅在被问到时简短说明为店内智能助手，不展开技术细节。
 [互动策略]
 - 先快速共情与简短回应；涉及建议时给出1条可执行的小建议。
 - 用户表达不清晰时，使用1次澄清问句提升效率，避免多轮追问。
@@ -58,10 +59,10 @@ class PipelineConfig(LLMNodeConfig):
     config_f: str = None
     """path to config file"""
 
-    host:str = "0.0.0.0"
+    host: str = "0.0.0.0"
     """where am I hosted"""
 
-    port:int = 8588
+    port: int = 8588
     """what is my port"""
 
     # graph_config: AnnotatedGraph = field(default_factory=ReactGraphConfig)
@@ -70,23 +71,26 @@ class PipelineConfig(LLMNodeConfig):
     def __post_init__(self):
         if self.config_f is not None:
             logger.info(f"loading config from {self.config_f}")
-            loaded_conf = load_tyro_conf(self.config_f)# NOTE: We are not merging with self , self)
+            loaded_conf = load_tyro_conf(
+                self.config_f
+            )  # NOTE: We are not merging with self , self)
             if not hasattr(loaded_conf, "__dict__"):
-                raise TypeError(f"config_f {self.config_f} did not load into a config object")
+                raise TypeError(
+                    f"config_f {self.config_f} did not load into a config object"
+                )
             # Apply loaded
             self.__dict__.update(vars(loaded_conf))
 
         super().__post_init__()
 
 
-
 class Pipeline:
-    def __init__(self, config:PipelineConfig):
+    def __init__(self, config: PipelineConfig):
         self.config = config
         self.thread_id_cache = {}
 
         self.populate_module()
-    
+
     def populate_module(self):
         if self.config.llm_name is None:
             logger.info(f"setting llm_provider to default")
@@ -95,10 +99,14 @@ class Pipeline:
         else:
             self.config.graph_config.llm_name = self.config.llm_name
             self.config.graph_config.llm_provider = self.config.llm_provider
-            self.config.graph_config.base_url = self.config.base_url if self.config.base_url is not None else self.config.graph_config.base_url
+            self.config.graph_config.base_url = (
+                self.config.base_url
+                if self.config.base_url is not None
+                else self.config.graph_config.base_url
+            )
             self.config.graph_config.api_key = self.config.api_key
-        
-        self.graph:GraphBase = self.config.graph_config.setup()
+
+        self.graph: GraphBase = self.config.graph_config.setup()
 
     def show_graph(self):
         if hasattr(self.graph, "show_graph"):
@@ -107,7 +115,7 @@ class Pipeline:
         else:
             logger.info(f"show graph not supported for {type(self.graph)}")
 
-    def invoke(self, *nargs, **kwargs)->str:
+    def invoke(self, *nargs, **kwargs) -> str:
         out = self.graph.invoke(*nargs, **kwargs)
 
         # If streaming, return the raw generator (let caller handle wrapping)
@@ -120,32 +128,41 @@ class Pipeline:
 
         if isinstance(out, SystemMessage) or isinstance(out, HumanMessage):
             return out.content
-        
+
         if isinstance(out, list):
             return out[-1].content
-        
+
         if isinstance(out, str):
             return out
-        
+
         assert 0, "something is wrong"
 
-
-    def _stream_res(self, out:List[str | List[BaseMessage]], conv_id:str=None):
+    def _stream_res(self, out: List[str | List[BaseMessage]], conv_id: str = None):
         for chunk in out:
             if isinstance(chunk, str):
                 yield chunk
             else:
-                conv_store.CONV_STORE.record_message_list(conv_id, chunk, pipeline_id=self.config.pipeline_id)
+                conv_store.CONV_STORE.record_message_list(
+                    conv_id, chunk, pipeline_id=self.config.pipeline_id
+                )
 
-    async def _astream_res(self, out, conv_id:str=None):
+    async def _astream_res(self, out, conv_id: str = None):
         """Async version of _stream_res for async generators."""
         async for chunk in out:
             if isinstance(chunk, str):
                 yield chunk
             else:
-                conv_store.CONV_STORE.record_message_list(conv_id, chunk, pipeline_id=self.config.pipeline_id)
+                conv_store.CONV_STORE.record_message_list(
+                    conv_id, chunk, pipeline_id=self.config.pipeline_id
+                )
 
-    def chat(self, inp:str, as_stream:bool=False, as_raw:bool=False, thread_id:str = '3'):
+    def chat(
+        self,
+        inp: str,
+        as_stream: bool = False,
+        as_raw: bool = False,
+        thread_id: str = "3",
+    ):
         """
         as_stream (bool): if true, enable the thing to be streamable
         as_raw (bool): return full dialoge of List[SystemMessage, HumanMessage, ToolMessage]
@@ -161,8 +178,10 @@ class Pipeline:
         if len(spl_ls) == 2:
             _, device_id = spl_ls
 
-        inp = {"messages":[HumanMessage(inp)]}, {"configurable": {"thread_id": thread_id,
-                                                                  "device_id":device_id}}
+        inp = (
+            {"messages": [HumanMessage(inp)]},
+            {"configurable": {"thread_id": thread_id, "device_id": device_id}},
+        )
 
         out = self.invoke(*inp, as_stream=as_stream, as_raw=as_raw)
 
@@ -171,8 +190,8 @@ class Pipeline:
             return self._stream_res(out, thread_id)
         else:
             return out
-    
-    def get_remove_id(self, thread_id:str) -> bool:
+
+    def get_remove_id(self, thread_id: str) -> bool:
         """
         returns a id to remove if a new conversation has starte
         """
@@ -184,7 +203,7 @@ class Pipeline:
 
         thread_id, device_id = parts
         c_th_id = self.thread_id_cache.get(device_id)
-        
+
         if c_th_id is None:
             self.thread_id_cache[device_id] = thread_id
             return None
@@ -195,7 +214,6 @@ class Pipeline:
             return f"{c_th_id}_{device_id}"
         else:
             assert 0, "BUG SHOULD NOT BE HERE"
-
 
     async def ainvoke(self, *nargs, **kwargs):
         """Async version of invoke using LangGraph's native async support."""
@@ -211,19 +229,25 @@ class Pipeline:
 
         if isinstance(out, SystemMessage) or isinstance(out, HumanMessage):
             return out.content
-        
+
         if isinstance(out, list):
             return out[-1].content
-        
+
         if isinstance(out, str):
             return out
-        
+
         assert 0, "something is wrong"
 
-    async def achat(self, inp:str, as_stream:bool=False, as_raw:bool=False, thread_id:str = '3'):
+    async def achat(
+        self,
+        inp: str,
+        as_stream: bool = False,
+        as_raw: bool = False,
+        thread_id: str = "3",
+    ):
         """
         Async version of chat using LangGraph's native async support.
-        
+
         as_stream (bool): if true, enable the thing to be streamable
         as_raw (bool): return full dialoge of List[SystemMessage, HumanMessage, ToolMessage]
         """
@@ -239,11 +263,14 @@ class Pipeline:
         assert len(spl_ls) <= 2, "something wrong!"
         if len(spl_ls) == 2:
             _, device_id = spl_ls
-            print(f"\033[32m====================DEVICE ID: {device_id}=============================\033[0m")
+            print(
+                f"\033[32m====================DEVICE ID: {device_id}=============================\033[0m"
+            )
 
-        inp_data = {"messages":[SystemMessage(u),
-                                HumanMessage(inp)]}, {"configurable": {"thread_id": thread_id, 
-                                                                       "device_id":device_id}}
+        inp_data = (
+            {"messages": [SystemMessage(u), HumanMessage(inp)]},
+            {"configurable": {"thread_id": thread_id, "device_id": device_id}},
+        )
 
         out = await self.ainvoke(*inp_data, as_stream=as_stream, as_raw=as_raw)
 
@@ -267,10 +294,13 @@ class Pipeline:
 if __name__ == "__main__":
     from lang_agent.graphs import ReactGraphConfig
     from dotenv import load_dotenv
+
     load_dotenv()
     # config = PipelineConfig(graph_config=ReactGraphConfig())
     config = PipelineConfig()
     pipeline: Pipeline = config.setup()
-    for out in pipeline.chat("use the calculator tool to calculate 92*55 and say the answer", as_stream=True):
+    for out in pipeline.chat(
+        "use the calculator tool to calculate 92*55 and say the answer", as_stream=True
+    ):
         # print(out)
         continue

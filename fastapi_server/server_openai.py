@@ -16,14 +16,11 @@ import tyro
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from lang_agent.pipeline import Pipeline, PipelineConfig
+from lang_agent.config.constants import API_KEY_HEADER, VALID_API_KEYS
 
 # Initialize Pipeline once
 pipeline_config = tyro.cli(PipelineConfig)
 pipeline: Pipeline = pipeline_config.setup()
-
-# API Key Authentication
-API_KEY_HEADER = APIKeyHeader(name="Authorization", auto_error=True)
-VALID_API_KEYS = set(filter(None, os.environ.get("FAST_AUTH_KEYS", "").split(",")))
 
 
 async def verify_api_key(api_key: str = Security(API_KEY_HEADER)):
@@ -46,12 +43,12 @@ class OpenAIChatCompletionRequest(BaseModel):
     temperature: Optional[float] = Field(default=1.0)
     max_tokens: Optional[int] = Field(default=None)
     # Optional overrides for pipeline behavior
-    thread_id: Optional[str] = Field(default='3')
+    thread_id: Optional[str] = Field(default="3")
 
 
 app = FastAPI(
     title="OpenAI-Compatible Chat API",
-    description="OpenAI Chat Completions API compatible endpoint backed by pipeline.chat"
+    description="OpenAI Chat Completions API compatible endpoint backed by pipeline.chat",
 )
 
 app.add_middleware(
@@ -63,7 +60,9 @@ app.add_middleware(
 )
 
 
-def sse_chunks_from_stream(chunk_generator, response_id: str, model: str, created_time: int):
+def sse_chunks_from_stream(
+    chunk_generator, response_id: str, model: str, created_time: int
+):
     """
     Stream chunks from pipeline and format as OpenAI SSE.
     """
@@ -75,14 +74,8 @@ def sse_chunks_from_stream(chunk_generator, response_id: str, model: str, create
                 "created": created_time,
                 "model": model,
                 "choices": [
-                    {
-                        "index": 0,
-                        "delta": {
-                            "content": chunk
-                        },
-                        "finish_reason": None
-                    }
-                ]
+                    {"index": 0, "delta": {"content": chunk}, "finish_reason": None}
+                ],
             }
             yield f"data: {json.dumps(data)}\n\n"
 
@@ -92,19 +85,15 @@ def sse_chunks_from_stream(chunk_generator, response_id: str, model: str, create
         "object": "chat.completion.chunk",
         "created": created_time,
         "model": model,
-        "choices": [
-            {
-                "index": 0,
-                "delta": {},
-                "finish_reason": "stop"
-            }
-        ]
+        "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
     }
     yield f"data: {json.dumps(final)}\n\n"
     yield "data: [DONE]\n\n"
 
 
-async def sse_chunks_from_astream(chunk_generator, response_id: str, model: str, created_time: int):
+async def sse_chunks_from_astream(
+    chunk_generator, response_id: str, model: str, created_time: int
+):
     """
     Async version: Stream chunks from pipeline and format as OpenAI SSE.
     """
@@ -116,14 +105,8 @@ async def sse_chunks_from_astream(chunk_generator, response_id: str, model: str,
                 "created": created_time,
                 "model": model,
                 "choices": [
-                    {
-                        "index": 0,
-                        "delta": {
-                            "content": chunk
-                        },
-                        "finish_reason": None
-                    }
-                ]
+                    {"index": 0, "delta": {"content": chunk}, "finish_reason": None}
+                ],
             }
             yield f"data: {json.dumps(data)}\n\n"
 
@@ -133,13 +116,7 @@ async def sse_chunks_from_astream(chunk_generator, response_id: str, model: str,
         "object": "chat.completion.chunk",
         "created": created_time,
         "model": model,
-        "choices": [
-            {
-                "index": 0,
-                "delta": {},
-                "finish_reason": "stop"
-            }
-        ]
+        "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
     }
     yield f"data: {json.dumps(final)}\n\n"
     yield "data: [DONE]\n\n"
@@ -149,15 +126,15 @@ async def sse_chunks_from_astream(chunk_generator, response_id: str, model: str,
 async def chat_completions(request: Request, _: str = Depends(verify_api_key)):
     try:
         body = await request.json()
-        
+
         messages = body.get("messages")
         if not messages:
             raise HTTPException(status_code=400, detail="messages is required")
-        
+
         stream = body.get("stream", False)
         model = body.get("model", "gpt-3.5-turbo")
         thread_id = body.get("thread_id", 3)
-        
+
         # Extract latest user message
         user_msg = None
         for m in reversed(messages):
@@ -166,27 +143,36 @@ async def chat_completions(request: Request, _: str = Depends(verify_api_key)):
             if role == "user" and content:
                 user_msg = content
                 break
-        
+
         if user_msg is None:
             last = messages[-1]
             user_msg = last.get("content") if isinstance(last, dict) else str(last)
-        
+
         response_id = f"chatcmpl-{os.urandom(12).hex()}"
         created_time = int(time.time())
-        
+
         if stream:
             # Use async streaming from pipeline
-            chunk_generator = await pipeline.achat(inp=user_msg, as_stream=True, thread_id=thread_id)
+            chunk_generator = await pipeline.achat(
+                inp=user_msg, as_stream=True, thread_id=thread_id
+            )
             return StreamingResponse(
-                sse_chunks_from_astream(chunk_generator, response_id=response_id, model=model, created_time=created_time),
+                sse_chunks_from_astream(
+                    chunk_generator,
+                    response_id=response_id,
+                    model=model,
+                    created_time=created_time,
+                ),
                 media_type="text/event-stream",
             )
-        
+
         # Non-streaming: get full result using async
-        result_text = await pipeline.achat(inp=user_msg, as_stream=False, thread_id=thread_id)
+        result_text = await pipeline.achat(
+            inp=user_msg, as_stream=False, thread_id=thread_id
+        )
         if not isinstance(result_text, str):
             result_text = str(result_text)
-        
+
         data = {
             "id": response_id,
             "object": "chat.completion",
@@ -195,21 +181,14 @@ async def chat_completions(request: Request, _: str = Depends(verify_api_key)):
             "choices": [
                 {
                     "index": 0,
-                    "message": {
-                        "role": "assistant",
-                        "content": result_text
-                    },
-                    "finish_reason": "stop"
+                    "message": {"role": "assistant", "content": result_text},
+                    "finish_reason": "stop",
                 }
             ],
-            "usage": {
-                "prompt_tokens": 0,
-                "completion_tokens": 0,
-                "total_tokens": 0
-            }
+            "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
         }
         return JSONResponse(content=data)
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -221,11 +200,7 @@ async def chat_completions(request: Request, _: str = Depends(verify_api_key)):
 async def root():
     return {
         "message": "OpenAI-compatible Chat API",
-        "endpoints": [
-            "/v1/chat/completions",
-            "/v1/memory (DELETE)",
-            "/health"
-        ]
+        "endpoints": ["/v1/chat/completions", "/v1/memory (DELETE)", "/health"],
     }
 
 

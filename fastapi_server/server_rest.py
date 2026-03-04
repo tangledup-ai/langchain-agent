@@ -17,6 +17,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from langgraph.checkpoint.memory import MemorySaver
 from lang_agent.pipeline import Pipeline, PipelineConfig
+from lang_agent.config.constants import API_KEY_HEADER, VALID_API_KEYS
 
 # Initialize Pipeline once (matches existing server_* pattern)
 pipeline_config = tyro.cli(PipelineConfig)
@@ -24,9 +25,6 @@ logger.info(f"starting agent with pipeline: \n{pipeline_config}")
 pipeline: Pipeline = pipeline_config.setup()
 
 # API Key Authentication
-API_KEY_HEADER = APIKeyHeader(name="Authorization", auto_error=False)
-VALID_API_KEYS = set(filter(None, os.environ.get("FAST_AUTH_KEYS", "").split(",")))
-
 
 async def verify_api_key(api_key: Optional[str] = Security(API_KEY_HEADER)):
     """Verify the API key from Authorization header (Bearer token format)."""
@@ -125,7 +123,9 @@ app.add_middleware(
 )
 
 
-async def rest_sse_from_astream(chunk_generator, response_id: str, conversation_id: str):
+async def rest_sse_from_astream(
+    chunk_generator, response_id: str, conversation_id: str
+):
     """
     Stream chunks as SSE events.
 
@@ -185,7 +185,9 @@ async def chat(body: ChatRequest, _: str = Depends(verify_api_key)):
         )
         return StreamingResponse(
             rest_sse_from_astream(
-                chunk_generator, response_id=response_id, conversation_id=conversation_id
+                chunk_generator,
+                response_id=response_id,
+                conversation_id=conversation_id,
             ),
             media_type="text/event-stream",
         )
@@ -195,7 +197,11 @@ async def chat(body: ChatRequest, _: str = Depends(verify_api_key)):
     )
     if not isinstance(result_text, str):
         result_text = str(result_text)
-    return JSONResponse(content=ChatResponse(conversation_id=conversation_id, output=result_text).model_dump())
+    return JSONResponse(
+        content=ChatResponse(
+            conversation_id=conversation_id, output=result_text
+        ).model_dump()
+    )
 
 
 @app.post("/v1/conversations/{conversation_id}/messages")
@@ -215,7 +221,9 @@ async def create_message(
         )
         return StreamingResponse(
             rest_sse_from_astream(
-                chunk_generator, response_id=response_id, conversation_id=conversation_id
+                chunk_generator,
+                response_id=response_id,
+                conversation_id=conversation_id,
             ),
             media_type="text/event-stream",
         )
@@ -257,7 +265,11 @@ async def delete_conversation_memory(
     cleared = _try_clear_single_thread_memory(thread_id)
     if cleared:
         return JSONResponse(
-            content={"status": "success", "scope": "conversation", "conversation_id": conversation_id}
+            content={
+                "status": "success",
+                "scope": "conversation",
+                "conversation_id": conversation_id,
+            }
         )
     return JSONResponse(
         content={
@@ -276,5 +288,3 @@ if __name__ == "__main__":
         port=8589,
         reload=True,
     )
-
-
