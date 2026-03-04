@@ -8,8 +8,8 @@ from lang_agent.config.core_config import load_tyro_conf
 
 def opt_to_config(save_path:str, *nargs):
     os.makedirs(osp.dirname(save_path), exist_ok=True)
-    subprocess.run(["python", "--save-path", save_path, *nargs])
-
+    subprocess.run(["python", "lang_agent/config/ty_build_config.py", 
+                    "--save-path", save_path, *nargs])
 
 def _build_and_load_pipeline_config(pipeline_id: str,
                                     pipeline_config_dir: str,
@@ -44,11 +44,9 @@ def build_route(pipeline_id:str,
                 prompt_set:str,
                 tool_keys:List[str],
                 api_key: str,
-                entry_pnt:str="fastapi_server/server_dashscope.py",
                 llm_name:str="qwen-plus",
                 pipeline_config_dir="configs/pipelines"):
-    cmd = [
-        "python", entry_pnt,
+    cmd_opt = [
         "route",            # ------------
         "--llm-name", llm_name,
         "--api-key", api_key,
@@ -62,22 +60,20 @@ def build_route(pipeline_id:str,
         ]
     
     if tool_keys:
-        cmd.extend(
+        cmd_opt.extend(
             ["--tool-manager-config.client-tool-manager.tool-keys", *tool_keys]
         )
 
-    return _build_and_load_pipeline_config(pipeline_id, pipeline_config_dir, cmd)
+    return _build_and_load_pipeline_config(pipeline_id, pipeline_config_dir, cmd_opt)
 
 
 def build_react(pipeline_id:str,
                 prompt_set:str,
                 tool_keys:List[str],
                 api_key: str,
-                entry_pnt:str="fastapi_server/server_dashscope.py",
                 llm_name:str="qwen-plus",
                 pipeline_config_dir="configs/pipelines"):
-    cmd = [
-        "python", entry_pnt,
+    cmd_opt = [
         "react",            # ------------
         "--llm-name", llm_name,
         "--api-key", api_key,
@@ -85,11 +81,11 @@ def build_react(pipeline_id:str,
         "--prompt-set-id", prompt_set,
         ]
     if tool_keys:
-        cmd.extend(
+        cmd_opt.extend(
             ["--tool-manager-config.client-tool-manager.tool-keys", *tool_keys]
         )
 
-    return _build_and_load_pipeline_config(pipeline_id, pipeline_config_dir, cmd)
+    return _build_and_load_pipeline_config(pipeline_id, pipeline_config_dir, cmd_opt)
 
 
 # {pipeline_id: build_function}
