@@ -75,6 +75,39 @@ DO UPDATE SET
     content = EXCLUDED.content,
     updated_at = now();
 
+-- Seed: default prompt set for xiaozhan agent (RoutingGraph)
+INSERT INTO prompt_sets (pipeline_id, graph_id, name, description, is_active, list)
+SELECT
+    'xiaozhan',
+    'routing',
+    'default',
+    'Default prompt set for xiaozhan (RoutingGraph)',
+    true,
+    ''
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM prompt_sets
+    WHERE pipeline_id = 'xiaozhan'
+      AND name = 'default'
+);
+
+INSERT INTO prompt_templates (prompt_set_id, prompt_key, content)
+SELECT ps.id, t.prompt_key, t.content
+FROM prompt_sets ps
+JOIN (
+    VALUES
+        ('route_prompt', '决定用工具或者聊天'),
+        ('chat_prompt', '正常聊天时说什么'),
+        ('tool_prompt', '如何用工具')
+) AS t(prompt_key, content)
+    ON true
+WHERE ps.pipeline_id = 'xiaozhan'
+  AND ps.name = 'default'
+ON CONFLICT (prompt_set_id, prompt_key)
+DO UPDATE SET
+    content = EXCLUDED.content,
+    updated_at = now();
+
 -- Seed: initial prompt set for lang_agent/graphs/react.py
 -- ReactGraph uses prompt key "sys_prompt" (see default_key in build_prompt_store).
 INSERT INTO prompt_sets (pipeline_id, graph_id, name, description, is_active, list)
@@ -96,6 +129,32 @@ INSERT INTO prompt_templates (prompt_set_id, prompt_key, content)
 SELECT ps.id, 'sys_prompt', '如何用工具'
 FROM prompt_sets ps
 WHERE ps.pipeline_id = 'react'
+  AND ps.name = 'default'
+ON CONFLICT (prompt_set_id, prompt_key)
+DO UPDATE SET
+    content = EXCLUDED.content,
+    updated_at = now();
+
+-- Seed: default prompt set for blueberry agent (ReactGraph)
+INSERT INTO prompt_sets (pipeline_id, graph_id, name, description, is_active, list)
+SELECT
+    'blueberry',
+    'react',
+    'default',
+    'Default prompt set for blueberry (ReactGraph)',
+    true,
+    ''
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM prompt_sets
+    WHERE pipeline_id = 'blueberry'
+      AND name = 'default'
+);
+
+INSERT INTO prompt_templates (prompt_set_id, prompt_key, content)
+SELECT ps.id, 'sys_prompt', '如何用工具'
+FROM prompt_sets ps
+WHERE ps.pipeline_id = 'blueberry'
   AND ps.name = 'default'
 ON CONFLICT (prompt_set_id, prompt_key)
 DO UPDATE SET
