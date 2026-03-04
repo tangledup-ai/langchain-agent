@@ -52,37 +52,41 @@ export type PipelineCreateRequest = {
   pipeline_id: string;
   prompt_set_id: string;
   tool_keys: string[];
-  port: number;
-  api_key: string;
-  entry_point: string;
+  api_key?: string;
   llm_name: string;
+  enabled?: boolean;
 };
 
-export type PipelineRunInfo = {
-  run_id: string;
-  pid: number;
+export type PipelineSpec = {
+  pipeline_id: string;
   graph_id: string;
+  enabled: boolean;
+  config_file: string;
+  llm_name: string;
+  overrides: Record<string, unknown>;
+};
+
+export type PipelineCreateResponse = {
   pipeline_id: string;
   prompt_set_id: string;
-  url: string;
-  port: number;
-  auth_type: string;
-  auth_header_name: string;
-  auth_key_masked: string;
-};
-
-export type PipelineCreateResponse = PipelineRunInfo & {
-  auth_key_once: string;
+  graph_id: string;
+  config_file: string;
+  llm_name: string;
+  enabled: boolean;
+  reload_required: boolean;
+  registry_path: string;
 };
 
 export type PipelineListResponse = {
-  items: PipelineRunInfo[];
+  items: PipelineSpec[];
   count: number;
 };
 
 export type PipelineStopResponse = {
-  run_id: string;
+  pipeline_id: string;
   status: string;
+  enabled: boolean;
+  reload_required: boolean;
 };
 
 export type McpToolConfigResponse = {

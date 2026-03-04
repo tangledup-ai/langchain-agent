@@ -17,7 +17,7 @@ import { chooseActiveConfigItem, chooseDisplayItemsByPipeline } from "./activeCo
 import type {
   GraphConfigListItem,
   GraphConfigReadResponse,
-  PipelineRunInfo,
+  PipelineSpec,
 } from "./types";
 
 type EditableAgent = {
@@ -28,24 +28,13 @@ type EditableAgent = {
   promptSetId?: string;
   toolKeys: string[];
   prompts: Record<string, string>;
-  port: number;
   apiKey: string;
   llmName: string;
 };
 
-type LaunchCredentials = {
-  url: string;
-  authType: string;
-  authHeaderName: string;
-  authKey: string;
-  authKeyMasked: string;
-};
-
 type ActiveTab = "agents" | "mcp";
 
-const DEFAULT_ENTRY_POINT = "fastapi_server/server_dashscope.py";
 const DEFAULT_LLM_NAME = "qwen-plus";
-const DEFAULT_PORT = 8100;
 const DEFAULT_API_KEY = "";
 const GRAPH_ARCH_IMAGE_MODULES = import.meta.glob(
   "../assets/images/graph_arch/*.{png,jpg,jpeg,webp,gif}",
@@ -117,7 +106,6 @@ function toEditable(
     promptSetId: config.prompt_set_id,
     toolKeys: config.tool_keys || [],
     prompts: config.prompt_dict || {},
-    port: DEFAULT_PORT,
     apiKey: config.api_key || DEFAULT_API_KEY,
     llmName: DEFAULT_LLM_NAME,
   };
@@ -127,12 +115,11 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("agents");
   const [graphs, setGraphs] = useState<string[]>([]);
   const [configItems, setConfigItems] = useState<GraphConfigListItem[]>([]);
-  const [running, setRunning] = useState<PipelineRunInfo[]>([]);
+  const [running, setRunning] = useState<PipelineSpec[]>([]);
   const [draftAgents, setDraftAgents] = useState<EditableAgent[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editor, setEditor] = useState<EditableAgent | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>("");
-  const [launchCredentials, setLaunchCredentials] = useState<LaunchCredentials | null>(null);
   const [mcpConfigPath, setMcpConfigPath] = useState<string>("");
   const [mcpConfigRaw, setMcpConfigRaw] = useState<string>("");
   const [mcpToolKeys, setMcpToolKeys] = useState<string[]>([]);
@@ -248,7 +235,6 @@ export default function App() {
       }
       const editable = toEditable(detail, false);
       editable.id = id;
-      editable.port = editor?.pipelineId === editable.pipelineId ? editor.port : DEFAULT_PORT;
       editable.llmName = editor?.pipelineId === editable.pipelineId ? editor.llmName : DEFAULT_LLM_NAME;
       // apiKey is loaded from backend (persisted in DB) — don't override with default
       setEditor(editable);
@@ -432,7 +418,6 @@ export default function App() {
       const detail = await getPipelineDefaultConfig(upsertResp.pipeline_id);
       const saved = toEditable(detail, false);
       saved.id = makeAgentKey(upsertResp.pipeline_id);
-      saved.port = editor.port;
       // apiKey is loaded from backend (persisted in DB) — don't override
       saved.llmName = editor.llmName;
       setEditor(saved);
@@ -485,10 +470,6 @@ export default function App() {
       setStatusMessage("pipeline_id is required before run.");
       return;
     }
-    if (!Number.isInteger(editor.port) || editor.port <= 0) {
-      setStatusMessage("port must be a positive integer.");
-      return;
-    }
     if (!editor.apiKey.trim()) {
       setStatusMessage("api_key is required before run.");
       return;
@@ -496,27 +477,20 @@ export default function App() {
 
     setBusy(true);
     setStatusMessage("Starting agent...");
-    setLaunchCredentials(null);
     try {
       const resp = await createPipeline({
         graph_id: editor.graphId,
         pipeline_id: editor.pipelineId.trim(),
         prompt_set_id: editor.promptSetId,
         tool_keys: editor.toolKeys,
-        port: editor.port,
         api_key: editor.apiKey.trim(),
-        entry_point: DEFAULT_ENTRY_POINT,
         llm_name: editor.llmName,
+        enabled: true,
       });
       await refreshRunning();
-      setStatusMessage(`Agent started. URL: ${resp.url}`);
-      setLaunchCredentials({
-        url: resp.url,
-        authType: resp.auth_type,
-        authHeaderName: resp.auth_header_name,
-        authKey: resp.auth_key_once,
-        authKeyMasked: resp.auth_key_masked,
-      });
+      setStatusMessage(
+        `Agent registered. config_file=${resp.config_file}, reload_required=${String(resp.reload_required)}`
+      );
     } catch (error) {
       setStatusMessage((error as Error).message);
     } finally {
@@ -537,7 +511,7 @@ export default function App() {
     setBusy(true);
     setStatusMessage("Stopping agent...");
     try {
-      await stopPipeline(target.run_id);
+      await stopPipeline(target.pipeline_id);
       await refreshRunning();
       setStatusMessage("Agent stopped.");
     } catch (error) {
@@ -562,23 +536,6 @@ export default function App() {
     })),
   ];
   const graphArchImage = editor ? getGraphArchImage(editor.graphId) : null;
-  const authHeaderValue = launchCredentials
-    ? `${launchCredentials.authHeaderName}: Bearer ${launchCredentials.authKey}`
-    : "";
-  const canUseClipboard = typeof navigator !== "undefined" && Boolean(navigator.clipboard);
-
-  async function copyText(text: string, label: string): Promise<void> {
-    if (!canUseClipboard) {
-      setStatusMessage(`Clipboard is not available. Please copy ${label} manually.`);
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(text);
-      setStatusMessage(`${label} copied.`);
-    } catch {
-      setStatusMessage(`Failed to copy ${label}.`);
-    }
-  }
 
   const showSidebar = activeTab === "agents";
 
@@ -660,48 +617,6 @@ export default function App() {
               </button>
             </div>
 
-            {launchCredentials ? (
-              <div className="launch-credentials">
-                <h3>Access Credentials (shown once)</h3>
-                <div>
-                  <strong>URL:</strong>{" "}
-                  <a href={launchCredentials.url} target="_blank" rel="noreferrer">
-                    {launchCredentials.url}
-                  </a>
-                  <button
-                    type="button"
-                    onClick={() => copyText(launchCredentials.url, "URL")}
-                    disabled={busy}
-                  >
-                    Copy URL
-                  </button>
-                </div>
-                <div>
-                  <strong>{launchCredentials.authType} key:</strong> {launchCredentials.authKey}
-                  <button
-                    type="button"
-                    onClick={() => copyText(launchCredentials.authKey, "auth key")}
-                    disabled={busy}
-                  >
-                    Copy Key
-                  </button>
-                </div>
-                <div>
-                  <strong>Header:</strong> <code>{authHeaderValue}</code>
-                  <button
-                    type="button"
-                    onClick={() => copyText(authHeaderValue, "auth header")}
-                    disabled={busy}
-                  >
-                    Copy Header
-                  </button>
-                </div>
-                <p className="empty">
-                  Stored after launch as masked value: {launchCredentials.authKeyMasked}
-                </p>
-              </div>
-            ) : null}
-
             {!editor ? (
               <div className="empty-panel">
                 <p>Select an agent from the left or create a new one.</p>
@@ -757,17 +672,6 @@ export default function App() {
                 </label>
 
                 <label>
-                  port
-                  <input
-                    type="number"
-                    min={1}
-                    value={editor.port}
-                    onChange={(e) => updateEditor("port", Number(e.target.value))}
-                    disabled={busy}
-                  />
-                </label>
-
-                <label>
                   api_key
                   <input
                     type="password"
@@ -815,21 +719,21 @@ export default function App() {
                     <p className="empty">No active runs for this agent.</p>
                   ) : (
                     selectedRuns.map((run) => (
-                      <div key={run.run_id} className="run-card">
+                      <div key={run.pipeline_id} className="run-card">
                         <div>
-                          <strong>run_id:</strong> {run.run_id}
+                          <strong>pipeline_id:</strong> {run.pipeline_id}
                         </div>
                         <div>
-                          <strong>pid:</strong> {run.pid}
+                          <strong>graph_id:</strong> {run.graph_id}
                         </div>
                         <div>
-                          <strong>url:</strong>{" "}
-                          <a href={run.url} target="_blank" rel="noreferrer">
-                            {run.url}
-                          </a>
+                          <strong>model:</strong> {run.llm_name}
                         </div>
                         <div>
-                          <strong>auth:</strong> {run.auth_header_name} Bearer {run.auth_key_masked}
+                          <strong>enabled:</strong> {String(run.enabled)}
+                        </div>
+                        <div>
+                          <strong>config_file:</strong> {run.config_file}
                         </div>
                       </div>
                     ))

@@ -120,8 +120,8 @@ export function listPipelines(): Promise<PipelineListResponse> {
   return fetchJson("/v1/pipelines");
 }
 
-export function stopPipeline(runId: string): Promise<PipelineStopResponse> {
-  return fetchJson(`/v1/pipelines/${runId}`, {
+export function stopPipeline(pipelineId: string): Promise<PipelineStopResponse> {
+  return fetchJson(`/v1/pipelines/${pipelineId}`, {
     method: "DELETE",
   });
 }
