@@ -100,19 +100,19 @@ def test_pipeline_selected_via_pipeline_id_body(dashscope_server):
         )
     body = {
         "input": {
-            "prompt": "hello from xiaozhan",
+            "prompt": "你是谁?",
             "session_id": "sess-1",
         },
-        "pipeline_id": "xiaozhan",
+        "pipeline_id": "blueberry",
         "stream": False,
     }
 
     resp = _post_app_response(
-        base_url, pipeline_id="xiaozhan", body=body, api_key=api_key
+        base_url, pipeline_id="blueberry", body=body, api_key=api_key
     )
     assert resp.status_code == HTTPStatus.OK, resp.text
     data = resp.json()
-    assert data.get("pipeline_id") == "xiaozhan"
+    assert data.get("pipeline_id") == "blueberry"
     assert "text" in data.get("output", {})
 
 
