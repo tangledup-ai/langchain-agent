@@ -1,31 +1,23 @@
 {
-  "routes": {
-    "default": {
-      "enabled": true,
-      "config_file": null,
-      "prompt_pipeline_id": "xiaozhan"
-    },
+  "pipelines": {
     "xiaozhan": {
       "enabled": true,
-      "config_file": "configs/pipelines/xiaozhan.yaml",
-      "prompt_pipeline_id": "xiaozhan"
+      "config_file": "configs/pipelines/xiaozhan.yaml"
     },
     "blueberry": {
       "enabled": true,
-      "config_file": "configs/pipelines/blueberry.yaml",
-      "prompt_pipeline_id": "blueberry",
-      "overrides": {
-        "llm_name": "qwen-plus"
-      }
+      "config_file": "configs/pipelines/blueberry.yaml"
     }
   },
   "api_keys": {
-    "example-key-1": {
-      "default_route_id": "default",
-      "allowed_route_ids": [
-        "default",
-        "xiaozhan"
-      ]
+    "sk-6c7091e6a95f404efb2ec30e8f51b897626d670375cdf822d78262f24ab12367": {
+      "example-key-1": {
+        "default_route_id": "default",
+        "allowed_route_ids": [
+          "xiaozhan",
+          "blueberry"
+        ]
+      }
     }
   }
 }
