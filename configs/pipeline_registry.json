@@ -13,7 +13,7 @@
     "blueberry": {
       "enabled": true,
       "config_file": "configs/pipelines/blueberry.yaml",
-      "prompt_pipeline_id": "react",
+      "prompt_pipeline_id": "blueberry",
       "overrides": {
         "llm_name": "qwen-plus"
       }
