@@ -4,6 +4,7 @@ import {
   deleteGraphConfig,
   getGraphConfig,
   getGraphDefaultConfig,
+  getPipelineDefaultConfig,
   getMcpToolConfig,
   listAvailableGraphs,
   listGraphConfigs,
@@ -12,6 +13,7 @@ import {
   updateMcpToolConfig,
   upsertGraphConfig,
 } from "./api/frontApis";
+import { chooseActiveConfigItem, chooseDisplayItemsByPipeline } from "./activeConfigSelection";
 import type {
   GraphConfigListItem,
   GraphConfigReadResponse,
@@ -60,8 +62,8 @@ const FALLBACK_PROMPTS_BY_GRAPH: Record<string, Record<string, string>> = {
   },
 };
 
-function makeAgentKey(pipelineId: string, promptSetId: string): string {
-  return `${pipelineId}::${promptSetId}`;
+function makeAgentKey(pipelineId: string): string {
+  return `pipeline::${pipelineId}`;
 }
 
 function parseToolCsv(value: string): string[] {
@@ -108,7 +110,7 @@ function toEditable(
   return {
     id: draft
       ? `draft-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
-      : makeAgentKey(config.pipeline_id, config.prompt_set_id),
+      : makeAgentKey(config.pipeline_id),
     isDraft: draft,
     graphId: config.graph_id || config.pipeline_id,
     pipelineId: config.pipeline_id,
@@ -137,7 +139,7 @@ export default function App() {
   const [busy, setBusy] = useState(false);
 
   const configKeySet = useMemo(
-    () => new Set(configItems.map((x) => makeAgentKey(x.pipeline_id, x.prompt_set_id))),
+    () => new Set(configItems.map((x) => makeAgentKey(x.pipeline_id))),
     [configItems]
   );
   const visibleConfigItems = useMemo(
@@ -155,6 +157,10 @@ export default function App() {
       }),
     [configItems]
   );
+  const displayConfigItems = useMemo(
+    () => chooseDisplayItemsByPipeline(visibleConfigItems),
+    [visibleConfigItems]
+  );
 
   const selectedRuns = useMemo(() => {
     if (!editor?.pipelineId) {
@@ -164,10 +170,7 @@ export default function App() {
       if (run.pipeline_id !== editor.pipelineId) {
         return false;
       }
-      if (!editor.promptSetId) {
-        return true;
-      }
-      return run.prompt_set_id === editor.promptSetId;
+      return true;
     });
   }, [editor, running]);
 
@@ -227,12 +230,22 @@ export default function App() {
   }, [activeTab]);
 
   async function selectExisting(item: GraphConfigListItem): Promise<void> {
-    const id = makeAgentKey(item.pipeline_id, item.prompt_set_id);
+    const id = makeAgentKey(item.pipeline_id);
     setSelectedId(id);
     setBusy(true);
     setStatusMessage("Loading agent details...");
     try {
-      const detail = await getGraphConfig(item.pipeline_id, item.prompt_set_id);
+      let detail: GraphConfigReadResponse;
+      try {
+        detail = await getPipelineDefaultConfig(item.pipeline_id);
+      } catch {
+        const latest = await listGraphConfigs({ pipeline_id: item.pipeline_id });
+        const selected = chooseActiveConfigItem(latest.items || [], item.pipeline_id);
+        if (!selected) {
+          throw new Error(`No prompt set found for pipeline '${item.pipeline_id}'`);
+        }
+        detail = await getGraphConfig(item.pipeline_id, selected.prompt_set_id);
+      }
       const editable = toEditable(detail, false);
       editable.id = id;
       editable.port = editor?.pipelineId === editable.pipelineId ? editor.port : DEFAULT_PORT;
@@ -395,19 +408,30 @@ export default function App() {
     setBusy(true);
     setStatusMessage("Saving agent config...");
     try {
+      let targetPromptSetId = editor.promptSetId;
+      if (!targetPromptSetId) {
+        try {
+          const active = await getPipelineDefaultConfig(editor.pipelineId.trim());
+          targetPromptSetId = active.prompt_set_id;
+        } catch {
+          throw new Error(
+            "No active prompt set for this pipeline. Create/activate one via backend first."
+          );
+        }
+      }
       const upsertResp = await upsertGraphConfig({
         graph_id: editor.graphId,
         pipeline_id: editor.pipelineId.trim(),
-        prompt_set_id: editor.promptSetId,
+        prompt_set_id: targetPromptSetId,
         tool_keys: editor.toolKeys,
         prompt_dict: editor.prompts,
         api_key: editor.apiKey.trim(),
       });
 
       await refreshConfigs();
-      const detail = await getGraphConfig(upsertResp.pipeline_id, upsertResp.prompt_set_id);
+      const detail = await getPipelineDefaultConfig(upsertResp.pipeline_id);
       const saved = toEditable(detail, false);
-      saved.id = makeAgentKey(upsertResp.pipeline_id, upsertResp.prompt_set_id);
+      saved.id = makeAgentKey(upsertResp.pipeline_id);
       saved.port = editor.port;
       // apiKey is loaded from backend (persisted in DB) — don't override
       saved.llmName = editor.llmName;
@@ -530,8 +554,8 @@ export default function App() {
       graphId: d.graphId,
       isDraft: true,
     })),
-    ...visibleConfigItems.map((item) => ({
-      id: makeAgentKey(item.pipeline_id, item.prompt_set_id),
+    ...displayConfigItems.map((item) => ({
+      id: makeAgentKey(item.pipeline_id),
       label: item.pipeline_id,
       graphId: item.graph_id || item.pipeline_id,
       isDraft: false,
@@ -580,9 +604,7 @@ export default function App() {
                     setEditor(selectedDraft);
                     return;
                   }
-                  const item = visibleConfigItems.find(
-                    (x) => makeAgentKey(x.pipeline_id, x.prompt_set_id) === row.id
-                  );
+                  const item = displayConfigItems.find((x) => makeAgentKey(x.pipeline_id) === row.id);
                   if (item) {
                     selectExisting(item);
                   }
@@ -722,11 +744,6 @@ export default function App() {
                     placeholder="example: routing-agent-1"
                     disabled={busy}
                   />
-                </label>
-
-                <label>
-                  prompt_set_id
-                  <input value={editor.promptSetId || "(assigned on save)"} readOnly />
                 </label>
 
                 <label>

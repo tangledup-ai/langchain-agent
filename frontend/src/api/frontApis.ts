@@ -70,6 +70,12 @@ export function getGraphDefaultConfig(
   return fetchJson(`/v1/graphs/${graphId}/default-config`);
 }
 
+export function getPipelineDefaultConfig(
+  pipelineId: string
+): Promise<GraphConfigReadResponse> {
+  return fetchJson(`/v1/graph-configs/default/${pipelineId}`);
+}
+
 export function upsertGraphConfig(
   payload: GraphConfigUpsertRequest
 ): Promise<GraphConfigUpsertResponse> {
