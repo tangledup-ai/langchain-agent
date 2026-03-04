@@ -11,12 +11,12 @@ from lang_agent.config.core_config import load_tyro_conf
 
 
 class ServerPipelineManager:
-    """Lazily load and cache multiple pipelines keyed by a client-facing route id."""
+    """Lazily load and cache multiple pipelines keyed by a client-facing pipeline id."""
 
-    def __init__(self, default_route_id: str, default_config: PipelineConfig):
-        self.default_route_id = default_route_id
+    def __init__(self, default_pipeline_id: str, default_config: PipelineConfig):
+        self.default_pipeline_id = default_pipeline_id
         self.default_config = default_config
-        self._route_specs: Dict[str, Dict[str, Any]] = {}
+        self._pipeline_specs: Dict[str, Dict[str, Any]] = {}
         self._api_key_policy: Dict[str, Dict[str, Any]] = {}
         self._pipelines: Dict[str, Pipeline] = {}
         self._pipeline_llm: Dict[str, str] = {}
@@ -36,34 +36,33 @@ class ServerPipelineManager:
             raise ValueError(f"pipeline registry file not found: {abs_path}")
 
         with open(abs_path, "r", encoding="utf-8") as f:
-            registry:dict = json.load(f)
+            registry: dict = json.load(f)
 
-        routes = registry.get("routes")
-        if routes is None:
-            # Backward compatibility with initial schema.
-            routes = registry.get("pipelines", {})
-        if not isinstance(routes, dict):
-            raise ValueError("`routes` in pipeline registry must be an object.")
+        pipelines = registry.get("pipelines")
+        if pipelines is None:
+            raise ValueError("`pipelines` in pipeline registry must be an object.")
 
-        self._route_specs = {}
-        for route_id, spec in routes.items():
+        self._pipeline_specs = {}
+        for pipeline_id, spec in pipelines.items():
             if not isinstance(spec, dict):
-                raise ValueError(f"route spec for `{route_id}` must be an object.")
-            self._route_specs[route_id] = {
+                raise ValueError(
+                    f"pipeline spec for `{pipeline_id}` must be an object."
+                )
+            self._pipeline_specs[pipeline_id] = {
                 "enabled": bool(spec.get("enabled", True)),
                 "config_file": spec.get("config_file"),
                 "overrides": spec.get("overrides", {}),
-                # Explicitly separates routing id from prompt config pipeline_id.
-                "prompt_pipeline_id": spec.get("prompt_pipeline_id"),
             }
-        if not self._route_specs:
-            raise ValueError("pipeline registry must define at least one route.")
+        if not self._pipeline_specs:
+            raise ValueError("pipeline registry must define at least one pipeline.")
 
         api_key_policy = registry.get("api_keys", {})
         if api_key_policy and not isinstance(api_key_policy, dict):
             raise ValueError("`api_keys` in pipeline registry must be an object.")
         self._api_key_policy = api_key_policy
-        logger.info(f"loaded pipeline registry: {abs_path}, routes={list(self._route_specs.keys())}")
+        logger.info(
+            f"loaded pipeline registry: {abs_path}, pipelines={list(self._pipeline_specs.keys())}"
+        )
 
     def _resolve_config_path(self, config_file: str) -> str:
         path = FsPath(config_file)
@@ -74,48 +73,47 @@ class ServerPipelineManager:
         root = FsPath(__file__).resolve().parents[2]
         return str((root / path).resolve())
 
-    def _build_pipeline(self, route_id: str) -> Tuple[Pipeline, str]:
-        spec = self._route_specs.get(route_id)
+    def _build_pipeline(self, pipeline_id: str) -> Tuple[Pipeline, str]:
+        spec = self._pipeline_specs.get(pipeline_id)
         if spec is None:
-            raise HTTPException(status_code=404, detail=f"Unknown route_id: {route_id}")
+            raise HTTPException(
+                status_code=404, detail=f"Unknown pipeline_id: {pipeline_id}"
+            )
         if not spec.get("enabled", True):
-            raise HTTPException(status_code=403, detail=f"Route disabled: {route_id}")
+            raise HTTPException(
+                status_code=403, detail=f"Pipeline disabled: {pipeline_id}"
+            )
 
         config_file = spec.get("config_file")
         overrides = spec.get("overrides", {})
         if config_file:
             loaded_cfg = load_tyro_conf(self._resolve_config_path(config_file))
-            # Some legacy yaml configs deserialize to plain dicts instead of
-            # InstantiateConfig dataclasses. Fall back to default config in that case.
             if hasattr(loaded_cfg, "setup"):
                 cfg = loaded_cfg
             else:
                 logger.warning(
-                    f"config_file for route `{route_id}` did not deserialize to config object; "
-                    "falling back to default config and applying route-level overrides."
+                    f"config_file for pipeline `{pipeline_id}` did not deserialize to config object; "
+                    "falling back to default config and applying pipeline-level overrides."
                 )
                 cfg = copy.deepcopy(self.default_config)
         else:
-            # Build from default config + shallow overrides so new pipelines can be
-            # added via registry without additional yaml files.
             cfg = copy.deepcopy(self.default_config)
         if not isinstance(overrides, dict):
-            raise ValueError(f"route `overrides` for `{route_id}` must be an object.")
+            raise ValueError(
+                f"pipeline `overrides` for `{pipeline_id}` must be an object."
+            )
         for key, value in overrides.items():
             if not hasattr(cfg, key):
-                raise ValueError(f"unknown override field `{key}` for route `{route_id}`")
+                raise ValueError(
+                    f"unknown override field `{key}` for pipeline `{pipeline_id}`"
+                )
             setattr(cfg, key, value)
-
-        prompt_pipeline_id = spec.get("prompt_pipeline_id")
-        if prompt_pipeline_id and (not isinstance(overrides, dict) or "pipeline_id" not in overrides):
-            if hasattr(cfg, "pipeline_id"):
-                cfg.pipeline_id = prompt_pipeline_id
 
         p = cfg.setup()
         llm_name = getattr(cfg, "llm_name", "unknown-model")
         return p, llm_name
 
-    def _authorize(self, api_key: str, route_id: str) -> None:
+    def _authorize(self, api_key: str, pipeline_id: str) -> None:
         if not self._api_key_policy:
             return
 
@@ -123,47 +121,46 @@ class ServerPipelineManager:
         if policy is None:
             return
 
-        allowed = policy.get("allowed_route_ids")
-        if allowed is None:
-            # Backward compatibility.
-            allowed = policy.get("allowed_pipeline_ids")
-        if allowed and route_id not in allowed:
-            raise HTTPException(status_code=403, detail=f"route_id `{route_id}` is not allowed for this API key")
+        allowed = policy.get("allowed_pipeline_ids")
+        if allowed and pipeline_id not in allowed:
+            raise HTTPException(
+                status_code=403,
+                detail=f"pipeline_id `{pipeline_id}` is not allowed for this API key",
+            )
 
-    def resolve_route_id(self, body: Dict[str, Any], app_id: Optional[str], api_key: str) -> str:
+    def resolve_pipeline_id(
+        self, body: Dict[str, Any], app_id: Optional[str], api_key: str
+    ) -> str:
         body_input = body.get("input", {})
-        route_id = (
-            body.get("route_id")
-            or (body_input.get("route_id") if isinstance(body_input, dict) else None)
-            or body.get("pipeline_key")
-            or (body_input.get("pipeline_key") if isinstance(body_input, dict) else None)
-            # Backward compatibility: pipeline_id still accepted as route selector.
-            or body.get("pipeline_id")
+        pipeline_id = (
+            body.get("pipeline_id")
             or (body_input.get("pipeline_id") if isinstance(body_input, dict) else None)
             or app_id
         )
 
-        if not route_id:
-            key_policy = self._api_key_policy.get(api_key, {}) if self._api_key_policy else {}
-            route_id = key_policy.get("default_route_id")
-            if not route_id:
-                # Backward compatibility.
-                route_id = key_policy.get("default_pipeline_id", self.default_route_id)
+        if not pipeline_id:
+            key_policy = (
+                self._api_key_policy.get(api_key, {}) if self._api_key_policy else {}
+            )
+            pipeline_id = key_policy.get(
+                "default_pipeline_id", self.default_pipeline_id
+            )
 
-        if route_id not in self._route_specs:
-            raise HTTPException(status_code=404, detail=f"Unknown route_id: {route_id}")
+        if pipeline_id not in self._pipeline_specs:
+            raise HTTPException(
+                status_code=404, detail=f"Unknown pipeline_id: {pipeline_id}"
+            )
 
-        self._authorize(api_key, route_id)
-        return route_id
+        self._authorize(api_key, pipeline_id)
+        return pipeline_id
 
-    def get_pipeline(self, route_id: str) -> Tuple[Pipeline, str]:
-        cached = self._pipelines.get(route_id)
+    def get_pipeline(self, pipeline_id: str) -> Tuple[Pipeline, str]:
+        cached = self._pipelines.get(pipeline_id)
         if cached is not None:
-            return cached, self._pipeline_llm[route_id]
+            return cached, self._pipeline_llm[pipeline_id]
 
-        pipeline_obj, llm_name = self._build_pipeline(route_id)
-        self._pipelines[route_id] = pipeline_obj
-        self._pipeline_llm[route_id] = llm_name
-        logger.info(f"lazy-loaded route_id={route_id} model={llm_name}")
+        pipeline_obj, llm_name = self._build_pipeline(pipeline_id)
+        self._pipelines[pipeline_id] = pipeline_obj
+        self._pipeline_llm[pipeline_id] = llm_name
+        logger.info(f"lazy-loaded pipeline_id={pipeline_id} model={llm_name}")
         return pipeline_obj, llm_name
-
