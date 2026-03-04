@@ -135,7 +135,7 @@ class Pipeline:
             if isinstance(chunk, str):
                 yield chunk
             else:
-                conv_store.CONV_STORE.record_message_list(conv_id, chunk)
+                conv_store.CONV_STORE.record_message_list(conv_id, chunk, pipeline_id=self.config.pipeline_id)
 
     async def _astream_res(self, out, conv_id:str=None):
         """Async version of _stream_res for async generators."""
@@ -143,7 +143,7 @@ class Pipeline:
             if isinstance(chunk, str):
                 yield chunk
             else:
-                conv_store.CONV_STORE.record_message_list(conv_id, chunk)
+                conv_store.CONV_STORE.record_message_list(conv_id, chunk, pipeline_id=self.config.pipeline_id)
 
     def chat(self, inp:str, as_stream:bool=False, as_raw:bool=False, thread_id:str = '3'):
         """
