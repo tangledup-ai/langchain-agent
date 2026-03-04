@@ -28,9 +28,9 @@ def _build_and_load_pipeline_config(pipeline_id: str,
     return load_tyro_conf(save_config_f)
 
 
-def update_pipeline_registry(pipeline_id:str, 
-                             prompt_set:str,
-                             graph_id: str,
+def update_pipeline_registry(pipeline_id:str, # the agent name -- xiaozhan, blueberry
+                             prompt_set:str,  # the version of the prompt for xiaozhan/blueberry
+                             graph_id: str,   # what type of graph is this pipeline.
                              config_file: str,
                              llm_name: str,
                              enabled: bool = True,
