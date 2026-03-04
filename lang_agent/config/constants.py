@@ -7,6 +7,8 @@ _PROJECT_ROOT = osp.dirname(osp.dirname(osp.dirname(osp.abspath(__file__))))
 
 MCP_CONFIG_PATH = osp.join(_PROJECT_ROOT, "configs", "mcp_config.json")
 MCP_CONFIG_DEFAULT_CONTENT = "{\n}\n"
+
+# NOTE: the fancy looking api key is FAST_AUTH_KEYS from .env
 PIPELINE_REGISTRY_PATH = osp.join(_PROJECT_ROOT, "configs", "pipeline_registry.json")
 
 API_KEY_HEADER = APIKeyHeader(name="Authorization", auto_error=True)
