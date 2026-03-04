@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 sys.path.append(osp.dirname(osp.dirname(osp.abspath(__file__))))
 
 from lang_agent.config.db_config_manager import DBConfigManager
-from lang_agent.front_api.build_server import GRAPH_BUILD_FNCS
+from lang_agent.front_api.build_server_utils import GRAPH_BUILD_FNCS
 
 _PROJECT_ROOT = osp.dirname(osp.dirname(osp.abspath(__file__)))
 _MCP_CONFIG_PATH = osp.join(_PROJECT_ROOT, "configs", "mcp_config.json")
