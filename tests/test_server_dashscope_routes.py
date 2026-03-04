@@ -80,49 +80,53 @@ def dashscope_server():
             proc.wait(timeout=10)
 
 
-def _post_app_response(base_url: str, route_id: str, body: dict, api_key: str):
-    url = f"{base_url}/api/v1/apps/{route_id}/sessions/test-session/responses"
+def _post_app_response(base_url: str, pipeline_id: str, body: dict, api_key: str):
+    url = f"{base_url}/api/v1/apps/{pipeline_id}/sessions/test-session/responses"
     headers = {"Authorization": f"Bearer {api_key}"}
     resp = requests.post(url, json=body, headers=headers, timeout=20)
     return resp
 
 
-def test_route_selected_via_route_id_body(dashscope_server):
+def test_pipeline_selected_via_pipeline_id_body(dashscope_server):
     """
-    When client specifies `route_id` in the body, it should be used as the selector
+    When client specifies `pipeline_id` in the body, it should be used as the selector
     and surfaced back in the JSON response.
     """
     base_url = dashscope_server
     api_key = _get_service_api_key()
     if not api_key:
-        pytest.skip("FAST_AUTH_KEYS is not set; cannot authenticate against server_dashscope")
+        pytest.skip(
+            "FAST_AUTH_KEYS is not set; cannot authenticate against server_dashscope"
+        )
     body = {
         "input": {
             "prompt": "hello from xiaozhan",
             "session_id": "sess-1",
         },
-        "route_id": "xiaozhan",
+        "pipeline_id": "xiaozhan",
         "stream": False,
     }
 
-    resp = _post_app_response(base_url, route_id="xiaozhan", body=body, api_key=api_key)
+    resp = _post_app_response(
+        base_url, pipeline_id="xiaozhan", body=body, api_key=api_key
+    )
     assert resp.status_code == HTTPStatus.OK, resp.text
     data = resp.json()
-    assert data.get("route_id") == "xiaozhan"
-    # Backward-compat alias should still be present.
     assert data.get("pipeline_id") == "xiaozhan"
     assert "text" in data.get("output", {})
 
 
-def test_route_selected_via_legacy_pipeline_id_body(dashscope_server):
+def test_pipeline_selected_via_pipeline_id_body_blueberry(dashscope_server):
     """
-    Backward compatibility: `pipeline_id` in the body should still act as a
-    route selector, even though route_id is preferred.
+    When client specifies `pipeline_id` in the body, it should be used as the selector
+    and surfaced back in the JSON response.
     """
     base_url = dashscope_server
     api_key = _get_service_api_key()
     if not api_key:
-        pytest.skip("FAST_AUTH_KEYS is not set; cannot authenticate against server_dashscope")
+        pytest.skip(
+            "FAST_AUTH_KEYS is not set; cannot authenticate against server_dashscope"
+        )
     body = {
         "input": {
             "prompt": "hello from blueberry",
@@ -132,17 +136,18 @@ def test_route_selected_via_legacy_pipeline_id_body(dashscope_server):
         "stream": False,
     }
 
-    resp = _post_app_response(base_url, route_id="blueberry", body=body, api_key=api_key)
+    resp = _post_app_response(
+        base_url, pipeline_id="blueberry", body=body, api_key=api_key
+    )
     assert resp.status_code == HTTPStatus.OK, resp.text
     data = resp.json()
-    assert data.get("route_id") == "blueberry"
     assert data.get("pipeline_id") == "blueberry"
     assert "text" in data.get("output", {})
 
 
-def test_route_forbidden_for_api_key_when_not_allowed(dashscope_server):
+def test_pipeline_forbidden_for_api_key_when_not_allowed(dashscope_server):
     """
-    API key policy in pipeline_registry should prevent a key from using routes
+    API key policy in pipeline_registry should prevent a key from using pipelines
     it is not explicitly allowed to access.
     """
     base_url = dashscope_server
@@ -151,17 +156,14 @@ def test_route_forbidden_for_api_key_when_not_allowed(dashscope_server):
             "prompt": "this should be forbidden",
             "session_id": "sess-3",
         },
-        "route_id": "blueberry",
+        "pipeline_id": "blueberry",
         "stream": False,
     }
 
     # Use a guaranteed-wrong API key so we test 401 behavior regardless of registry config.
-    resp = _post_app_response(base_url, route_id="blueberry", body=body, api_key="invalid-key-for-test")
+    resp = _post_app_response(
+        base_url, pipeline_id="blueberry", body=body, api_key="invalid-key-for-test"
+    )
     assert resp.status_code == HTTPStatus.UNAUTHORIZED
     data = resp.json()
     assert data.get("detail") == "Invalid API key"
-
-
-
-
-

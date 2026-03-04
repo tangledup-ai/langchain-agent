@@ -8,6 +8,7 @@ Instructions:
 - Set BASE_URL below to the server base URL you started.
 - Optionally set environment variables ALI_API_KEY and ALI_APP_ID.
 """
+
 import os
 import json
 import os.path as osp
@@ -30,6 +31,7 @@ except Exception as e:
 
 # <<< Paste your running FastAPI base url here >>>
 BASE_URL = os.getenv("DS_BASE_URL", "http://127.0.0.1:8588/api/")
+
 
 # Params
 def _first_non_empty_csv_token(value: str) -> str:
@@ -61,23 +63,24 @@ def _pick_api_key(registry: dict) -> str:
         return fast_first
     if ali_key:
         return ali_key
-    raise RuntimeError("Missing API key. Set FAST_AUTH_KEYS or ALI_API_KEY in your environment.")
+    raise RuntimeError(
+        "Missing API key. Set FAST_AUTH_KEYS or ALI_API_KEY in your environment."
+    )
 
 
 def _pick_app_id(api_key: str, registry: dict) -> str:
-    # Explicit user choice always wins.
-    explicit = os.getenv("ALI_APP_ID")
-    if explicit:
-        return explicit
+    if api_key:
+        explicit = (registry.get("api_keys") or {}).get(api_key, {}).get("app_id")
+        if explicit:
+            return explicit
 
-    routes_obj = registry.get("routes")
-    if not isinstance(routes_obj, dict):
-        routes_obj = registry.get("pipelines", {})
-    route_ids = [r for r in routes_obj.keys() if isinstance(r, str) and r]
+    pipelines_obj = registry.get("pipelines")
+    if not isinstance(pipelines_obj, dict):
+        pipelines_obj = {}
+    pipeline_ids = [r for r in pipelines_obj.keys() if isinstance(r, str) and r]
 
-    # Prefer an explicitly configured route so test behavior matches registry/routes.
-    if route_ids:
-        return route_ids[0]
+    if pipeline_ids:
+        return pipeline_ids[0]
     return "default"
 
 
@@ -85,12 +88,10 @@ def _warn_if_policy_disallows_app_id(api_key: str, app_id: str, registry: dict) 
     policy = (registry.get("api_keys") or {}).get(api_key, {})
     if not isinstance(policy, dict):
         return
-    allowed = policy.get("allowed_route_ids")
-    if allowed is None:
-        allowed = policy.get("allowed_pipeline_ids")
+    allowed = policy.get("allowed_pipeline_ids")
     if isinstance(allowed, list) and allowed and app_id not in allowed:
         logger.bind(tag=TAG).warning(
-            f"app_id='{app_id}' is not in allowed_route_ids for current API key; server may return 403."
+            f"app_id='{app_id}' is not in allowed_pipeline_ids for current API key; server may return 403."
         )
 
 
@@ -102,7 +103,7 @@ SESSION_ID = str(uuid.uuid4())
 
 dialogue = [
     {"role": "system", "content": "You are a helpful assistant."},
-    {"role": "user", "content": "who are you"},
+    {"role": "user", "content": "你叫什么名字"},
 ]
 
 call_params = {
@@ -141,7 +142,7 @@ def main():
                 continue
             # SDK流式为增量覆盖，计算差量输出
             if len(current_text) >= len(last_text):
-                delta = current_text[len(last_text):]
+                delta = current_text[len(last_text) :]
             else:
                 # 避免偶发回退
                 delta = current_text
@@ -158,7 +159,7 @@ def main():
             logger.bind(tag=TAG).error(
                 f"code={responses.status_code}, message={responses.message}, 请参考文档：https://help.aliyun.com/zh/model-studio/developer-reference/error-code"
             )
-            u =  "【阿里百练API服务响应异常】"
+            u = "【阿里百练API服务响应异常】"
         else:
             full_text = getattr(getattr(responses, "output", None), "text", "")
             logger.bind(tag=TAG).info(
@@ -168,11 +169,8 @@ def main():
             print("from non-stream: ", u)
     except Exception as e:
         logger.bind(tag=TAG).error(f"Error: {e}")
-        u =  "【阿里百练API服务响应异常】"
-            
+        u = "【阿里百练API服务响应异常】"
 
 
 if __name__ == "__main__":
     main()
-
-
