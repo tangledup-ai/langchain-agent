@@ -4,13 +4,11 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field
 from typing import Any, Dict, List, Optional, Tuple
-from pathlib import Path as FsPath
 import os
 import os.path as osp
 import sys
 import time
 import json
-import copy
 import uvicorn
 from loguru import logger
 import tyro
@@ -18,14 +16,12 @@ import tyro
 # Ensure we can import from project root
 sys.path.append(osp.dirname(osp.dirname(osp.abspath(__file__))))
 
-from lang_agent.pipeline import Pipeline, PipelineConfig
-from lang_agent.config.core_config import load_tyro_conf
+from lang_agent.pipeline import PipelineConfig
 from lang_agent.components.server_pipeline_manager import ServerPipelineManager
 
-# Initialize default pipeline once (used when no explicit pipeline id is provided)
+# Load base config for route-level overrides (pipelines are lazy-loaded from registry)
 pipeline_config = tyro.cli(PipelineConfig)
-logger.info(f"starting agent with default pipeline: \n{pipeline_config}")
-pipeline: Pipeline = pipeline_config.setup()
+logger.info(f"starting agent with base pipeline config: \n{pipeline_config}")
 
 # API Key Authentication
 API_KEY_HEADER = APIKeyHeader(name="Authorization", auto_error=True)
@@ -39,7 +35,6 @@ REGISTRY_FILE = os.environ.get(
 PIPELINE_MANAGER = ServerPipelineManager(
     default_route_id=os.environ.get("FAST_DEFAULT_ROUTE_ID", os.environ.get("FAST_DEFAULT_PIPELINE_ID", "default")),
     default_config=pipeline_config,
-    default_pipeline=pipeline,
 )
 PIPELINE_MANAGER.load_registry(REGISTRY_FILE)
 
