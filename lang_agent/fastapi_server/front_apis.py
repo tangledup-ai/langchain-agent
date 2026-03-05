@@ -23,6 +23,10 @@ from lang_agent.front_api.build_server_utils import (
     GRAPH_BUILD_FNCS,
     update_pipeline_registry,
 )
+from lang_agent.components.client_tool_manager import (
+    ClientToolManager,
+    ClientToolManagerConfig,
+)
 
 
 class GraphConfigUpsertRequest(BaseModel):
@@ -154,6 +158,12 @@ class McpConfigUpdateResponse(BaseModel):
     tool_keys: List[str]
 
 
+class McpAvailableToolsResponse(BaseModel):
+    available_tools: List[str] = Field(default_factory=list)
+    errors: List[str] = Field(default_factory=list)
+    servers: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+
+
 app = FastAPI(
     title="Front APIs",
     description="Manage graph configs and launch graph pipelines.",
@@ -195,6 +205,7 @@ async def root():
             "/v1/pipelines/api-keys/{api_key} (DELETE) - delete API key routing policy",
             "/v1/tool-configs/mcp (GET)",
             "/v1/tool-configs/mcp (PUT)",
+            "/v1/tool-configs/mcp/tools (GET)",
         ],
     }
 
@@ -456,6 +467,38 @@ async def update_mcp_tool_config(body: McpConfigUpdateRequest):
         status="updated",
         path=MCP_CONFIG_PATH,
         tool_keys=tool_keys,
+    )
+
+
+@app.get("/v1/tool-configs/mcp/tools", response_model=McpAvailableToolsResponse)
+async def list_mcp_available_tools():
+    try:
+        _read_mcp_config_raw()
+        manager = ClientToolManager(
+            ClientToolManagerConfig(mcp_config_f=MCP_CONFIG_PATH)
+        )
+        servers = await manager.aget_tools_by_server()
+        available_tools = sorted(
+            {
+                tool_name
+                for server_info in servers.values()
+                for tool_name in server_info.get("tools", [])
+            }
+        )
+        errors = [
+            f"{server_name}: {server_info.get('error')}"
+            for server_name, server_info in servers.items()
+            if server_info.get("error")
+        ]
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return McpAvailableToolsResponse(
+        available_tools=available_tools,
+        errors=errors,
+        servers=servers,
     )
 
 
