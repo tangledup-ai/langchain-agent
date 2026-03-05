@@ -555,7 +555,7 @@ async def create_pipeline(body: PipelineCreateRequest):
         config_file=normalized.config_file,
         llm_name=normalized.llm_name,
         enabled=normalized.enabled,
-        reload_required=True,
+        reload_required=False,
         registry_path=PIPELINE_REGISTRY_PATH,
     )
 
@@ -583,7 +583,7 @@ async def stop_pipeline(pipeline_id: str):
         pipeline_id=pipeline_id,
         status="disabled",
         enabled=False,
-        reload_required=True,
+        reload_required=False,
     )
 
 
@@ -688,5 +688,15 @@ async def delete_pipeline_api_key_policy(api_key: str):
     return ApiKeyPolicyDeleteResponse(
         api_key=normalized_key,
         status="deleted",
-        reload_required=True,
+        reload_required=False,
+    )
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "front_apis:app",
+        host="0.0.0.0",
+        port=8500,
+        reload=True,
     )
