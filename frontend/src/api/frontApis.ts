@@ -16,6 +16,13 @@ import type {
 const API_BASE_URL =
   import.meta.env.VITE_FRONT_API_BASE_URL?.trim() || "http://127.0.0.1:8500";
 
+// Log which backend the frontend is targeting on startup, with file + line hint.
+// This runs once when the module is loaded.
+// eslint-disable-next-line no-console
+console.info(
+  `[frontend] Using FRONT_API_BASE_URL=${API_BASE_URL} (src/api/frontApis.ts:16)`
+);
+
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
