@@ -62,7 +62,7 @@ class PipelineConfig(LLMNodeConfig):
     host: str = "0.0.0.0"
     """where am I hosted"""
 
-    port: int = 8588
+    port: int = 8500
     """what is my port"""
 
     # graph_config: AnnotatedGraph = field(default_factory=ReactGraphConfig)
