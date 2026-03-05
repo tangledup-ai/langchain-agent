@@ -22,7 +22,7 @@ def opt_to_config(save_path: str, *nargs):
 def _build_and_load_pipeline_config(
     pipeline_id: str, pipeline_config_dir: str, cmd: List[str]
 ):
-    save_config_f = osp.join(pipeline_config_dir, f"{pipeline_id}.yml")
+    save_config_f = osp.join(pipeline_config_dir, f"{pipeline_id}.yaml")
     opt_to_config(save_config_f, *cmd)
 
     # TODO: think if returning the built pipeline is better or just the config obj for front_api

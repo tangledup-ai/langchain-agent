@@ -96,7 +96,7 @@ class Evaluator:
         
         df_m.to_csv(metric_f)
 
-        self.config.save_config(f"{head_path}-{n_exp}.yml")
+        self.config.save_config(f"{head_path}-{n_exp}.yaml")
     
     def format_result_df(self, df:pd.DataFrame):
 

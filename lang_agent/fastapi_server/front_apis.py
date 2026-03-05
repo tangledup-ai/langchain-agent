@@ -511,7 +511,7 @@ async def create_pipeline(body: PipelineCreateRequest):
             ),
         )
 
-    config_file = f"configs/pipelines/{pipeline_id}.yml"
+    config_file = f"configs/pipelines/{pipeline_id}.yaml"
     config_abs_dir = osp.join(_PROJECT_ROOT, "configs", "pipelines")
     try:
         build_fn(

@@ -2,7 +2,7 @@
     "pipelines": {
         "xiaozhan": {
             "enabled": true,
-            "config_file": "configs/pipelines/xiaozhan.yml",
+            "config_file": "configs/pipelines/xiaozhan.yaml",
             "graph_id": "routing",
             "overrides": {
                 "llm_name": "qwen-plus"
@@ -10,7 +10,7 @@
         },
         "blueberry": {
             "enabled": true,
-            "config_file": "configs/pipelines/blueberry.yml",
+            "config_file": "configs/pipelines/blueberry.yaml",
             "graph_id": "react",
             "overrides": {
                 "llm_name": "qwen-plus"
