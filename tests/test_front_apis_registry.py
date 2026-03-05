@@ -20,7 +20,7 @@ def _fake_build_fn(
 ):
     out_dir = Path(pipeline_config_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_file = out_dir / f"{pipeline_id}.yml"
+    out_file = out_dir / f"{pipeline_id}.yaml"
     out_file.write_text(
         json.dumps(
             {
