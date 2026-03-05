@@ -33,9 +33,21 @@ type EditableAgent = {
 };
 
 type ActiveTab = "agents" | "mcp";
+type McpTransport = "streamable_http" | "sse" | "stdio";
+type McpEntry = {
+  id: string;
+  name: string;
+  transport: McpTransport;
+  url: string;
+  command: string;
+  args: string;
+  authorization: string;
+  extraFields: Record<string, unknown>;
+};
 
 const DEFAULT_LLM_NAME = "qwen-plus";
 const DEFAULT_API_KEY = "";
+const MCP_TRANSPORT_OPTIONS: McpTransport[] = ["streamable_http", "sse", "stdio"];
 const GRAPH_ARCH_IMAGE_MODULES = import.meta.glob(
   "../assets/images/graph_arch/*.{png,jpg,jpeg,webp,gif}",
   { eager: true, import: "default" }
@@ -67,6 +79,257 @@ function parseToolCsv(value: string): string[] {
     out.push(trimmed);
   }
   return out;
+}
+
+function parseArgCsv(value: string): string[] {
+  const out: string[] = [];
+  for (const token of value.split(",")) {
+    const trimmed = token.trim();
+    if (!trimmed) {
+      continue;
+    }
+    out.push(trimmed);
+  }
+  return out;
+}
+
+function isMcpTransport(value: unknown): value is McpTransport {
+  return (
+    value === "streamable_http" ||
+    value === "sse" ||
+    value === "stdio"
+  );
+}
+
+function stripJsonComments(value: string): string {
+  let out = "";
+  let i = 0;
+  let inString = false;
+  let escaped = false;
+
+  while (i < value.length) {
+    const current = value[i];
+    const next = value[i + 1];
+
+    if (inString) {
+      out += current;
+      if (escaped) {
+        escaped = false;
+      } else if (current === "\\") {
+        escaped = true;
+      } else if (current === "\"") {
+        inString = false;
+      }
+      i += 1;
+      continue;
+    }
+
+    if (current === "\"") {
+      inString = true;
+      out += current;
+      i += 1;
+      continue;
+    }
+
+    if (current === "/" && next === "/") {
+      i += 2;
+      while (i < value.length && value[i] !== "\n") {
+        i += 1;
+      }
+      continue;
+    }
+
+    if (current === "/" && next === "*") {
+      i += 2;
+      while (i < value.length && !(value[i] === "*" && value[i + 1] === "/")) {
+        i += 1;
+      }
+      i += 2;
+      continue;
+    }
+
+    out += current;
+    i += 1;
+  }
+
+  return out;
+}
+
+function stripTrailingCommas(value: string): string {
+  let out = "";
+  let i = 0;
+  let inString = false;
+  let escaped = false;
+
+  while (i < value.length) {
+    const current = value[i];
+
+    if (inString) {
+      out += current;
+      if (escaped) {
+        escaped = false;
+      } else if (current === "\\") {
+        escaped = true;
+      } else if (current === "\"") {
+        inString = false;
+      }
+      i += 1;
+      continue;
+    }
+
+    if (current === "\"") {
+      inString = true;
+      out += current;
+      i += 1;
+      continue;
+    }
+
+    if (current === ",") {
+      let j = i + 1;
+      while (j < value.length && /\s/.test(value[j])) {
+        j += 1;
+      }
+      if (value[j] === "}" || value[j] === "]") {
+        i += 1;
+        continue;
+      }
+    }
+
+    out += current;
+    i += 1;
+  }
+
+  return out;
+}
+
+function createEmptyMcpEntry(): McpEntry {
+  return {
+    id: `mcp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    name: "",
+    transport: "streamable_http",
+    url: "",
+    command: "",
+    args: "",
+    authorization: "",
+    extraFields: {},
+  };
+}
+
+function parseMcpEntries(rawContent: string): McpEntry[] {
+  const normalized = stripTrailingCommas(stripJsonComments(rawContent)).trim();
+  if (!normalized) {
+    return [];
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(normalized);
+  } catch (error) {
+    throw new Error(`MCP config parse error: ${(error as Error).message}`);
+  }
+
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("MCP config must be a JSON object at top level.");
+  }
+
+  const configObj = parsed as Record<string, unknown>;
+  return Object.entries(configObj).map(([name, server]) => {
+    const serverObj =
+      server && typeof server === "object" && !Array.isArray(server)
+        ? ({ ...(server as Record<string, unknown>) } as Record<string, unknown>)
+        : {};
+    const rawTransport = serverObj.transport;
+    const transport: McpTransport = isMcpTransport(rawTransport)
+      ? rawTransport
+      : "streamable_http";
+    const url = typeof serverObj.url === "string" ? serverObj.url : "";
+    const command = typeof serverObj.command === "string" ? serverObj.command : "";
+    const args =
+      Array.isArray(serverObj.args) && serverObj.args.every((x) => typeof x === "string")
+        ? (serverObj.args as string[]).join(", ")
+        : typeof serverObj.args === "string"
+          ? serverObj.args
+          : "";
+    const headers =
+      serverObj.headers && typeof serverObj.headers === "object" && !Array.isArray(serverObj.headers)
+        ? ({ ...(serverObj.headers as Record<string, unknown>) } as Record<string, unknown>)
+        : null;
+    const authorization = headers && typeof headers.Authorization === "string" ? headers.Authorization : "";
+    if (headers) {
+      delete headers.Authorization;
+      if (Object.keys(headers).length > 0) {
+        serverObj.headers = headers;
+      } else {
+        delete serverObj.headers;
+      }
+    }
+    delete serverObj.transport;
+    delete serverObj.url;
+    delete serverObj.command;
+    delete serverObj.args;
+    return {
+      id: `mcp-${name}-${Math.random().toString(36).slice(2, 6)}`,
+      name,
+      transport,
+      url,
+      command,
+      args,
+      authorization,
+      extraFields: serverObj,
+    };
+  });
+}
+
+function buildMcpRawContent(entries: McpEntry[]): string {
+  const root: Record<string, Record<string, unknown>> = {};
+  for (const entry of entries) {
+    const key = entry.name.trim();
+    if (!key) {
+      continue;
+    }
+    const payload: Record<string, unknown> = {
+      ...entry.extraFields,
+      transport: entry.transport,
+    };
+    const payloadHeaders =
+      payload.headers && typeof payload.headers === "object" && !Array.isArray(payload.headers)
+        ? ({ ...(payload.headers as Record<string, unknown>) } as Record<string, unknown>)
+        : null;
+    if (payloadHeaders) {
+      delete payloadHeaders.Authorization;
+      if (Object.keys(payloadHeaders).length > 0) {
+        payload.headers = payloadHeaders;
+      } else {
+        delete payload.headers;
+      }
+    }
+    if (entry.transport === "stdio") {
+      payload.command = entry.command.trim();
+      const args = parseArgCsv(entry.args);
+      if (args.length > 0) {
+        payload.args = args;
+      } else {
+        delete payload.args;
+      }
+      delete payload.url;
+    } else {
+      payload.url = entry.url.trim();
+      if (entry.authorization.trim()) {
+        payload.headers = {
+          ...(payload.headers &&
+          typeof payload.headers === "object" &&
+          !Array.isArray(payload.headers)
+            ? (payload.headers as Record<string, unknown>)
+            : {}),
+          Authorization: entry.authorization.trim(),
+        };
+      }
+      delete payload.command;
+      delete payload.args;
+    }
+    root[key] = payload;
+  }
+  return `${JSON.stringify(root, null, 2)}\n`;
 }
 
 function maskSecretPreview(value: string): string {
@@ -121,7 +384,7 @@ export default function App() {
   const [editor, setEditor] = useState<EditableAgent | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [mcpConfigPath, setMcpConfigPath] = useState<string>("");
-  const [mcpConfigRaw, setMcpConfigRaw] = useState<string>("");
+  const [mcpEntries, setMcpEntries] = useState<McpEntry[]>([]);
   const [mcpToolKeys, setMcpToolKeys] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
 
@@ -221,11 +484,11 @@ export default function App() {
     if (activeTab !== "mcp") {
       return;
     }
-    if (mcpConfigRaw) {
+    if (mcpEntries.length > 0) {
       return;
     }
     reloadMcpConfig().catch(() => undefined);
-  }, [activeTab]);
+  }, [activeTab, mcpEntries.length]);
 
   async function selectExisting(item: GraphConfigListItem): Promise<void> {
     const id = makeAgentKey(item.pipeline_id);
@@ -366,8 +629,14 @@ export default function App() {
     try {
       const resp = await getMcpToolConfig();
       setMcpConfigPath(resp.path || "");
-      setMcpConfigRaw(resp.raw_content || "");
       setMcpToolKeys(resp.tool_keys || []);
+      try {
+        setMcpEntries(parseMcpEntries(resp.raw_content || ""));
+      } catch (error) {
+        setMcpEntries([]);
+        setStatusMessage((error as Error).message);
+        return;
+      }
       setStatusMessage("MCP config loaded.");
     } catch (error) {
       setStatusMessage((error as Error).message);
@@ -377,10 +646,34 @@ export default function App() {
   }
 
   async function saveMcpConfig(): Promise<void> {
+    const names = new Set<string>();
+    for (const entry of mcpEntries) {
+      const name = entry.name.trim();
+      if (!name) {
+        setStatusMessage("Each MCP entry must have a name.");
+        return;
+      }
+      if (names.has(name)) {
+        setStatusMessage(`Duplicate MCP name '${name}'.`);
+        return;
+      }
+      names.add(name);
+      if (entry.transport === "stdio") {
+        if (!entry.command.trim()) {
+          setStatusMessage(`MCP '${name}' requires command for stdio transport.`);
+          return;
+        }
+      } else if (!entry.url.trim()) {
+        setStatusMessage(`MCP '${name}' requires url for ${entry.transport} transport.`);
+        return;
+      }
+    }
+
+    const rawContent = buildMcpRawContent(mcpEntries);
     setBusy(true);
     setStatusMessage("Saving MCP config...");
     try {
-      const resp = await updateMcpToolConfig({ raw_content: mcpConfigRaw });
+      const resp = await updateMcpToolConfig({ raw_content: rawContent });
       setMcpConfigPath(resp.path || "");
       setMcpToolKeys(resp.tool_keys || []);
       setStatusMessage("MCP config saved.");
@@ -389,6 +682,20 @@ export default function App() {
     } finally {
       setBusy(false);
     }
+  }
+
+  function addMcpEntry(): void {
+    setMcpEntries((prev) => [...prev, createEmptyMcpEntry()]);
+  }
+
+  function removeMcpEntry(id: string): void {
+    setMcpEntries((prev) => prev.filter((entry) => entry.id !== id));
+  }
+
+  function updateMcpEntry(id: string, patch: Partial<McpEntry>): void {
+    setMcpEntries((prev) =>
+      prev.map((entry) => (entry.id === id ? { ...entry, ...patch } : entry))
+    );
   }
 
   async function saveConfig(): Promise<void> {
@@ -785,8 +1092,11 @@ export default function App() {
         ) : (
           <section className="mcp-config-section tab-pane">
             <div className="mcp-config-header">
-              <h3>Edit MCP Tool Options</h3>
+              <h3>MCP Tool Options</h3>
               <div className="header-actions">
+                <button type="button" onClick={addMcpEntry} disabled={busy}>
+                  Add
+                </button>
                 <button type="button" onClick={reloadMcpConfig} disabled={busy}>
                   Reload
                 </button>
@@ -796,7 +1106,7 @@ export default function App() {
               </div>
             </div>
             <p className="empty">
-              This tab edits <code>configs/mcp_config.json</code> directly (comments supported).
+              Configure MCP servers here and save to <code>configs/mcp_config.json</code>.
             </p>
             {mcpConfigPath ? (
               <p className="empty">
@@ -806,14 +1116,102 @@ export default function App() {
             <p className="empty">
               Tool options detected: {mcpToolKeys.length ? mcpToolKeys.join(", ") : "(none)"}
             </p>
-            <textarea
-              className="mcp-config-editor"
-              value={mcpConfigRaw}
-              onChange={(e) => setMcpConfigRaw(e.target.value)}
-              rows={18}
-              spellCheck={false}
-              disabled={busy}
-            />
+            <div className="mcp-entry-list">
+              {mcpEntries.length === 0 ? (
+                <p className="empty">No MCP entries yet. Click Add to create one.</p>
+              ) : (
+                mcpEntries.map((entry) => (
+                  <div key={entry.id} className="mcp-entry-card">
+                    <div className="mcp-entry-header">
+                      <strong>{entry.name.trim() || "New MCP"}</strong>
+                      <button
+                        type="button"
+                        onClick={() => removeMcpEntry(entry.id)}
+                        disabled={busy}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <div className="mcp-entry-grid">
+                      <label>
+                        MCP Name
+                        <input
+                          value={entry.name}
+                          onChange={(e) => updateMcpEntry(entry.id, { name: e.target.value })}
+                          placeholder="weather"
+                          disabled={busy}
+                        />
+                      </label>
+                      <label>
+                        Transport
+                        <select
+                          value={entry.transport}
+                          onChange={(e) =>
+                            updateMcpEntry(entry.id, {
+                              transport: e.target.value as McpTransport,
+                            })
+                          }
+                          disabled={busy}
+                        >
+                          {MCP_TRANSPORT_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      {entry.transport === "stdio" ? (
+                        <>
+                          <label>
+                            Command
+                            <input
+                              value={entry.command}
+                              onChange={(e) =>
+                                updateMcpEntry(entry.id, { command: e.target.value })
+                              }
+                              placeholder="python"
+                              disabled={busy}
+                            />
+                          </label>
+                          <label>
+                            Args (comma separated, optional)
+                            <input
+                              value={entry.args}
+                              onChange={(e) => updateMcpEntry(entry.id, { args: e.target.value })}
+                              placeholder="server.py, --port, 8000"
+                              disabled={busy}
+                            />
+                          </label>
+                        </>
+                      ) : (
+                        <>
+                          <label className="mcp-entry-wide">
+                            URL
+                            <input
+                              value={entry.url}
+                              onChange={(e) => updateMcpEntry(entry.id, { url: e.target.value })}
+                              placeholder="http://127.0.0.1:8100"
+                              disabled={busy}
+                            />
+                          </label>
+                          <label className="mcp-entry-wide">
+                            Authorization (optional)
+                            <input
+                              value={entry.authorization}
+                              onChange={(e) =>
+                                updateMcpEntry(entry.id, { authorization: e.target.value })
+                              }
+                              placeholder="Bearer <token>"
+                              disabled={busy}
+                            />
+                          </label>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </section>
         )}
       </main>

@@ -311,6 +311,52 @@ button:disabled {
   width: 100%;
 }
 
+.mcp-entry-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.mcp-entry-card {
+  background: #fff;
+  border: 1px solid #d7e6f6;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.mcp-entry-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.mcp-entry-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(200px, 1fr));
+}
+
+.mcp-entry-grid label {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  gap: 6px;
+}
+
+.mcp-entry-grid input,
+.mcp-entry-grid select {
+  border: 1px solid #c9d4e2;
+  border-radius: 8px;
+  font-size: 14px;
+  padding: 8px;
+}
+
+.mcp-entry-wide {
+  grid-column: 1 / -1;
+}
+
 .empty {
   color: #687788;
   margin: 6px 0;
