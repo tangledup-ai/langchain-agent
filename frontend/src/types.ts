@@ -105,3 +105,15 @@ export type McpToolConfigUpdateResponse = {
   tool_keys: string[];
 };
 
+export type McpAvailableToolsResponse = {
+  available_tools: string[];
+  errors: string[];
+  servers: Record<
+    string,
+    {
+      tools: string[];
+      error?: string | null;
+    }
+  >;
+};
+

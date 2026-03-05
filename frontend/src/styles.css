@@ -317,6 +317,19 @@ button:disabled {
   margin-top: 10px;
 }
 
+.mcp-tools-error {
+  color: #a33434;
+  margin: 6px 0 0 0;
+}
+
+.mcp-tools-inline {
+  background: #f8fbff;
+  border: 1px solid #d7e6f6;
+  border-radius: 8px;
+  margin: 0 0 10px 0;
+  padding: 8px;
+}
+
 .mcp-entry-card {
   background: #fff;
   border: 1px solid #d7e6f6;

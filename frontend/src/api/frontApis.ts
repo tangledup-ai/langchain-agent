@@ -4,6 +4,7 @@ import type {
   GraphConfigReadResponse,
   GraphConfigUpsertRequest,
   GraphConfigUpsertResponse,
+  McpAvailableToolsResponse,
   McpToolConfigResponse,
   McpToolConfigUpdateRequest,
   McpToolConfigUpdateResponse,
@@ -112,6 +113,10 @@ export function updateMcpToolConfig(
     method: "PUT",
     body: JSON.stringify(payload),
   });
+}
+
+export function listMcpAvailableTools(): Promise<McpAvailableToolsResponse> {
+  return fetchJson("/v1/tool-configs/mcp/tools");
 }
 
 export function createPipeline(

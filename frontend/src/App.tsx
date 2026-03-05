@@ -6,6 +6,7 @@ import {
   getGraphDefaultConfig,
   getPipelineDefaultConfig,
   getMcpToolConfig,
+  listMcpAvailableTools,
   listAvailableGraphs,
   listGraphConfigs,
   listPipelines,
@@ -403,6 +404,8 @@ export default function App() {
   const [mcpConfigPath, setMcpConfigPath] = useState<string>("");
   const [mcpEntries, setMcpEntries] = useState<McpEntry[]>([]);
   const [mcpToolKeys, setMcpToolKeys] = useState<string[]>([]);
+  const [mcpToolsByServer, setMcpToolsByServer] = useState<Record<string, string[]>>({});
+  const [mcpErrorsByServer, setMcpErrorsByServer] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
 
   const configKeySet = useMemo(
@@ -654,6 +657,7 @@ export default function App() {
         setStatusMessage((error as Error).message);
         return;
       }
+      await refreshMcpAvailableTools();
       setStatusMessage("MCP config loaded.");
     } catch (error) {
       setStatusMessage((error as Error).message);
@@ -693,11 +697,33 @@ export default function App() {
       const resp = await updateMcpToolConfig({ raw_content: rawContent });
       setMcpConfigPath(resp.path || "");
       setMcpToolKeys(resp.tool_keys || []);
+      await refreshMcpAvailableTools();
       setStatusMessage("MCP config saved.");
     } catch (error) {
       setStatusMessage((error as Error).message);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function refreshMcpAvailableTools(): Promise<void> {
+    try {
+      const resp = await listMcpAvailableTools();
+      const nextTools: Record<string, string[]> = {};
+      const nextErrors: Record<string, string> = {};
+      const servers = resp.servers || {};
+      for (const [serverName, info] of Object.entries(servers)) {
+        nextTools[serverName] = Array.isArray(info?.tools) ? info.tools : [];
+        if (typeof info?.error === "string" && info.error.trim()) {
+          nextErrors[serverName] = info.error;
+        }
+      }
+      setMcpToolsByServer(nextTools);
+      setMcpErrorsByServer(nextErrors);
+    } catch (error) {
+      const message = (error as Error).message || "Unknown error";
+      setMcpToolsByServer({});
+      setMcpErrorsByServer({ _global: message });
     }
   }
 
@@ -1149,6 +1175,23 @@ export default function App() {
                         Remove
                       </button>
                     </div>
+                    {entry.name.trim() ? (
+                      <div className="mcp-tools-inline">
+                        <p className="empty">
+                          Available tools:{" "}
+                          {(mcpToolsByServer[entry.name.trim()] || []).length > 0
+                            ? mcpToolsByServer[entry.name.trim()].join(", ")
+                            : "(none)"}
+                        </p>
+                        {mcpErrorsByServer[entry.name.trim()] ? (
+                          <p className="mcp-tools-error">
+                            Error: {mcpErrorsByServer[entry.name.trim()]}
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <p className="empty">Set MCP Name, then Save/Reload to fetch tools.</p>
+                    )}
                     <div className="mcp-entry-grid">
                       <label>
                         MCP Name
@@ -1229,6 +1272,9 @@ export default function App() {
                 ))
               )}
             </div>
+            {mcpErrorsByServer._global ? (
+              <p className="mcp-tools-error">Error: {mcpErrorsByServer._global}</p>
+            ) : null}
           </section>
         )}
       </main>
