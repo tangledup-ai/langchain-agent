@@ -251,32 +251,30 @@ class ClientToolManager:
     def populate_module(self):
         with open(self.config.mcp_config_f, "r") as f:
             self.mcp_configs:dict = commentjson.load(f)
+
+    def _get_to_load_configs(self) -> dict:
+        if self.config.tool_keys is None:
+            return self.mcp_configs
+
+        if len(self.config.tool_keys) == 0:
+            logger.info("no tools will be loaded")
+            return {}
+
+        to_load_config = {}
+        for key in self.config.tool_keys:
+            val = self.mcp_configs.get(key)
+            if val is None:
+                logger.warning(f"{key} is not in mcp tools")
+            else:
+                to_load_config[key] = val
+        return to_load_config
     
     async def aget_tools(self):
         """
         Get tools from all configured MCP servers.
         Handles connection failures gracefully by logging warnings and continuing.
         """
-        
-        def get_to_load_configs() -> dict:
-            if self.config.tool_keys is None:
-                to_load_config = self.mcp_configs
-            else:
-                if len(self.config.tool_keys) == 0:
-                    logger.info("no tools will be loaded")
-                    return {}
-
-                to_load_config = {}
-                for key in self.config.tool_keys:
-                    val = self.mcp_configs.get(key)
-                    if val is None:
-                        logger.warning(f"{key} is not in mcp tools")
-                    else:
-                        to_load_config[key] = val
-            
-            return to_load_config
-        
-        to_load_config = get_to_load_configs()
+        to_load_config = self._get_to_load_configs()
         all_tools = []
         for server_name, server_config in to_load_config.items():
             try:
@@ -297,6 +295,78 @@ class ClientToolManager:
                 continue
         
         return all_tools
+
+    async def aget_tools_with_errors(self):
+        """
+        Get tools and collect human-readable per-server errors.
+        Returns:
+            (all_tools, errors)
+        """
+        to_load_config = self._get_to_load_configs()
+        all_tools = []
+        errors = []
+        for server_name, server_config in to_load_config.items():
+            try:
+                single_server_config = {server_name: server_config}
+                client = MultiServerMCPClient(single_server_config)
+                tools = await client.get_tools()
+                all_tools.extend(tools)
+                logger.info(
+                    f"Successfully connected to MCP server '{server_name}', retrieved {len(tools)} tools"
+                )
+            except Exception as e:
+                url = (
+                    server_config.get("url", "unknown URL")
+                    if isinstance(server_config, dict)
+                    else "unknown URL"
+                )
+                err_msg = (
+                    f"{server_name} ({url}): {type(e).__name__}: {e}"
+                )
+                errors.append(err_msg)
+                logger.exception(
+                    f"Failed to connect to MCP server '{server_name}' at {url}"
+                )
+                if hasattr(e, "exceptions"):
+                    for nested_exc in e.exceptions:
+                        errors.append(
+                            f"{server_name} nested: {type(nested_exc).__name__}: {nested_exc}"
+                        )
+                continue
+        return all_tools, errors
+
+    async def aget_tools_by_server(self) -> dict:
+        """
+        Get MCP tools grouped by server name, including per-server error (if any).
+        Returns:
+            {
+                "server_name": {
+                    "tools": ["tool_a", "tool_b"],
+                    "error": "ExceptionType: message" | None,
+                },
+                ...
+            }
+        """
+        to_load_config = self._get_to_load_configs()
+        grouped = {}
+        for server_name, server_config in to_load_config.items():
+            grouped[server_name] = {"tools": [], "error": None}
+            try:
+                single_server_config = {server_name: server_config}
+                client = MultiServerMCPClient(single_server_config)
+                tools = await client.get_tools()
+                tool_names = sorted(
+                    {
+                        str(getattr(tool, "name", "")).strip()
+                        for tool in tools
+                        if str(getattr(tool, "name", "")).strip()
+                    }
+                )
+                grouped[server_name] = {"tools": tool_names, "error": None}
+            except Exception as e:
+                grouped[server_name]["error"] = f"{type(e).__name__}: {e}"
+                logger.exception(f"Failed to connect to MCP server '{server_name}'")
+        return grouped
 
     def get_tools(self):
         try:
