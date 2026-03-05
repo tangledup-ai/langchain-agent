@@ -283,16 +283,27 @@ export default function App() {
     if (!editor) {
       return;
     }
+    const targetEditorId = editor.id;
     setBusy(true);
     setStatusMessage("Loading default prompts for selected graph...");
     try {
       const defaults = await loadPromptDefaults(graphId);
-      setEditorAndSyncDraft((prev) => ({
-        ...prev,
-        graphId,
-        prompts: { ...defaults.prompt_dict },
-        toolKeys: defaults.tool_keys || [],
-      }));
+      setEditor((prev) => {
+        if (!prev || prev.id !== targetEditorId) {
+          // Selection changed while defaults were loading; do not mutate another agent.
+          return prev;
+        }
+        const next: EditableAgent = {
+          ...prev,
+          graphId,
+          prompts: { ...defaults.prompt_dict },
+          toolKeys: defaults.tool_keys || [],
+        };
+        if (next.isDraft) {
+          setDraftAgents((drafts) => drafts.map((draft) => (draft.id === next.id ? next : draft)));
+        }
+        return next;
+      });
       setStatusMessage("");
     } catch (error) {
       setStatusMessage((error as Error).message);
