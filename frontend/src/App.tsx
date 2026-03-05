@@ -148,18 +148,29 @@ export default function App() {
     () => chooseDisplayItemsByPipeline(visibleConfigItems),
     [visibleConfigItems]
   );
+  const runningPipelineIdSet = useMemo(() => {
+    const ids = new Set<string>();
+    for (const run of running) {
+      if (run.enabled) {
+        ids.add(run.pipeline_id);
+      }
+    }
+    return ids;
+  }, [running]);
 
   const selectedRuns = useMemo(() => {
-    if (!editor?.pipelineId) {
+    const pipelineId = editor?.pipelineId.trim();
+    if (!pipelineId) {
       return [];
     }
     return running.filter((run) => {
-      if (run.pipeline_id !== editor.pipelineId) {
+      if (run.pipeline_id !== pipelineId) {
         return false;
       }
-      return true;
+      return run.enabled;
     });
   }, [editor, running]);
+  const isEditorRunning = selectedRuns.length > 0;
 
   async function refreshConfigs(): Promise<void> {
     const resp = await listGraphConfigs();
@@ -532,12 +543,14 @@ export default function App() {
       id: d.id,
       label: d.pipelineId || "(new agent)",
       graphId: d.graphId,
+      isRunning: d.pipelineId ? runningPipelineIdSet.has(d.pipelineId.trim()) : false,
       isDraft: true,
     })),
     ...displayConfigItems.map((item) => ({
       id: makeAgentKey(item.pipeline_id),
       label: item.pipeline_id,
       graphId: item.graph_id || item.pipeline_id,
+      isRunning: runningPipelineIdSet.has(item.pipeline_id),
       isDraft: false,
     })),
   ];
@@ -573,7 +586,12 @@ export default function App() {
                   }
                 }}
               >
-                <span>{row.label}</span>
+                <span className="agent-item-title">
+                  <span>{row.label}</span>
+                  <span className={`agent-status-pill ${row.isRunning ? "running" : "stopped"}`}>
+                    {row.isRunning ? "Running" : "Stopped"}
+                  </span>
+                </span>
                 <small>{row.graphId}</small>
               </button>
             ))}
@@ -612,10 +630,10 @@ export default function App() {
               <button onClick={saveConfig} disabled={busy || !editor}>
                 Save
               </button>
-              <button onClick={runSelected} disabled={busy || !editor}>
+              <button onClick={runSelected} disabled={busy || !editor || isEditorRunning}>
                 Run
               </button>
-              <button onClick={stopSelected} disabled={busy || !editor}>
+              <button onClick={stopSelected} disabled={busy || !editor || !isEditorRunning}>
                 Stop
               </button>
               <button onClick={deleteSelected} disabled={busy || !editor}>
@@ -720,7 +738,12 @@ export default function App() {
                 </div>
 
                 <div className="run-info">
-                  <h3>Running Instances</h3>
+                  <div className="run-info-header">
+                    <h3>Running Instances</h3>
+                    <span className={`runtime-badge ${isEditorRunning ? "running" : "stopped"}`}>
+                      Runtime: {isEditorRunning ? "Running" : "Stopped"}
+                    </span>
+                  </div>
                   {selectedRuns.length === 0 ? (
                     <p className="empty">No active runs for this agent.</p>
                   ) : (

@@ -73,6 +73,33 @@ button:disabled {
   width: 100%;
 }
 
+.agent-item-title {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.agent-status-pill {
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+}
+
+.agent-status-pill.running {
+  background: #dff7e7;
+  border: 1px solid #8cd3a1;
+  color: #1a6b35;
+}
+
+.agent-status-pill.stopped {
+  background: #f2f4f7;
+  border: 1px solid #d1d8e0;
+  color: #4a5565;
+}
+
 .agent-item.selected {
   border-color: #4d7ef3;
   background: #edf3ff;
@@ -196,6 +223,32 @@ button:disabled {
 .prompt-section h3,
 .run-info h3 {
   margin-top: 0;
+}
+
+.run-info-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.runtime-badge {
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+}
+
+.runtime-badge.running {
+  background: #dff7e7;
+  border: 1px solid #8cd3a1;
+  color: #1a6b35;
+}
+
+.runtime-badge.stopped {
+  background: #f2f4f7;
+  border: 1px solid #d1d8e0;
+  color: #4a5565;
 }
 
 .graph-arch-section {
