@@ -476,7 +476,7 @@ export default function App() {
     }
 
     setBusy(true);
-    setStatusMessage("Starting agent...");
+    setStatusMessage("Registering agent runtime...");
     try {
       const resp = await createPipeline({
         graph_id: editor.graphId,
@@ -488,9 +488,15 @@ export default function App() {
         enabled: true,
       });
       await refreshRunning();
-      setStatusMessage(
-        `Agent registered. config_file=${resp.config_file}, reload_required=${String(resp.reload_required)}`
-      );
+      if (resp.reload_required) {
+        setStatusMessage(
+          `Agent registered, runtime reload pending. config_file=${resp.config_file}`
+        );
+      } else {
+        setStatusMessage(
+          `Agent registered and runtime auto-reload is active. Ready to chat via app_id=${resp.pipeline_id}.`
+        );
+      }
     } catch (error) {
       setStatusMessage((error as Error).message);
     } finally {
