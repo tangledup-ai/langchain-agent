@@ -355,6 +355,23 @@ function getGraphArchImage(graphId: string): string | null {
   return null;
 }
 
+function sanitizeConfigPath(path: string): string {
+  if (!path.trim()) {
+    return path;
+  }
+  const normalized = path.replace(/\\/g, "/");
+  const marker = "/configs/";
+  const markerIndex = normalized.lastIndexOf(marker);
+  if (markerIndex >= 0) {
+    return normalized.slice(markerIndex + 1);
+  }
+  const parts = normalized.split("/").filter(Boolean);
+  if (parts.length >= 2) {
+    return parts.slice(-2).join("/");
+  }
+  return normalized;
+}
+
 function toEditable(
   config: GraphConfigReadResponse,
   draft: boolean
@@ -1110,7 +1127,7 @@ export default function App() {
             </p>
             {mcpConfigPath ? (
               <p className="empty">
-                File: <code>{mcpConfigPath}</code>
+                File: <code>{sanitizeConfigPath(mcpConfigPath)}</code>
               </p>
             ) : null}
             <p className="empty">
