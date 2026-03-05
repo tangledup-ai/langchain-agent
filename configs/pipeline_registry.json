@@ -1,24 +1,31 @@
 {
-  "pipelines": {
-    "xiaozhan": {
-      "enabled": true,
-      "config_file": "configs/pipelines/xiaozhan.yaml"
+    "pipelines": {
+        "xiaozhan": {
+            "enabled": true,
+            "config_file": "configs/pipelines/xiaozhan.yml",
+            "graph_id": "routing",
+            "overrides": {
+                "llm_name": "qwen-plus"
+            }
+        },
+        "blueberry": {
+            "enabled": true,
+            "config_file": "configs/pipelines/blueberry.yml",
+            "graph_id": "react",
+            "overrides": {
+                "llm_name": "qwen-plus"
+            }
+        }
     },
-    "blueberry": {
-      "enabled": true,
-      "config_file": "configs/pipelines/blueberry.yaml"
+    "api_keys": {
+        "sk-6c7091e6a95f404efb2ec30e8f51b897626d670375cdf822d78262f24ab12367": {
+            "example-key-1": {
+                "default_route_id": "default",
+                "allowed_route_ids": [
+                    "xiaozhan",
+                    "blueberry"
+                ]
+            }
+        }
     }
-  },
-  "api_keys": {
-    "sk-6c7091e6a95f404efb2ec30e8f51b897626d670375cdf822d78262f24ab12367": {
-      "example-key-1": {
-        "default_route_id": "default",
-        "allowed_route_ids": [
-          "xiaozhan",
-          "blueberry"
-        ]
-      }
-    }
-  }
 }
-
