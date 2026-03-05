@@ -189,6 +189,12 @@ async def _process_dashscope_request(
     session_id: Optional[str],
     api_key: str,
 ):
+    try:
+        PIPELINE_MANAGER.refresh_registry_if_needed()
+    except Exception as e:
+        logger.error(f"failed to refresh pipeline registry: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to refresh pipeline registry: {e}")
+
     req_app_id = app_id or body.get("app_id")
     body_input = body.get("input", {}) if isinstance(body.get("input"), dict) else {}
     req_session_id = session_id or body_input.get("session_id")
