@@ -30,7 +30,7 @@ except Exception as e:
 
 
 # <<< Paste your running FastAPI base url here >>>
-BASE_URL = os.getenv("DS_BASE_URL", "http://127.0.0.1:8588/api/")
+BASE_URL = os.getenv("DS_BASE_URL", "http://127.0.0.1:8500/api/")
 
 
 # Params

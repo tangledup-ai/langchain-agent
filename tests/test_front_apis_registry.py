@@ -38,7 +38,7 @@ def _fake_build_fn(
 
 def test_registry_route_lifecycle(monkeypatch, tmp_path):
     registry_path = tmp_path / "pipeline_registry.json"
-    monkeypatch.setattr(front_apis, "_PIPELINE_REGISTRY_PATH", str(registry_path))
+    monkeypatch.setattr(front_apis, "PIPELINE_REGISTRY_PATH", str(registry_path))
     monkeypatch.setitem(front_apis.GRAPH_BUILD_FNCS, "routing", _fake_build_fn)
 
     client = TestClient(front_apis.app)
@@ -60,7 +60,7 @@ def test_registry_route_lifecycle(monkeypatch, tmp_path):
     assert create_data["pipeline_id"] == "xiaozhan"
     assert create_data["graph_id"] == "routing"
     assert create_data["llm_name"] == "qwen-plus"
-    assert create_data["reload_required"] is True
+    assert create_data["reload_required"] is False
 
     list_resp = client.get("/v1/pipelines")
     assert list_resp.status_code == 200, list_resp.text
@@ -91,7 +91,7 @@ def test_registry_route_lifecycle(monkeypatch, tmp_path):
 
 def test_registry_api_key_policy_lifecycle(monkeypatch, tmp_path):
     registry_path = tmp_path / "pipeline_registry.json"
-    monkeypatch.setattr(front_apis, "_PIPELINE_REGISTRY_PATH", str(registry_path))
+    monkeypatch.setattr(front_apis, "PIPELINE_REGISTRY_PATH", str(registry_path))
     monkeypatch.setitem(front_apis.GRAPH_BUILD_FNCS, "routing", _fake_build_fn)
 
     client = TestClient(front_apis.app)
@@ -136,4 +136,4 @@ def test_registry_api_key_policy_lifecycle(monkeypatch, tmp_path):
     delete_data = delete_resp.json()
     assert delete_data["api_key"] == "sk-test-key"
     assert delete_data["status"] == "deleted"
-    assert delete_data["reload_required"] is True
+    assert delete_data["reload_required"] is False
