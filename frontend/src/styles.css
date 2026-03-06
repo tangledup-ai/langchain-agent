@@ -370,10 +370,49 @@ button:disabled {
 }
 
 .discussion-message pre {
-  font-family: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   margin: 8px 0 0;
-  white-space: pre-wrap;
-  word-break: break-word;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.discussion-message-markdown > :first-child {
+  margin-top: 0;
+}
+
+.discussion-message-markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.discussion-message-markdown code {
+  background: #f3f5f8;
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+
+.discussion-message-markdown pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.discussion-message-markdown a {
+  color: #1a4fc5;
+  text-decoration: underline;
+}
+
+.discussion-message-markdown p,
+.discussion-message-markdown ul,
+.discussion-message-markdown ol,
+.discussion-message-markdown blockquote,
+.discussion-message-markdown table {
+  margin: 8px 0;
+}
+
+.discussion-message-markdown blockquote {
+  border-left: 3px solid #d0d8e2;
+  color: #4f5f73;
+  margin-left: 0;
+  padding-left: 10px;
 }
 
 .mcp-config-section {

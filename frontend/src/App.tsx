@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   createPipeline,
   deleteGraphConfig,
@@ -1328,7 +1330,18 @@ export default function App() {
                               : ""}
                           </small>
                         </div>
-                        <pre>{message.content}</pre>
+                        <div className="discussion-message-markdown">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              a: ({ node: _node, ...props }) => (
+                                <a {...props} target="_blank" rel="noreferrer" />
+                              ),
+                            }}
+                          >
+                            {message.content}
+                          </ReactMarkdown>
+                        </div>
                       </article>
                     ))
                   )}
