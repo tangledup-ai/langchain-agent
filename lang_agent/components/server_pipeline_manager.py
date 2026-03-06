@@ -158,11 +158,12 @@ class ServerPipelineManager:
             if hasattr(loaded_cfg, "setup"):
                 cfg = loaded_cfg
             else:
-                logger.warning(
-                    f"config_file for pipeline `{pipeline_id}` did not deserialize to config object; "
-                    "falling back to default config and applying pipeline-level overrides."
+                raise ValueError(
+                    "config_file for pipeline "
+                    f"`{pipeline_id}` did not deserialize to a config object. "
+                    "Rebuild the pipeline via /v1/pipelines to regenerate a "
+                    "valid serialized PipelineConfig file."
                 )
-                cfg = copy.deepcopy(self.default_config)
         else:
             cfg = copy.deepcopy(self.default_config)
         if not isinstance(overrides, dict):
