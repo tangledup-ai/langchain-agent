@@ -325,3 +325,27 @@ def test_pipeline_conversation_messages_404(monkeypatch):
     resp = client.get("/v1/pipelines/agent-a/conversations/agent-b:conv-9/messages")
     assert resp.status_code == 404, resp.text
     assert "not found for pipeline 'agent-a'" in resp.json()["detail"]
+
+
+def test_runtime_auth_info_prefers_registry_then_env(monkeypatch, tmp_path):
+    registry_path = tmp_path / "pipeline_registry.json"
+    registry_path.write_text(
+        json.dumps(
+            {
+                "pipelines": {},
+                "api_keys": {
+                    "sk-from-registry": {"default_pipeline_id": "blueberry"},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(front_apis, "PIPELINE_REGISTRY_PATH", str(registry_path))
+    monkeypatch.setenv("FAST_AUTH_KEYS", "sk-from-env,other")
+
+    client = TestClient(front_apis.app)
+    resp = client.get("/v1/runtime-auth")
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert data["fast_api_key"] == "sk-from-registry"
+    assert data["source"] == "pipeline_registry"

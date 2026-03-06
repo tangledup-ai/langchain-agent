@@ -152,3 +152,4 @@ def test_refresh_registry_applies_disabled_state_immediately(tmp_path):
 
 
 
+
