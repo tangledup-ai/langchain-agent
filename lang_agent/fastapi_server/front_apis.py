@@ -146,6 +146,11 @@ class PipelineConversationMessagesResponse(BaseModel):
     count: int
 
 
+class RuntimeAuthInfoResponse(BaseModel):
+    fast_api_key: str
+    source: str
+
+
 class ApiKeyPolicyItem(BaseModel):
     api_key: str
     default_pipeline_id: Optional[str] = Field(default=None)
@@ -228,6 +233,7 @@ async def root():
             "/v1/pipelines (POST) - build config + upsert pipeline registry entry",
             "/v1/pipelines (GET) - list registry pipeline specs",
             "/v1/pipelines/{pipeline_id} (DELETE) - disable pipeline in registry",
+            "/v1/runtime-auth (GET) - show runtime FAST API key info",
             "/v1/pipelines/{pipeline_id}/conversations (GET) - list pipeline conversations",
             "/v1/pipelines/{pipeline_id}/conversations/{conversation_id}/messages (GET) - list messages in a conversation",
             "/v1/pipelines/api-keys (GET) - list API key routing policies",
@@ -279,6 +285,30 @@ def _write_pipeline_registry(registry: Dict[str, Any]) -> None:
     with open(PIPELINE_REGISTRY_PATH, "w", encoding="utf-8") as f:
         json.dump(registry, f, indent=2)
         f.write("\n")
+
+
+def _resolve_runtime_fast_api_key() -> RuntimeAuthInfoResponse:
+    """Pick a runtime auth key from pipeline registry first, then FAST_AUTH_KEYS env."""
+    try:
+        registry = _read_pipeline_registry()
+        api_keys = registry.get("api_keys", {})
+        if isinstance(api_keys, dict):
+            for key in api_keys.keys():
+                candidate = str(key).strip()
+                if candidate:
+                    return RuntimeAuthInfoResponse(
+                        fast_api_key=candidate, source="pipeline_registry"
+                    )
+    except Exception:
+        # fall back to env parsing below
+        pass
+
+    raw_env = os.environ.get("FAST_AUTH_KEYS", "")
+    for token in raw_env.split(","):
+        candidate = token.strip()
+        if candidate:
+            return RuntimeAuthInfoResponse(fast_api_key=candidate, source="env")
+    return RuntimeAuthInfoResponse(fast_api_key="", source="none")
 
 
 def _normalize_pipeline_spec(pipeline_id: str, spec: Dict[str, Any]) -> PipelineSpec:
@@ -658,6 +688,11 @@ async def stop_pipeline(pipeline_id: str):
         enabled=False,
         reload_required=False,
     )
+
+
+@app.get("/v1/runtime-auth", response_model=RuntimeAuthInfoResponse)
+async def get_runtime_auth_info():
+    return _resolve_runtime_fast_api_key()
 
 
 @app.get(
