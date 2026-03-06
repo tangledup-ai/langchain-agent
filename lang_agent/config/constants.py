@@ -15,3 +15,5 @@ API_KEY_HEADER = APIKeyHeader(name="Authorization", auto_error=True)
 API_KEY_HEADER_NO_ERROR = APIKeyHeader(name="Authorization", auto_error=False)
 
 VALID_API_KEYS = set(filter(None, os.environ.get("FAST_AUTH_KEYS", "").split(",")))
+
+TY_BUILD_SCRIPT = osp.join(_PROJECT_ROOT, "lang_agent", "config", "ty_build_config.py")

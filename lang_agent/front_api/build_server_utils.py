@@ -5,15 +5,13 @@ import subprocess
 import json
 
 from lang_agent.config.core_config import load_tyro_conf
-
-_PROJECT_ROOT = osp.dirname(osp.dirname(osp.dirname(osp.abspath(__file__))))
-_TY_BUILD_SCRIPT = osp.join(_PROJECT_ROOT, "lang_agent", "config", "ty_build_config.py")
+from lang_agent.config.constants import TY_BUILD_SCRIPT, _PROJECT_ROOT
 
 
 def opt_to_config(save_path: str, *nargs):
     os.makedirs(osp.dirname(save_path), exist_ok=True)
     subprocess.run(
-        ["python", _TY_BUILD_SCRIPT, "--save-path", save_path, *nargs],
+        ["python", TY_BUILD_SCRIPT, "--save-path", save_path, *nargs],
         check=True,
         cwd=_PROJECT_ROOT,
     )
