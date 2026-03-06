@@ -89,6 +89,33 @@ export type PipelineStopResponse = {
   reload_required: boolean;
 };
 
+export type ConversationListItem = {
+  conversation_id: string;
+  pipeline_id: string;
+  message_count: number;
+  last_updated?: string | null;
+};
+
+export type PipelineConversationListResponse = {
+  pipeline_id: string;
+  items: ConversationListItem[];
+  count: number;
+};
+
+export type ConversationMessageItem = {
+  message_type: string;
+  content: string;
+  sequence_number: number;
+  created_at: string;
+};
+
+export type PipelineConversationMessagesResponse = {
+  pipeline_id: string;
+  conversation_id: string;
+  items: ConversationMessageItem[];
+  count: number;
+};
+
 export type McpToolConfigResponse = {
   path: string;
   raw_content: string;

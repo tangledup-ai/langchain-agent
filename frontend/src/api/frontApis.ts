@@ -1,5 +1,7 @@
 import type {
   AvailableGraphsResponse,
+  ConversationListItem,
+  ConversationMessageItem,
   GraphConfigListResponse,
   GraphConfigReadResponse,
   GraphConfigUpsertRequest,
@@ -10,6 +12,8 @@ import type {
   McpToolConfigUpdateResponse,
   PipelineCreateRequest,
   PipelineCreateResponse,
+  PipelineConversationListResponse,
+  PipelineConversationMessagesResponse,
   PipelineListResponse,
   PipelineStopResponse,
 } from "../types";
@@ -136,5 +140,25 @@ export function stopPipeline(pipelineId: string): Promise<PipelineStopResponse> 
   return fetchJson(`/v1/pipelines/${pipelineId}`, {
     method: "DELETE",
   });
+}
+
+export async function listPipelineConversations(
+  pipelineId: string,
+  limit = 100
+): Promise<ConversationListItem[]> {
+  const response = await fetchJson<PipelineConversationListResponse>(
+    `/v1/pipelines/${encodeURIComponent(pipelineId)}/conversations?limit=${limit}`
+  );
+  return response.items || [];
+}
+
+export async function getPipelineConversationMessages(
+  pipelineId: string,
+  conversationId: string
+): Promise<ConversationMessageItem[]> {
+  const response = await fetchJson<PipelineConversationMessagesResponse>(
+    `/v1/pipelines/${encodeURIComponent(pipelineId)}/conversations/${encodeURIComponent(conversationId)}/messages`
+  );
+  return response.items || [];
 }
 
