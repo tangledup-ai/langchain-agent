@@ -3,9 +3,11 @@ import {
   createPipeline,
   deleteGraphConfig,
   getGraphConfig,
+  getPipelineConversationMessages,
   getGraphDefaultConfig,
   getPipelineDefaultConfig,
   getMcpToolConfig,
+  listPipelineConversations,
   listMcpAvailableTools,
   listAvailableGraphs,
   listGraphConfigs,
@@ -16,6 +18,8 @@ import {
 } from "./api/frontApis";
 import { chooseActiveConfigItem, chooseDisplayItemsByPipeline } from "./activeConfigSelection";
 import type {
+  ConversationListItem,
+  ConversationMessageItem,
   GraphConfigListItem,
   GraphConfigReadResponse,
   PipelineSpec,
@@ -33,7 +37,7 @@ type EditableAgent = {
   llmName: string;
 };
 
-type ActiveTab = "agents" | "mcp";
+type ActiveTab = "agents" | "discussions" | "mcp";
 type McpTransport = "streamable_http" | "sse" | "stdio";
 type McpEntry = {
   id: string;
@@ -373,6 +377,17 @@ function sanitizeConfigPath(path: string): string {
   return normalized;
 }
 
+function formatDateTime(value?: string | null): string {
+  if (!value) {
+    return "";
+  }
+  const timestamp = Date.parse(value);
+  if (Number.isNaN(timestamp)) {
+    return value;
+  }
+  return new Date(timestamp).toLocaleString();
+}
+
 function toEditable(
   config: GraphConfigReadResponse,
   draft: boolean
@@ -406,6 +421,10 @@ export default function App() {
   const [mcpToolKeys, setMcpToolKeys] = useState<string[]>([]);
   const [mcpToolsByServer, setMcpToolsByServer] = useState<Record<string, string[]>>({});
   const [mcpErrorsByServer, setMcpErrorsByServer] = useState<Record<string, string>>({});
+  const [discussionConversations, setDiscussionConversations] = useState<ConversationListItem[]>([]);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [discussionMessages, setDiscussionMessages] = useState<ConversationMessageItem[]>([]);
+  const [discussionLoading, setDiscussionLoading] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const configKeySet = useMemo(
@@ -454,6 +473,8 @@ export default function App() {
     });
   }, [editor, running]);
   const isEditorRunning = selectedRuns.length > 0;
+  const selectedPipelineId = editor?.pipelineId.trim() || "";
+  const canViewDiscussions = !!selectedPipelineId && !editor?.isDraft;
 
   async function refreshConfigs(): Promise<void> {
     const resp = await listGraphConfigs();
@@ -509,6 +530,82 @@ export default function App() {
     }
     reloadMcpConfig().catch(() => undefined);
   }, [activeTab, mcpEntries.length]);
+
+  async function loadPipelineDiscussions(
+    pipelineId: string,
+    opts: { keepSelection?: boolean } = {}
+  ): Promise<void> {
+    if (!pipelineId) {
+      setDiscussionConversations([]);
+      setSelectedConversationId(null);
+      setDiscussionMessages([]);
+      return;
+    }
+    setDiscussionLoading(true);
+    try {
+      const conversations = await listPipelineConversations(pipelineId);
+      setDiscussionConversations(conversations);
+      const nextSelected = opts.keepSelection
+        ? conversations.find((item) => item.conversation_id === selectedConversationId)
+          ? selectedConversationId
+          : null
+        : null;
+      const initialConversationId = nextSelected || conversations[0]?.conversation_id || null;
+      setSelectedConversationId(initialConversationId);
+
+      if (initialConversationId) {
+        const messages = await getPipelineConversationMessages(
+          pipelineId,
+          initialConversationId
+        );
+        setDiscussionMessages(messages);
+      } else {
+        setDiscussionMessages([]);
+      }
+    } catch (error) {
+      setStatusMessage((error as Error).message);
+      setDiscussionConversations([]);
+      setSelectedConversationId(null);
+      setDiscussionMessages([]);
+    } finally {
+      setDiscussionLoading(false);
+    }
+  }
+
+  async function selectDiscussionConversation(conversationId: string): Promise<void> {
+    if (!selectedPipelineId) {
+      return;
+    }
+    setSelectedConversationId(conversationId);
+    setDiscussionLoading(true);
+    try {
+      const messages = await getPipelineConversationMessages(
+        selectedPipelineId,
+        conversationId
+      );
+      setDiscussionMessages(messages);
+    } catch (error) {
+      setStatusMessage((error as Error).message);
+      setDiscussionMessages([]);
+    } finally {
+      setDiscussionLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab !== "discussions") {
+      return;
+    }
+    if (!canViewDiscussions) {
+      setDiscussionConversations([]);
+      setSelectedConversationId(null);
+      setDiscussionMessages([]);
+      return;
+    }
+    loadPipelineDiscussions(selectedPipelineId, { keepSelection: true }).catch(
+      () => undefined
+    );
+  }, [activeTab, canViewDiscussions, selectedPipelineId]);
 
   async function selectExisting(item: GraphConfigListItem): Promise<void> {
     const id = makeAgentKey(item.pipeline_id);
@@ -786,6 +883,23 @@ export default function App() {
         api_key: editor.apiKey.trim(),
       });
 
+      let yamlSyncError = "";
+      try {
+        await createPipeline({
+          graph_id: editor.graphId,
+          pipeline_id: editor.pipelineId.trim(),
+          prompt_set_id: upsertResp.prompt_set_id,
+          tool_keys: editor.toolKeys,
+          api_key: editor.apiKey.trim(),
+          llm_name: editor.llmName || DEFAULT_LLM_NAME,
+          enabled: isEditorRunning,
+        });
+        await refreshRunning();
+      } catch (error) {
+        // Preserve the DB save result but surface why YAML/registry sync failed.
+        yamlSyncError = (error as Error).message;
+      }
+
       await refreshConfigs();
       const detail = await getPipelineDefaultConfig(upsertResp.pipeline_id);
       const saved = toEditable(detail, false);
@@ -795,7 +909,11 @@ export default function App() {
       setEditor(saved);
       setSelectedId(saved.id);
       setDraftAgents((prev) => prev.filter((d) => d.id !== editor.id));
-      setStatusMessage("Agent config saved.");
+      setStatusMessage(
+        yamlSyncError
+          ? `Agent config saved, but YAML sync failed: ${yamlSyncError}`
+          : "Agent config saved and YAML synced."
+      );
     } catch (error) {
       setStatusMessage((error as Error).message);
     } finally {
@@ -917,7 +1035,7 @@ export default function App() {
   ];
   const graphArchImage = editor ? getGraphArchImage(editor.graphId) : null;
 
-  const showSidebar = activeTab === "agents";
+  const showSidebar = activeTab !== "mcp";
 
   return (
     <div className={`app ${showSidebar ? "" : "full-width"}`}>
@@ -972,6 +1090,14 @@ export default function App() {
               disabled={busy}
             >
               Agents
+            </button>
+            <button
+              type="button"
+              className={`tab-button ${activeTab === "discussions" ? "active" : ""}`}
+              onClick={() => setActiveTab("discussions")}
+              disabled={busy}
+            >
+              Agent Discussions
             </button>
             <button
               type="button"
@@ -1132,6 +1258,84 @@ export default function App() {
               </section>
             )}
           </div>
+        ) : activeTab === "discussions" ? (
+          <section className="discussion-section tab-pane">
+            <div className="discussion-header">
+              <h3>Agent Discussions</h3>
+              <div className="header-actions">
+                <button
+                  type="button"
+                  onClick={() =>
+                    loadPipelineDiscussions(selectedPipelineId, { keepSelection: true })
+                  }
+                  disabled={busy || discussionLoading || !canViewDiscussions}
+                >
+                  Refresh
+                </button>
+              </div>
+            </div>
+            {!editor ? (
+              <p className="empty">Select an agent from the left to view its discussions.</p>
+            ) : editor.isDraft || !selectedPipelineId ? (
+              <p className="empty">Save this agent first to start tracking discussion history.</p>
+            ) : (
+              <div className="discussion-layout">
+                <div className="discussion-list">
+                  {discussionConversations.length === 0 ? (
+                    <p className="empty">No discussions found for this agent yet.</p>
+                  ) : (
+                    discussionConversations.map((conversation) => (
+                      <button
+                        key={conversation.conversation_id}
+                        className={`discussion-item ${
+                          selectedConversationId === conversation.conversation_id
+                            ? "selected"
+                            : ""
+                        }`}
+                        onClick={() =>
+                          selectDiscussionConversation(conversation.conversation_id)
+                        }
+                        disabled={discussionLoading}
+                      >
+                        <strong>{conversation.conversation_id}</strong>
+                        <small>
+                          messages: {conversation.message_count}
+                          {conversation.last_updated
+                            ? ` • ${formatDateTime(conversation.last_updated)}`
+                            : ""}
+                        </small>
+                      </button>
+                    ))
+                  )}
+                </div>
+                <div className="discussion-thread">
+                  {!selectedConversationId ? (
+                    <p className="empty">Select a discussion to inspect messages.</p>
+                  ) : discussionMessages.length === 0 ? (
+                    <p className="empty">No stored messages for this discussion.</p>
+                  ) : (
+                    discussionMessages.map((message) => (
+                      <article
+                        key={`${message.sequence_number}-${message.created_at}`}
+                        className={`discussion-message ${message.message_type}`}
+                      >
+                        <div className="discussion-message-meta">
+                          <strong>{message.message_type}</strong>
+                          <small>
+                            #{message.sequence_number}
+                            {message.created_at
+                              ? ` • ${formatDateTime(message.created_at)}`
+                              : ""}
+                          </small>
+                        </div>
+                        <pre>{message.content}</pre>
+                      </article>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </section>
         ) : (
           <section className="mcp-config-section tab-pane">
             <div className="mcp-config-header">
