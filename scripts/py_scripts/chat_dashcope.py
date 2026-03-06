@@ -3,7 +3,7 @@
 Simple chat loop to interact with the blueberry pipeline via DashScope-compatible API.
 
 Usage:
-    python chat_blueberry.py
+    python scripts/py_scripts/chat_dashcope.py
 
 The script connects to the server running on http://localhost:8500
 and uses the API key from the pipeline registry.
