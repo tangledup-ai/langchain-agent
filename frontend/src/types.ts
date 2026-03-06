@@ -116,6 +116,11 @@ export type PipelineConversationMessagesResponse = {
   count: number;
 };
 
+export type RuntimeAuthInfoResponse = {
+  fast_api_key: string;
+  source: string;
+};
+
 export type McpToolConfigResponse = {
   path: string;
   raw_content: string;

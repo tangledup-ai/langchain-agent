@@ -16,6 +16,7 @@ import type {
   PipelineConversationMessagesResponse,
   PipelineListResponse,
   PipelineStopResponse,
+  RuntimeAuthInfoResponse,
 } from "../types";
 
 const API_BASE_URL =
@@ -140,6 +141,10 @@ export function stopPipeline(pipelineId: string): Promise<PipelineStopResponse> 
   return fetchJson(`/v1/pipelines/${pipelineId}`, {
     method: "DELETE",
   });
+}
+
+export function getRuntimeAuthInfo(): Promise<RuntimeAuthInfoResponse> {
+  return fetchJson("/v1/runtime-auth");
 }
 
 export async function listPipelineConversations(

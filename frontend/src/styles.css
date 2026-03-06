@@ -282,6 +282,33 @@ button:disabled {
   padding: 10px;
 }
 
+.run-card-columns {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(280px, 1fr) minmax(420px, 1.3fr);
+}
+
+.run-card-left,
+.run-card-right {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.run-card-right {
+  border-left: 1px solid #dbe2ea;
+  min-width: 0;
+  padding-left: 12px;
+}
+
+.run-card-right code {
+  display: inline-block;
+  max-width: 100%;
+  overflow-x: auto;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
 .discussion-section {
   background: #f7fbff;
   border: 1px solid #d7e6f6;

@@ -8,6 +8,7 @@ import {
   getPipelineConversationMessages,
   getGraphDefaultConfig,
   getPipelineDefaultConfig,
+  getRuntimeAuthInfo,
   getMcpToolConfig,
   listPipelineConversations,
   listMcpAvailableTools,
@@ -54,6 +55,7 @@ type McpEntry = {
 
 const DEFAULT_LLM_NAME = "qwen-plus";
 const DEFAULT_API_KEY = "";
+const LOCAL_DASHSCOPE_BASE = "http://127.0.0.1:8500/v1/apps";
 const MCP_TRANSPORT_OPTIONS: McpTransport[] = ["streamable_http", "sse", "stdio"];
 const GRAPH_ARCH_IMAGE_MODULES = import.meta.glob(
   "../assets/images/graph_arch/*.{png,jpg,jpeg,webp,gif}",
@@ -390,6 +392,15 @@ function formatDateTime(value?: string | null): string {
   return new Date(timestamp).toLocaleString();
 }
 
+function stripTrailingSlash(value: string): string {
+  return value.replace(/\/+$/, "");
+}
+
+function buildAgentChatUrlBase(): string {
+  const baseUrl = stripTrailingSlash(LOCAL_DASHSCOPE_BASE);
+  return `${baseUrl}/`;
+}
+
 function toEditable(
   config: GraphConfigReadResponse,
   draft: boolean
@@ -423,6 +434,7 @@ export default function App() {
   const [mcpToolKeys, setMcpToolKeys] = useState<string[]>([]);
   const [mcpToolsByServer, setMcpToolsByServer] = useState<Record<string, string[]>>({});
   const [mcpErrorsByServer, setMcpErrorsByServer] = useState<Record<string, string>>({});
+  const [runtimeFastApiKey, setRuntimeFastApiKey] = useState<string>("");
   const [discussionConversations, setDiscussionConversations] = useState<ConversationListItem[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [discussionMessages, setDiscussionMessages] = useState<ConversationMessageItem[]>([]);
@@ -497,6 +509,12 @@ export default function App() {
         listGraphConfigs(),
         listPipelines(),
       ]);
+      try {
+        const runtimeAuth = await getRuntimeAuthInfo();
+        setRuntimeFastApiKey(runtimeAuth.fast_api_key || "");
+      } catch {
+        setRuntimeFastApiKey("");
+      }
       setGraphs(graphResp.available_graphs || []);
       setConfigItems(configResp.items || []);
       setRunning(runsResp.items || []);
@@ -1238,20 +1256,37 @@ export default function App() {
                   ) : (
                     selectedRuns.map((run) => (
                       <div key={run.pipeline_id} className="run-card">
-                        <div>
-                          <strong>pipeline_id:</strong> {run.pipeline_id}
-                        </div>
-                        <div>
-                          <strong>graph_id:</strong> {run.graph_id}
-                        </div>
-                        <div>
-                          <strong>model:</strong> {run.llm_name}
-                        </div>
-                        <div>
-                          <strong>enabled:</strong> {String(run.enabled)}
-                        </div>
-                        <div>
-                          <strong>config_file:</strong> {run.config_file}
+                        <div className="run-card-columns">
+                          <div className="run-card-left">
+                            <div>
+                              <strong>pipeline_id:</strong> {run.pipeline_id}
+                            </div>
+                            <div>
+                              <strong>graph_id:</strong> {run.graph_id}
+                            </div>
+                            <div>
+                              <strong>model:</strong> {run.llm_name}
+                            </div>
+                            <div>
+                              <strong>enabled:</strong> {String(run.enabled)}
+                            </div>
+                            <div>
+                              <strong>config_file:</strong> {run.config_file}
+                            </div>
+                          </div>
+                          <div className="run-card-right">
+                            <div>
+                              <strong>FAST_API_KEY:</strong>{" "}
+                              <code>{runtimeFastApiKey || "(not found)"}</code>
+                            </div>
+                            <div>
+                              <strong>chat_url:</strong>{" "}
+                              <code>{buildAgentChatUrlBase()}</code>
+                            </div>
+                            <div>
+                              <strong>app_id:</strong> {run.pipeline_id}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     ))
