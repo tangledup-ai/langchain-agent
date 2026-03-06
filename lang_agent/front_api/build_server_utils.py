@@ -65,6 +65,7 @@ def build_route(
     pipeline_config_dir="configs/pipelines",
 ):
     cmd_opt = [
+        "--pipeline.pipeline-id", pipeline_id,
         "route",  # ------------
         "--llm-name", llm_name,
         "--api-key", api_key,
@@ -94,6 +95,7 @@ def build_react(
     pipeline_config_dir="configs/pipelines",
 ):
     cmd_opt = [
+        "--pipeline.pipeline-id", pipeline_id,
         "react",  # ------------
         "--llm-name", llm_name,
         "--api-key", api_key,
