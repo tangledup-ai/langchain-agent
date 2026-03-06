@@ -167,3 +167,105 @@ export async function getPipelineConversationMessages(
   return response.items || [];
 }
 
+type StreamAgentChatOptions = {
+  appId: string;
+  sessionId: string;
+  apiKey: string;
+  message: string;
+  onText: (text: string) => void;
+};
+
+function parseErrorDetail(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+  const detail = (payload as { detail?: unknown }).detail;
+  return typeof detail === "string" && detail.trim() ? detail : null;
+}
+
+export async function streamAgentChatResponse(
+  options: StreamAgentChatOptions
+): Promise<string> {
+  const { appId, sessionId, apiKey, message, onText } = options;
+  const response = await fetch(
+    `${API_BASE_URL}/v1/apps/${encodeURIComponent(appId)}/sessions/${encodeURIComponent(sessionId)}/responses`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        messages: [{ role: "user", content: message }],
+        stream: true,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    let messageText = `Request failed (${response.status})`;
+    try {
+      const payload = (await response.json()) as unknown;
+      const detail = parseErrorDetail(payload);
+      if (detail) {
+        messageText = detail;
+      }
+    } catch {
+      // Keep fallback status-based message.
+    }
+    throw new Error(messageText);
+  }
+
+  if (!response.body) {
+    throw new Error("Streaming response is not available.");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffered = "";
+  let latestText = "";
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) {
+      break;
+    }
+    buffered += decoder.decode(value, { stream: true });
+
+    let splitIndex = buffered.indexOf("\n\n");
+    while (splitIndex >= 0) {
+      const eventBlock = buffered.slice(0, splitIndex);
+      buffered = buffered.slice(splitIndex + 2);
+      splitIndex = buffered.indexOf("\n\n");
+
+      const lines = eventBlock.split("\n");
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line.startsWith("data:")) {
+          continue;
+        }
+        const payloadRaw = line.slice(5).trim();
+        if (!payloadRaw) {
+          continue;
+        }
+        let payload: unknown;
+        try {
+          payload = JSON.parse(payloadRaw);
+        } catch {
+          continue;
+        }
+        const nextText =
+          typeof (payload as { output?: { text?: unknown } })?.output?.text === "string"
+            ? ((payload as { output: { text: string } }).output.text as string)
+            : "";
+        if (nextText !== latestText) {
+          latestText = nextText;
+          onText(latestText);
+        }
+      }
+    }
+  }
+
+  return latestText;
+}
+

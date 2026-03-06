@@ -16,6 +16,7 @@ import {
   listGraphConfigs,
   listPipelines,
   stopPipeline,
+  streamAgentChatResponse,
   updateMcpToolConfig,
   upsertGraphConfig,
 } from "./api/frontApis";
@@ -38,6 +39,12 @@ type EditableAgent = {
   prompts: Record<string, string>;
   apiKey: string;
   llmName: string;
+};
+
+type AgentChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
 };
 
 type ActiveTab = "agents" | "discussions" | "mcp";
@@ -401,6 +408,10 @@ function buildAgentChatUrlBase(): string {
   return `${baseUrl}/`;
 }
 
+function createConversationId(): string {
+  return `conv-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 function toEditable(
   config: GraphConfigReadResponse,
   draft: boolean
@@ -439,6 +450,11 @@ export default function App() {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [discussionMessages, setDiscussionMessages] = useState<ConversationMessageItem[]>([]);
   const [discussionLoading, setDiscussionLoading] = useState(false);
+  const [chatPipelineId, setChatPipelineId] = useState<string | null>(null);
+  const [chatConversationId, setChatConversationId] = useState<string>(createConversationId);
+  const [chatInput, setChatInput] = useState<string>("");
+  const [chatMessages, setChatMessages] = useState<AgentChatMessage[]>([]);
+  const [chatSending, setChatSending] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const configKeySet = useMemo(
@@ -1037,6 +1053,88 @@ export default function App() {
     }
   }
 
+  function openAgentChat(pipelineId: string): void {
+    setChatPipelineId(pipelineId);
+    setChatConversationId(createConversationId());
+    setChatMessages([]);
+    setChatInput("");
+    setStatusMessage("");
+  }
+
+  function closeAgentChat(): void {
+    setChatPipelineId(null);
+    setChatMessages([]);
+    setChatInput("");
+  }
+
+  function startNewAgentChatConversation(): void {
+    setChatConversationId(createConversationId());
+    setChatMessages([]);
+    setChatInput("");
+  }
+
+  async function sendAgentChatMessage(): Promise<void> {
+    const pipelineId = (chatPipelineId || "").trim();
+    const message = chatInput.trim();
+    if (!pipelineId || !message || chatSending) {
+      return;
+    }
+
+    const authKey = runtimeFastApiKey.trim() || "dev-key";
+    const userMessage: AgentChatMessage = {
+      id: `user-${Date.now()}`,
+      role: "user",
+      content: message,
+    };
+    const assistantMessageId = `assistant-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const assistantMessage: AgentChatMessage = {
+      id: assistantMessageId,
+      role: "assistant",
+      content: "",
+    };
+
+    setChatSending(true);
+    setChatInput("");
+    setChatMessages((prev) => [...prev, userMessage, assistantMessage]);
+    setStatusMessage("");
+
+    try {
+      await streamAgentChatResponse({
+        appId: pipelineId,
+        sessionId: chatConversationId,
+        apiKey: authKey,
+        message,
+        onText: (text) => {
+          setChatMessages((prev) =>
+            prev.map((item) =>
+              item.id === assistantMessageId
+                ? {
+                    ...item,
+                    content: text,
+                  }
+                : item
+            )
+          );
+        },
+      });
+    } catch (error) {
+      const messageText = (error as Error).message || "Chat request failed.";
+      setStatusMessage(messageText);
+      setChatMessages((prev) =>
+        prev.map((item) =>
+          item.id === assistantMessageId
+            ? {
+                ...item,
+                content: `Error: ${messageText}`,
+              }
+            : item
+        )
+      );
+    } finally {
+      setChatSending(false);
+    }
+  }
+
   const rows = [
     ...draftAgents.map((d) => ({
       id: d.id,
@@ -1069,30 +1167,44 @@ export default function App() {
           </div>
           <div className="agent-list">
             {rows.map((row) => (
-              <button
-                key={row.id}
-                className={`agent-item ${selectedId === row.id ? "selected" : ""}`}
-                onClick={() => {
-                  if (row.isDraft) {
-                    const selectedDraft = draftAgents.find((d) => d.id === row.id) || null;
-                    setSelectedId(row.id);
-                    setEditor(selectedDraft);
-                    return;
-                  }
-                  const item = displayConfigItems.find((x) => makeAgentKey(x.pipeline_id) === row.id);
-                  if (item) {
-                    selectExisting(item);
-                  }
-                }}
-              >
-                <span className="agent-item-title">
-                  <span>{row.label}</span>
-                  <span className={`agent-status-pill ${row.isRunning ? "running" : "stopped"}`}>
-                    {row.isRunning ? "Running" : "Stopped"}
+              <div key={row.id} className="agent-item-row">
+                <button
+                  className={`agent-item ${selectedId === row.id ? "selected" : ""}`}
+                  onClick={() => {
+                    if (row.isDraft) {
+                      const selectedDraft = draftAgents.find((d) => d.id === row.id) || null;
+                      setSelectedId(row.id);
+                      setEditor(selectedDraft);
+                      return;
+                    }
+                    const item = displayConfigItems.find(
+                      (x) => makeAgentKey(x.pipeline_id) === row.id
+                    );
+                    if (item) {
+                      selectExisting(item);
+                    }
+                  }}
+                >
+                  <span className="agent-item-title">
+                    <span>{row.label}</span>
+                    <span className={`agent-status-pill ${row.isRunning ? "running" : "stopped"}`}>
+                      {row.isRunning ? "Running" : "Stopped"}
+                    </span>
                   </span>
-                </span>
-                <small>{row.graphId}</small>
-              </button>
+                  <small>{row.graphId}</small>
+                </button>
+                {!row.isDraft ? (
+                  <button
+                    type="button"
+                    className="agent-chat-button"
+                    onClick={() => openAgentChat(row.label)}
+                    disabled={busy || !row.isRunning}
+                    title={row.isRunning ? "Chat with this agent" : "Start this agent to chat"}
+                  >
+                    Chat
+                  </button>
+                ) : null}
+              </div>
             ))}
             {rows.length === 0 ? <p className="empty">No agents configured yet.</p> : null}
           </div>
@@ -1530,6 +1642,60 @@ export default function App() {
           </section>
         )}
       </main>
+
+      {chatPipelineId ? (
+        <div className="chat-modal-overlay" role="dialog" aria-modal="true">
+          <section className="chat-modal">
+            <header className="chat-modal-header">
+              <div>
+                <strong>Chat: {chatPipelineId}</strong>
+                <small>conv_id: {chatConversationId}</small>
+              </div>
+              <div className="header-actions">
+                <button type="button" onClick={startNewAgentChatConversation} disabled={chatSending}>
+                  New Conv
+                </button>
+                <button type="button" onClick={closeAgentChat} disabled={chatSending}>
+                  Close
+                </button>
+              </div>
+            </header>
+            <div className="chat-modal-messages">
+              {chatMessages.length === 0 ? (
+                <p className="empty">Send a message to start this conversation.</p>
+              ) : (
+                chatMessages.map((message) => (
+                  <article
+                    key={message.id}
+                    className={`chat-modal-message ${message.role === "assistant" ? "assistant" : "user"}`}
+                  >
+                    <strong>{message.role === "assistant" ? "Agent" : "You"}</strong>
+                    <p>{message.content || (chatSending && message.role === "assistant" ? "..." : "")}</p>
+                  </article>
+                ))
+              )}
+            </div>
+            <div className="chat-modal-input">
+              <textarea
+                value={chatInput}
+                onChange={(event) => setChatInput(event.target.value)}
+                placeholder="Type your message..."
+                rows={3}
+                disabled={chatSending}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  sendAgentChatMessage().catch(() => undefined);
+                }}
+                disabled={chatSending || !chatInput.trim()}
+              >
+                Send (Stream)
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
