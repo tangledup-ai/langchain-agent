@@ -160,3 +160,30 @@ ON CONFLICT (prompt_set_id, prompt_key)
 DO UPDATE SET
     content = EXCLUDED.content,
     updated_at = now();
+
+-- Seed: initial prompt set for lang_agent/graphs/deepagents_qt.py
+-- DeepAgent uses prompt key "sys_prompt" with DB-first, file-fallback loading.
+INSERT INTO prompt_sets (pipeline_id, graph_id, name, description, is_active, list)
+SELECT
+    'deepagent',
+    'deepagent',
+    'default',
+    'Initial prompt set for DeepAgent',
+    true,
+    ''
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM prompt_sets
+    WHERE pipeline_id = 'deepagent'
+      AND name = 'default'
+);
+
+INSERT INTO prompt_templates (prompt_set_id, prompt_key, content)
+SELECT ps.id, 'sys_prompt', '你是一个擅长调用工具和处理文件任务的深度代理。'
+FROM prompt_sets ps
+WHERE ps.pipeline_id = 'deepagent'
+  AND ps.name = 'default'
+ON CONFLICT (prompt_set_id, prompt_key)
+DO UPDATE SET
+    content = EXCLUDED.content,
+    updated_at = now();
