@@ -55,6 +55,7 @@ export type PipelineCreateRequest = {
   api_key?: string;
   llm_name: string;
   enabled?: boolean;
+  graph_params?: Record<string, unknown>;
 };
 
 export type PipelineSpec = {
@@ -63,7 +64,6 @@ export type PipelineSpec = {
   enabled: boolean;
   config_file: string;
   llm_name: string;
-  overrides: Record<string, unknown>;
 };
 
 export type PipelineCreateResponse = {

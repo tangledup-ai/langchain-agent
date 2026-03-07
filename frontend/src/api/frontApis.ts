@@ -173,6 +173,7 @@ type StreamAgentChatOptions = {
   apiKey: string;
   message: string;
   onText: (text: string) => void;
+  signal?: AbortSignal;
 };
 
 function parseErrorDetail(payload: unknown): string | null {
@@ -186,7 +187,7 @@ function parseErrorDetail(payload: unknown): string | null {
 export async function streamAgentChatResponse(
   options: StreamAgentChatOptions
 ): Promise<string> {
-  const { appId, sessionId, apiKey, message, onText } = options;
+  const { appId, sessionId, apiKey, message, onText, signal } = options;
   const response = await fetch(
     `${API_BASE_URL}/v1/apps/${encodeURIComponent(appId)}/sessions/${encodeURIComponent(sessionId)}/responses`,
     {
@@ -199,6 +200,7 @@ export async function streamAgentChatResponse(
         messages: [{ role: "user", content: message }],
         stream: true,
       }),
+      signal,
     }
   );
 
@@ -226,6 +228,10 @@ export async function streamAgentChatResponse(
   let latestText = "";
 
   while (true) {
+    if (signal?.aborted) {
+      reader.cancel();
+      throw new Error("Request cancelled");
+    }
     const { value, done } = await reader.read();
     if (done) {
       break;

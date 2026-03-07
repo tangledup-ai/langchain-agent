@@ -618,6 +618,7 @@ button:disabled {
   display: grid;
   gap: 8px;
   grid-template-columns: 1fr auto;
+  align-items: start;
 }
 
 .chat-modal-input textarea {
@@ -626,5 +627,25 @@ button:disabled {
   font-size: 14px;
   padding: 8px;
   resize: vertical;
+}
+
+.chat-modal-actions {
+  display: flex;
+  gap: 8px;
+  height: 100%;
+}
+
+.chat-modal-actions button {
+  height: auto;
+  white-space: nowrap;
+}
+
+.chat-stop-button {
+  background-color: #dc3545;
+  color: white;
+}
+
+.chat-stop-button:hover {
+  background-color: #bb2d3b;
 }
 

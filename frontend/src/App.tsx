@@ -39,6 +39,7 @@ type EditableAgent = {
   prompts: Record<string, string>;
   apiKey: string;
   llmName: string;
+  actBackend: DeepAgentActBackend;
 };
 
 type AgentChatMessage = {
@@ -48,6 +49,7 @@ type AgentChatMessage = {
 };
 
 type ActiveTab = "agents" | "discussions" | "mcp";
+type DeepAgentActBackend = "state_bk" | "local_shell" | "daytona_sandbox";
 type McpTransport = "streamable_http" | "sse" | "stdio";
 type McpEntry = {
   id: string;
@@ -62,6 +64,15 @@ type McpEntry = {
 
 const DEFAULT_LLM_NAME = "qwen-plus";
 const DEFAULT_API_KEY = "";
+const DEFAULT_DEEPAGENT_ACT_BACKEND: DeepAgentActBackend = "state_bk";
+const DEEPAGENT_BACKEND_OPTIONS: Array<{
+  value: DeepAgentActBackend;
+  label: string;
+}> = [
+  { value: "state_bk", label: "state_bk" },
+  { value: "local_shell", label: "local_shell" },
+  { value: "daytona_sandbox", label: "daytona_sandbox" },
+];
 const LOCAL_DASHSCOPE_BASE = "http://127.0.0.1:8500/v1/apps";
 const MCP_TRANSPORT_OPTIONS: McpTransport[] = ["streamable_http", "sse", "stdio"];
 const GRAPH_ARCH_IMAGE_MODULES = import.meta.glob(
@@ -73,6 +84,9 @@ const FALLBACK_PROMPTS_BY_GRAPH: Record<string, Record<string, string>> = {
     route_prompt: "",
     chat_prompt: "",
     tool_prompt: "",
+  },
+  deepagent: {
+    sys_prompt: "",
   },
   react: {
     sys_prompt: "",
@@ -412,6 +426,26 @@ function createConversationId(): string {
   return `conv-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function normalizeDeepAgentActBackend(value: unknown): DeepAgentActBackend {
+  if (value === "local_shell" || value === "localshell") {
+    return "local_shell";
+  }
+  if (value === "daytona_sandbox" || value === "daytonasandbox") {
+    return "daytona_sandbox";
+  }
+  if (value === "state_bk" || value === "statebk") {
+    return "state_bk";
+  }
+  return DEFAULT_DEEPAGENT_ACT_BACKEND;
+}
+
+function buildGraphParams(editor: EditableAgent): Record<string, unknown> {
+  if (editor.graphId === "deepagent") {
+    return { act_bkend: editor.actBackend };
+  }
+  return {};
+}
+
 function toEditable(
   config: GraphConfigReadResponse,
   draft: boolean
@@ -428,6 +462,7 @@ function toEditable(
     prompts: config.prompt_dict || {},
     apiKey: config.api_key || DEFAULT_API_KEY,
     llmName: DEFAULT_LLM_NAME,
+    actBackend: DEFAULT_DEEPAGENT_ACT_BACKEND,
   };
 }
 
@@ -455,6 +490,7 @@ export default function App() {
   const [chatInput, setChatInput] = useState<string>("");
   const [chatMessages, setChatMessages] = useState<AgentChatMessage[]>([]);
   const [chatSending, setChatSending] = useState(false);
+  const [chatAbortController, setChatAbortController] = useState<AbortController | null>(null);
   const [busy, setBusy] = useState(false);
 
   const configKeySet = useMemo(
@@ -714,6 +750,10 @@ export default function App() {
           graphId,
           prompts: { ...defaults.prompt_dict },
           toolKeys: defaults.tool_keys || [],
+          actBackend:
+            graphId === "deepagent"
+              ? prev.actBackend || DEFAULT_DEEPAGENT_ACT_BACKEND
+              : DEFAULT_DEEPAGENT_ACT_BACKEND,
         };
         if (next.isDraft) {
           setDraftAgents((drafts) => drafts.map((draft) => (draft.id === next.id ? next : draft)));
@@ -905,9 +945,8 @@ export default function App() {
           const active = await getPipelineDefaultConfig(editor.pipelineId.trim());
           targetPromptSetId = active.prompt_set_id;
         } catch {
-          throw new Error(
-            "No active prompt set for this pipeline. Create/activate one via backend first."
-          );
+          // For a brand-new pipeline, let backend create a new prompt set.
+          targetPromptSetId = undefined;
         }
       }
       const upsertResp = await upsertGraphConfig({
@@ -929,6 +968,7 @@ export default function App() {
           api_key: editor.apiKey.trim(),
           llm_name: editor.llmName || DEFAULT_LLM_NAME,
           enabled: isEditorRunning,
+          graph_params: buildGraphParams(editor),
         });
         await refreshRunning();
       } catch (error) {
@@ -1012,6 +1052,7 @@ export default function App() {
         api_key: editor.apiKey.trim(),
         llm_name: editor.llmName,
         enabled: true,
+        graph_params: buildGraphParams(editor),
       });
       await refreshRunning();
       if (resp.reload_required) {
@@ -1081,6 +1122,9 @@ export default function App() {
     }
 
     const authKey = runtimeFastApiKey.trim() || "dev-key";
+    const controller = new AbortController();
+    setChatAbortController(controller);
+
     const userMessage: AgentChatMessage = {
       id: `user-${Date.now()}`,
       role: "user",
@@ -1104,6 +1148,7 @@ export default function App() {
         sessionId: chatConversationId,
         apiKey: authKey,
         message,
+        signal: controller.signal,
         onText: (text) => {
           setChatMessages((prev) =>
             prev.map((item) =>
@@ -1118,6 +1163,19 @@ export default function App() {
         },
       });
     } catch (error) {
+      if ((error as Error).message === "Request cancelled") {
+        setChatMessages((prev) =>
+          prev.map((item) =>
+            item.id === assistantMessageId
+              ? {
+                  ...item,
+                  content: item.content + "\n\n*[Stopped]*",
+                }
+              : item
+          )
+        );
+        return;
+      }
       const messageText = (error as Error).message || "Chat request failed.";
       setStatusMessage(messageText);
       setChatMessages((prev) =>
@@ -1132,6 +1190,7 @@ export default function App() {
       );
     } finally {
       setChatSending(false);
+      setChatAbortController(null);
     }
   }
 
@@ -1336,6 +1395,28 @@ export default function App() {
                     disabled={busy}
                   />
                 </label>
+
+                {editor.graphId === "deepagent" ? (
+                  <label>
+                    act_bkend
+                    <select
+                      value={editor.actBackend}
+                      onChange={(e) =>
+                        updateEditor(
+                          "actBackend",
+                          normalizeDeepAgentActBackend(e.target.value)
+                        )
+                      }
+                      disabled={busy}
+                    >
+                      {DEEPAGENT_BACKEND_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
 
                 <div className="prompt-section">
                   <h3>Prompts</h3>
@@ -1670,7 +1751,11 @@ export default function App() {
                     className={`chat-modal-message ${message.role === "assistant" ? "assistant" : "user"}`}
                   >
                     <strong>{message.role === "assistant" ? "Agent" : "You"}</strong>
-                    <p>{message.content || (chatSending && message.role === "assistant" ? "..." : "")}</p>
+                    <div className="chat-message-content">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {message.content || (chatSending && message.role === "assistant" ? "..." : "")}
+                      </ReactMarkdown>
+                    </div>
                   </article>
                 ))
               )}
@@ -1679,19 +1764,41 @@ export default function App() {
               <textarea
                 value={chatInput}
                 onChange={(event) => setChatInput(event.target.value)}
-                placeholder="Type your message..."
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    if (chatInput.trim() && !chatSending) {
+                      sendAgentChatMessage().catch(() => undefined);
+                    }
+                  }
+                }}
+                placeholder="Type your message... (Enter to send, Shift+Enter for new line)"
                 rows={3}
                 disabled={chatSending}
               />
-              <button
-                type="button"
-                onClick={() => {
-                  sendAgentChatMessage().catch(() => undefined);
-                }}
-                disabled={chatSending || !chatInput.trim()}
-              >
-                Send (Stream)
-              </button>
+              <div className="chat-modal-actions">
+                {chatSending ? (
+                  <button
+                    type="button"
+                    className="chat-stop-button"
+                    onClick={() => {
+                      chatAbortController?.abort();
+                    }}
+                  >
+                    Stop
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sendAgentChatMessage().catch(() => undefined);
+                    }}
+                    disabled={chatSending || !chatInput.trim()}
+                  >
+                    Send (Stream)
+                  </button>
+                )}
+              </div>
             </div>
           </section>
         </div>
