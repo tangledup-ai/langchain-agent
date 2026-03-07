@@ -39,3 +39,23 @@ class LocalShell(BaseFilesystemBackend):
                                          virtual_mode=True,
                                         #  env={"PATH": "/usr/bin:/bin"}
                                          inherit_env=True)
+
+
+
+if __name__ == "__main__":
+    import sys
+
+    # Instantiate a LocalShell instance with the default config
+    config = LocalShellConfig()
+    shell = LocalShell(config)
+
+    # Try checking access to 'npx'
+    try:
+        result = shell.backend.execute("npx --version")
+        if result.exit_code == 0:
+            print("npx is available, version:", result.output.strip())
+        else:
+            print("npx returned non-zero exit code:", result.exit_code, file=sys.stderr)
+            print("output:", result.output, file=sys.stderr)
+    except Exception as e:
+        print("Could not access 'npx':", str(e), file=sys.stderr)
