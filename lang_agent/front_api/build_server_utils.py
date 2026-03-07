@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Literal
 import os
 import os.path as osp
 import subprocess
@@ -6,6 +6,15 @@ import json
 
 from lang_agent.config.core_config import load_tyro_conf
 from lang_agent.config.constants import TY_BUILD_SCRIPT, _PROJECT_ROOT
+
+_DEEP_AGENT_BACKEND_ALIASES = {
+    "state_bk": "statebk",
+    "statebk": "statebk",
+    "local_shell": "localshell",
+    "localshell": "localshell",
+    "daytona_sandbox": "daytonasandbox",
+    "daytonasandbox": "daytonasandbox",
+}
 
 
 def opt_to_config(save_path: str, *nargs):
@@ -50,7 +59,7 @@ def update_pipeline_registry(
     pipeline["enabled"] = bool(enabled)
     pipeline["config_file"] = config_file
     pipeline["graph_id"] = graph_id
-    pipeline["overrides"] = {"llm_name": llm_name}
+    pipeline["llm_name"] = llm_name
 
     with open(registry_f, "w", encoding="utf-8") as f:
         json.dump(registry, f, indent=4)
@@ -62,7 +71,8 @@ def build_route(
     tool_keys: List[str],
     api_key: str,
     llm_name: str = "qwen-plus",
-    pipeline_config_dir="configs/pipelines",
+    pipeline_config_dir: str = "configs/pipelines",
+    **_: Any,
 ):
     cmd_opt = [
         "--pipeline.pipeline-id", pipeline_id,
@@ -92,7 +102,8 @@ def build_react(
     tool_keys: List[str],
     api_key: str,
     llm_name: str = "qwen-plus",
-    pipeline_config_dir="configs/pipelines",
+    pipeline_config_dir: str = "configs/pipelines",
+    **_: Any,
 ):
     cmd_opt = [
         "--pipeline.pipeline-id", pipeline_id,
@@ -110,8 +121,50 @@ def build_react(
     return _build_and_load_pipeline_config(pipeline_id, pipeline_config_dir, cmd_opt)
 
 
+def build_deep_agent(
+    pipeline_id: str,
+    prompt_set: str,
+    tool_keys: List[str],
+    api_key: str,
+    llm_name: str = "qwen-plus",
+    pipeline_config_dir: str = "configs/pipelines",
+    act_bkend: Literal[
+        "local_shell",
+        "localshell",
+        "state_bk",
+        "statebk",
+        "daytona_sandbox",
+        "daytonasandbox",
+    ] = "state_bk",
+    **_: Any,
+):
+    backend_subcommand = _DEEP_AGENT_BACKEND_ALIASES.get(act_bkend)
+    if backend_subcommand is None:
+        raise ValueError(
+            "Unsupported deepagent backend "
+            f"'{act_bkend}'. Expected one of {sorted(_DEEP_AGENT_BACKEND_ALIASES.keys())}"
+        )
+
+    cmd_opt = [
+        "--pipeline.pipeline-id", pipeline_id,
+        "deepagent",
+        "--llm-name", llm_name,
+        "--api-key", api_key,
+        "--pipeline-id", pipeline_id,
+        "--prompt-set-id", prompt_set,
+        backend_subcommand,
+    ]
+
+    if tool_keys:
+        cmd_opt.extend(
+            ["--tool-manager-config.client-tool-manager.tool-keys", *tool_keys]
+        )
+
+    return _build_and_load_pipeline_config(pipeline_id, pipeline_config_dir, cmd_opt)
+
 # {pipeline_id: build_function}
 GRAPH_BUILD_FNCS = {
     "routing": build_route,
     "react": build_react,
+    "deepagent": build_deep_agent,
 }
