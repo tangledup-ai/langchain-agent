@@ -61,7 +61,12 @@ class DeepAgent(GraphBase):
                                             checkpointer=self.mem,
                                             **bkend_agent_params)
         
-        self.prompt_store = build_prompt_store(file_path=self.config.sys_prompt_f, default_key="sys_prompt")
+        self.prompt_store = build_prompt_store(
+            pipeline_id=self.config.pipeline_id,
+            prompt_set_id=self.config.prompt_set_id,
+            file_path=self.config.sys_prompt_f,
+            default_key="sys_prompt",
+        )
         self.sys_prompt = self.prompt_store.get("sys_prompt")
 
     def _agent_call(self, state:State):
