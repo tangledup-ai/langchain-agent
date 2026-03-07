@@ -55,7 +55,7 @@ class ServerPipelineManager:
             parsed_specs[pipeline_id] = {
                 "enabled": bool(spec.get("enabled", True)),
                 "config_file": spec.get("config_file"),
-                "overrides": spec.get("overrides", {}),
+                "llm_name": spec.get("llm_name"),
             }
         if not parsed_specs:
             raise ValueError("pipeline registry must define at least one pipeline.")
@@ -152,7 +152,7 @@ class ServerPipelineManager:
             )
 
         config_file = spec.get("config_file")
-        overrides = spec.get("overrides", {})
+        registry_llm_name = spec.get("llm_name")
         if config_file:
             loaded_cfg = load_tyro_conf(self._resolve_config_path(config_file))
             if hasattr(loaded_cfg, "setup"):
@@ -166,19 +166,11 @@ class ServerPipelineManager:
                 )
         else:
             cfg = copy.deepcopy(self.default_config)
-        if not isinstance(overrides, dict):
-            raise ValueError(
-                f"pipeline `overrides` for `{pipeline_id}` must be an object."
-            )
-        for key, value in overrides.items():
-            if not hasattr(cfg, key):
-                raise ValueError(
-                    f"unknown override field `{key}` for pipeline `{pipeline_id}`"
-                )
-            setattr(cfg, key, value)
+            if registry_llm_name is not None and hasattr(cfg, "llm_name"):
+                setattr(cfg, "llm_name", registry_llm_name)
 
         p = cfg.setup()
-        llm_name = getattr(cfg, "llm_name", "unknown-model")
+        llm_name = str(getattr(cfg, "llm_name", registry_llm_name or "unknown-model"))
         return p, llm_name
 
     def _authorize(self, api_key: str, pipeline_id: str) -> None:
