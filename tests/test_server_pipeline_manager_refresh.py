@@ -35,7 +35,7 @@ def test_refresh_registry_picks_up_new_pipeline(tmp_path):
             "default": {
                 "enabled": True,
                 "config_file": None,
-                "overrides": {"llm_name": "qwen-plus"},
+                "llm_name": "qwen-plus",
             }
         },
     )
@@ -57,12 +57,12 @@ def test_refresh_registry_picks_up_new_pipeline(tmp_path):
             "default": {
                 "enabled": True,
                 "config_file": None,
-                "overrides": {"llm_name": "qwen-plus"},
+                "llm_name": "qwen-plus",
             },
             "blueberry": {
                 "enabled": True,
                 "config_file": None,
-                "overrides": {"llm_name": "qwen-max"},
+                "llm_name": "qwen-max",
             },
         },
     )
@@ -83,7 +83,7 @@ def test_refresh_registry_invalidates_cache_for_changed_pipeline(tmp_path):
             "blueberry": {
                 "enabled": True,
                 "config_file": None,
-                "overrides": {"llm_name": "qwen-plus"},
+                "llm_name": "qwen-plus",
             }
         },
     )
@@ -102,7 +102,7 @@ def test_refresh_registry_invalidates_cache_for_changed_pipeline(tmp_path):
             "blueberry": {
                 "enabled": True,
                 "config_file": None,
-                "overrides": {"llm_name": "qwen-max"},
+                "llm_name": "qwen-max",
             }
         },
     )
@@ -122,7 +122,7 @@ def test_refresh_registry_applies_disabled_state_immediately(tmp_path):
             "blueberry": {
                 "enabled": True,
                 "config_file": None,
-                "overrides": {"llm_name": "qwen-plus"},
+                "llm_name": "qwen-plus",
             }
         },
     )
@@ -139,7 +139,7 @@ def test_refresh_registry_applies_disabled_state_immediately(tmp_path):
             "blueberry": {
                 "enabled": False,
                 "config_file": None,
-                "overrides": {"llm_name": "qwen-plus"},
+                "llm_name": "qwen-plus",
             }
         },
     )
@@ -149,6 +149,7 @@ def test_refresh_registry_applies_disabled_state_immediately(tmp_path):
     with pytest.raises(HTTPException) as exc_info:
         manager.get_pipeline("blueberry")
     assert exc_info.value.status_code == 403
+
 
 
 
