@@ -12,7 +12,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$SCRIPT_DIR"
+PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 ENV_FILE="$PROJECT_ROOT/.env"
 
 echo -e "${GREEN}=== LangChain Agent Installation Script ===${NC}\n"
