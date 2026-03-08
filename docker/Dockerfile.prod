@@ -1,0 +1,85 @@
+# Multi-stage Dockerfile for production deployment
+# Stage 1: Build frontend
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /app/frontend
+
+# Copy frontend files
+COPY frontend/package*.json ./
+RUN npm ci
+
+COPY frontend/ ./
+RUN npm run build
+
+# Stage 2: Python backend
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy Python dependencies
+COPY pyproject.toml ./
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -e .
+
+# Copy application code
+COPY lang_agent/ ./lang_agent/
+COPY configs/ ./configs/
+COPY scripts/ ./scripts/
+COPY assets/ ./assets/
+COPY static/ ./static/
+
+# Copy built frontend from stage 1
+COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+
+# Expose port
+EXPOSE 8500
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8500/health || exit 1
+
+# Create entrypoint script to wait for DB
+# Uses Python to check database connection (more reliable than psql)
+RUN echo '#!/bin/bash\n\
+set -e\n\
+echo "Waiting for database to be ready..."\n\
+python3 << EOF\n\
+import sys\n\
+import time\n\
+import psycopg\n\
+\n\
+max_attempts = 30\n\
+conn_str = "${CONN_STR}"\n\
+\n\
+for i in range(max_attempts):\n\
+    try:\n\
+        with psycopg.connect(conn_str, connect_timeout=2) as conn:\n\
+            with conn.cursor() as cur:\n\
+                cur.execute("SELECT 1")\n\
+        print("Database is ready!")\n\
+        sys.exit(0)\n\
+    except Exception as e:\n\
+        if i == max_attempts - 1:\n\
+            print(f"Warning: Database not ready after {max_attempts * 2} seconds, continuing anyway...")\n\
+            print(f"Error: {e}")\n\
+            sys.exit(0)\n\
+        print(f"Database is unavailable - sleeping (attempt {i+1}/{max_attempts})")\n\
+        time.sleep(2)\n\
+EOF\n\
+exec "$@"' > /entrypoint.sh && chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
+
+# Run the combined server
+CMD ["python", "-m", "uvicorn", "lang_agent.fastapi_server.combined:app", "--host", "0.0.0.0", "--port", "8500"]
+
