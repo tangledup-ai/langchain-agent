@@ -28,8 +28,8 @@ services:
   # Backend API server
   backend:
     build:
-      context: .
-      dockerfile: Dockerfile.prod
+      context: ..
+      dockerfile: docker/Dockerfile.prod
     container_name: langchain-agent-backend
     environment:
       - PYTHONPATH=/app
