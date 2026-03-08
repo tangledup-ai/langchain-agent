@@ -1,4 +1,5 @@
 -- A prompt_set groups a full collection of prompts together.
+-- This script runs in the ai_conversations database context
 -- Each pipeline can have many sets (versions, A/B variants, etc.);
 -- exactly one should be marked is_active per pipeline.
 CREATE TABLE IF NOT EXISTS prompt_sets (

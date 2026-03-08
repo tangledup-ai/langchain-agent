@@ -1,4 +1,5 @@
 -- Create the messages table
+-- This script runs in the ai_conversations database context
 CREATE TABLE IF NOT EXISTS messages (
     id BIGSERIAL PRIMARY KEY,
     conversation_id TEXT NOT NULL,
