@@ -2,6 +2,10 @@
 
 这是一个基于FastAPI的聊天API服务，使用OpenAI格式的请求来调用pipeline.invoke方法进行聊天。
 
+## Docker Installation
+
+For production deployment using Docker, see the [Installation Guide](README_INSTALL.md).
+
 ## 安装依赖
 
 ```bash
@@ -140,15 +144,35 @@ npm install
 
 ### Start the `front_apis` server
 
-The frontend talks to the `front_apis` FastAPI service, which by default listens on `http://127.0.0.1:8001`.
+The frontend talks to the `front_apis` FastAPI service, which by default listens on `http://127.0.0.1:8500`.
 
 From the project root:
 
 ```bash
-uvicorn fastapi_server.front_apis:app --reload --host 0.0.0.0 --port 8001
+uvicorn fastapi_server.front_apis:app --reload --host 0.0.0.0 --port 8500
 ```
 
-You can change the URL by setting `VITE_FRONT_API_BASE_URL` in `frontend/.env` (defaults to `http://127.0.0.1:8001`).
+Or run directly:
+```bash
+python fastapi_server/front_apis.py
+```
+
+### Backend run modes
+
+Run whichever backend mode you need from the project root:
+
+```bash
+# admin/control plane only (/v1/... frontend APIs)
+uvicorn fastapi_server.front_apis:app --reload --host 0.0.0.0 --port 8500
+
+# DashScope chat runtime only (/apps/... and /v1/apps/... APIs)
+uvicorn fastapi_server.server_dashscope:app --reload --host 0.0.0.0 --port 8588
+
+# combined mode: one process serves both front_apis + DashScope endpoints
+uvicorn fastapi_server.combined:app --reload --host 0.0.0.0 --port 8500
+```
+
+You can change the URL by setting `VITE_FRONT_API_BASE_URL` in `frontend/.env` (defaults to `http://127.0.0.1:8500`).
 
 ### Start the development server
 
