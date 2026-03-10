@@ -25,7 +25,9 @@ dependencies = [
     "pandas",
     "asgiref",
     "psycopg[binary]",
-    "deepagents"
+    "deepagents",
+    "daytona",
+    "langchain_daytona"
 ]
 
 [tool.setuptools.packages.find]
