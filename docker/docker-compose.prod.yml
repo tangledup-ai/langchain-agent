@@ -5,6 +5,8 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: langchain-agent-db
+    networks:
+      - app-network
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
@@ -15,7 +17,7 @@ services:
       APP_DB_PASSWORD: ${POSTGRES_PASSWORD:-secure_password_123}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init_database:/docker-entrypoint-initdb.d
+      - ../scripts/init_database:/docker-entrypoint-initdb.d
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
@@ -45,6 +47,8 @@ services:
       - ../scripts:/app/scripts
       - ../assets:/app/assets
       - ../static:/app/static
+    networks:
+      - app-network
     depends_on:
       postgres:
         condition: service_healthy
@@ -60,6 +64,8 @@ services:
   nginx:
     image: nginx:alpine
     container_name: langchain-agent-nginx
+    networks:
+      - app-network
     ports:
       - "${FRONTEND_PORT:-80}:80"
     volumes:
@@ -71,4 +77,8 @@ services:
 
 volumes:
   postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
 
