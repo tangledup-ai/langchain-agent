@@ -24,7 +24,8 @@ dependencies = [
     "commentjson",
     "pandas",
     "asgiref",
-    "psycopg[binary]"
+    "psycopg[binary]",
+    "deepagents"
 ]
 
 [tool.setuptools.packages.find]
