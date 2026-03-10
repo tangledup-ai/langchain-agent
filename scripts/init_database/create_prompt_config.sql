@@ -42,6 +42,10 @@ CREATE TABLE IF NOT EXISTS prompt_templates (
 CREATE INDEX IF NOT EXISTS idx_prompt_templates_set_id
     ON prompt_templates(prompt_set_id);
 
+-- Grant permissions to app user
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO myapp_user;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO myapp_user;
+
 -- Seed: initial prompt set for lang_agent/graphs/routing.py
 -- The pipeline_id can be used by RoutingConfig.pipeline_id to load these prompts.
 INSERT INTO prompt_sets (pipeline_id, graph_id, name, description, is_active, list)

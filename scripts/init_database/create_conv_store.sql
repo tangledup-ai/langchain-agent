@@ -15,3 +15,7 @@ CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages (conversation_i
 
 -- Index for fast lookup by pipeline_id
 CREATE INDEX IF NOT EXISTS idx_messages_pipeline ON messages (pipeline_id);
+
+-- Grant permissions to app user
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO myapp_user;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO myapp_user;
