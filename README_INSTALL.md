@@ -49,6 +49,17 @@ sudo systemctl restart docker
 
 Then run `./scripts/shell_scripts/install.sh`
 
+### configuring '.env' and 'frontend/.env'
+```bash
+ALI_API_KEY="API_KEY_FOR_ALI_QWEN"
+ALI_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
+POSTGRES_ROOT_PASSWORD="ROOT_PASSOWRD_FOR_DB_IN_CONN_STR - required for installation"
+POSTGRES_PASSWORD="USER_PASSWORD_FOR_DB_CONN_STR - required for installation" - need to be same in POSTGRES_PASSWORD
+CONN_STR="CONNECTION_STRING_TO_DATABASE" # DOCKER PASSWORD
+FAST_AUTH_KEYS="API_KEY_FOR_OTHER_APPLICATIONS_TO_USE_BUILT_PIPELINE"
+DAYTONA_API_KEY="DAYTONA_CONFIG - NOT REQUIRED"
+```
+
 ### Option 2: Pre-load Docker Images Offline
 
 1. On a machine with good Docker Hub access, run:
