@@ -22,6 +22,18 @@ import type {
 const API_BASE_URL =
   import.meta.env.VITE_FRONT_API_BASE_URL?.trim() || "http://127.0.0.1:8500";
 
+export function joinApiUrl(baseUrl: string, path: string): string {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const normalizedBase = baseUrl.trim();
+
+  // "/" is commonly used in Docker+nginx builds and should resolve as same-origin.
+  if (!normalizedBase || normalizedBase === "/") {
+    return normalizedPath;
+  }
+
+  return `${normalizedBase.replace(/\/+$/, "")}${normalizedPath}`;
+}
+
 // Log which backend the frontend is targeting on startup, with file + line hint.
 // This runs once when the module is loaded.
 // eslint-disable-next-line no-console
@@ -30,7 +42,8 @@ console.info(
 );
 
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const url = joinApiUrl(API_BASE_URL, path);
+  const response = await fetch(url, {
     headers: {
       "Content-Type": "application/json",
       ...(init?.headers || {}),
@@ -49,7 +62,24 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
     }
     throw new Error(message);
   }
-  return (await response.json()) as T;
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  const bodyText = await response.text();
+  if (!bodyText.trim()) {
+    return undefined as T;
+  }
+
+  try {
+    return JSON.parse(bodyText) as T;
+  } catch {
+    const preview = bodyText.slice(0, 160).replace(/\s+/g, " ").trim();
+    throw new Error(
+      `Expected JSON response from ${url}, but received non-JSON content: ${preview || "<empty>"}`
+    );
+  }
 }
 
 export function listAvailableGraphs(): Promise<AvailableGraphsResponse> {
@@ -189,7 +219,10 @@ export async function streamAgentChatResponse(
 ): Promise<string> {
   const { appId, sessionId, apiKey, message, onText, signal } = options;
   const response = await fetch(
-    `${API_BASE_URL}/v1/apps/${encodeURIComponent(appId)}/sessions/${encodeURIComponent(sessionId)}/responses`,
+    joinApiUrl(
+      API_BASE_URL,
+      `/v1/apps/${encodeURIComponent(appId)}/sessions/${encodeURIComponent(sessionId)}/responses`
+    ),
     {
       method: "POST",
       headers: {
