@@ -49,7 +49,7 @@ POSTGRES_PORT=5432
 BACKEND_PORT=8500
 
 # Frontend Configuration
-FRONTEND_PORT=80
+FRONTEND_PORT=8080
 
 # Database Connection String (used by backend)
 CONN_STR=postgresql://myapp_user:secure_password_123@postgres:5432/ai_conversations
@@ -59,6 +59,21 @@ EOF
     else
         echo -e "${GREEN}✓ .env file already exists${NC}\n"
     fi
+}
+
+# Build frontend
+build_frontend() {
+    echo -e "${YELLOW}Building frontend...${NC}"
+    cd "$PROJECT_ROOT/frontend"
+    
+    if [ ! -d "node_modules" ]; then
+        echo "Installing frontend dependencies..."
+        npm install
+    fi
+    
+    npm run build
+    
+    echo -e "${GREEN}✓ Frontend built successfully${NC}\n"
 }
 
 # Build Docker images
@@ -137,6 +152,7 @@ show_status() {
 main() {
     check_requirements
     create_env_file
+    build_frontend
     build_images
     start_services
     init_database
