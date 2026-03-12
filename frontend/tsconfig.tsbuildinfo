@@ -1,1 +1,1 @@
-{"root":["./src/App.tsx","./src/activeConfigSelection.test.ts","./src/activeConfigSelection.ts","./src/main.tsx","./src/types.ts","./src/vite-env.d.ts","./src/api/frontApis.ts"],"version":"5.9.3"}
+{"root":["./src/App.tsx","./src/activeConfigSelection.test.ts","./src/activeConfigSelection.ts","./src/main.tsx","./src/types.ts","./src/vite-env.d.ts","./src/api/frontApis.test.ts","./src/api/frontApis.ts"],"version":"5.9.3"}
