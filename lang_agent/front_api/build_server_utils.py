@@ -75,23 +75,40 @@ def build_route(
     **_: Any,
 ):
     cmd_opt = [
-        "--pipeline.pipeline-id", pipeline_id,
+        "--pipeline.pipeline-id",
+        pipeline_id,
         "route",  # ------------
-        "--llm-name", llm_name,
-        "--api-key", api_key,
-        "--pipeline-id", pipeline_id,
-        "--prompt-set-id", prompt_set,
-        "tool_node",  # ------------
-        "--llm-name", llm_name,
-        "--api-key", api_key,
-        "--pipeline-id", pipeline_id,
-        "--prompt-set-id", prompt_set,
+        "--llm-name",
+        llm_name,
+        "--api-key",
+        api_key,
+        "--pipeline-id",
+        pipeline_id,
+        "--prompt-set-id",
+        prompt_set,
     ]
 
     if tool_keys:
         cmd_opt.extend(
             ["--tool-manager-config.client-tool-manager.tool-keys", *tool_keys]
         )
+        # Tyro parses list options greedily across positional subcommands; repeat a
+        # parent-level option to terminate list parsing before `tool_node`.
+        cmd_opt.extend(["--pipeline-id", pipeline_id])
+
+    cmd_opt.extend(
+        [
+        "tool_node",  # ------------
+        "--llm-name",
+        llm_name,
+        "--api-key",
+        api_key,
+        "--pipeline-id",
+        pipeline_id,
+        "--prompt-set-id",
+        prompt_set,
+        ]
+    )
 
     return _build_and_load_pipeline_config(pipeline_id, pipeline_config_dir, cmd_opt)
 
@@ -106,13 +123,18 @@ def build_react(
     **_: Any,
 ):
     cmd_opt = [
-        "--pipeline.pipeline-id", pipeline_id,
+        "--pipeline.pipeline-id",
+        pipeline_id,
         "react",  # ------------
-        "--llm-name", llm_name,
-        "--api-key", api_key,
-        "--pipeline-id", pipeline_id,
-        "--prompt-set-id", prompt_set,
-        ]
+        "--llm-name",
+        llm_name,
+        "--api-key",
+        api_key,
+        "--pipeline-id",
+        pipeline_id,
+        "--prompt-set-id",
+        prompt_set,
+    ]
     if tool_keys:
         cmd_opt.extend(
             ["--tool-manager-config.client-tool-manager.tool-keys", *tool_keys]
@@ -146,21 +168,30 @@ def build_deep_agent(
         )
 
     cmd_opt = [
-        "--pipeline.pipeline-id", pipeline_id,
+        "--pipeline.pipeline-id",
+        pipeline_id,
         "deepagent",
-        "--llm-name", llm_name,
-        "--api-key", api_key,
-        "--pipeline-id", pipeline_id,
-        "--prompt-set-id", prompt_set,
-        backend_subcommand,
+        "--llm-name",
+        llm_name,
+        "--api-key",
+        api_key,
+        "--pipeline-id",
+        pipeline_id,
+        "--prompt-set-id",
+        prompt_set,
     ]
 
     if tool_keys:
         cmd_opt.extend(
             ["--tool-manager-config.client-tool-manager.tool-keys", *tool_keys]
         )
+        # Same greedy-list behavior as `build_route`; terminate before backend subcommand.
+        cmd_opt.extend(["--pipeline-id", pipeline_id])
+
+    cmd_opt.append(backend_subcommand)
 
     return _build_and_load_pipeline_config(pipeline_id, pipeline_config_dir, cmd_opt)
+
 
 # {pipeline_id: build_function}
 GRAPH_BUILD_FNCS = {
