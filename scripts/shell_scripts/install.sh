@@ -61,24 +61,9 @@ EOF
     fi
 }
 
-# Build frontend
-build_frontend() {
-    echo -e "${YELLOW}Building frontend...${NC}"
-    cd "$PROJECT_ROOT/frontend"
-    
-    if [ ! -d "node_modules" ]; then
-        echo "Installing frontend dependencies..."
-        npm install
-    fi
-    
-    npm run build
-    
-    echo -e "${GREEN}✓ Frontend built successfully${NC}\n"
-}
-
 # Build Docker images
 build_images() {
-    echo -e "${YELLOW}Building Docker images...${NC}"
+    echo -e "${YELLOW}Building Docker images (including frontend)...${NC}"
     cd "$PROJECT_ROOT"
     
     # Check if docker-compose or docker compose
@@ -152,7 +137,6 @@ show_status() {
 main() {
     check_requirements
     create_env_file
-    build_frontend
     build_images
     start_services
     init_database
