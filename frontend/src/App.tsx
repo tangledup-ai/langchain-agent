@@ -36,6 +36,7 @@ type EditableAgent = {
   pipelineId: string;
   promptSetId?: string;
   toolKeys: string[];
+  toolKeysInput: string;
   prompts: Record<string, string>;
   apiKey: string;
   llmName: string;
@@ -459,6 +460,7 @@ function toEditable(
     pipelineId: config.pipeline_id,
     promptSetId: config.prompt_set_id,
     toolKeys: config.tool_keys || [],
+    toolKeysInput: (config.tool_keys || []).join(", "),
     prompts: config.prompt_dict || {},
     apiKey: config.api_key || DEFAULT_API_KEY,
     llmName: DEFAULT_LLM_NAME,
@@ -750,6 +752,7 @@ export default function App() {
           graphId,
           prompts: { ...defaults.prompt_dict },
           toolKeys: defaults.tool_keys || [],
+          toolKeysInput: (defaults.tool_keys || []).join(", "),
           actBackend:
             graphId === "deepagent"
               ? prev.actBackend || DEFAULT_DEEPAGENT_ACT_BACKEND
@@ -1366,8 +1369,12 @@ export default function App() {
                 <label>
                   tool_keys (comma separated)
                   <input
-                    value={editor.toolKeys.join(", ")}
-                    onChange={(e) => updateEditor("toolKeys", parseToolCsv(e.target.value))}
+                    value={editor.toolKeysInput}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      updateEditor("toolKeysInput", raw);
+                      updateEditor("toolKeys", parseToolCsv(raw));
+                    }}
                     placeholder="tool_a, tool_b"
                     disabled={busy}
                   />
