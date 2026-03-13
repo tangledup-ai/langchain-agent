@@ -10,6 +10,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+def resolve_llm_api_key(api_key: Optional[str]) -> Optional[str]:
+    """Resolve the API key for OpenAI-compatible providers."""
+    if api_key not in (None, "", "wrong-key"):
+        resolved_key = api_key
+    else:
+        resolved_key = os.environ.get("ALI_API_KEY") or os.environ.get("OPENAI_API_KEY")
+
+    # Some OpenAI-compatible integrations still read OPENAI_API_KEY from env.
+    if resolved_key and not os.environ.get("OPENAI_API_KEY"):
+        os.environ["OPENAI_API_KEY"] = resolved_key
+
+    return resolved_key
+
 ## NOTE: base classes taken from nerfstudio
 class PrintableConfig:
     """
@@ -99,12 +113,12 @@ class LLMKeyConfig(InstantiateConfig):
     """api key for llm"""
 
     def __post_init__(self):
-        if self.api_key == "wrong-key" or self.api_key is None:
-            self.api_key = os.environ.get("ALI_API_KEY")
-            if self.api_key is None:
-                logger.error(f"no ALI_API_KEY provided for embedding")
-            else:
-                logger.info("ALI_API_KEY loaded from environ")
+        original_api_key = self.api_key
+        self.api_key = resolve_llm_api_key(self.api_key)
+        if self.api_key is None:
+            logger.error("no ALI_API_KEY or OPENAI_API_KEY provided for embedding")
+        elif original_api_key in (None, "", "wrong-key"):
+            logger.info("LLM API key loaded from environment")
 
 
 @dataclass

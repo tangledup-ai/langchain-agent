@@ -13,7 +13,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, BaseMessage
 from langchain.agents import create_agent
 from langgraph.checkpoint.memory import MemorySaver
 
-from lang_agent.config import LLMNodeConfig, load_tyro_conf
+from lang_agent.config import LLMNodeConfig, load_tyro_conf, resolve_llm_api_key
 from lang_agent.graphs import AnnotatedGraph, ReactGraphConfig, RoutingConfig
 from lang_agent.base import GraphBase
 from lang_agent.components import conv_store
@@ -104,7 +104,13 @@ class Pipeline:
                 if self.config.base_url is not None
                 else self.config.graph_config.base_url
             )
-            self.config.graph_config.api_key = self.config.api_key
+            pipeline_api_key = resolve_llm_api_key(self.config.api_key)
+            graph_api_key = resolve_llm_api_key(
+                getattr(self.config.graph_config, "api_key", None)
+            )
+            resolved_api_key = pipeline_api_key or graph_api_key
+            self.config.api_key = resolved_api_key
+            self.config.graph_config.api_key = resolved_api_key
 
         self.graph: GraphBase = self.config.graph_config.setup()
 
