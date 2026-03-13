@@ -192,33 +192,19 @@ def build_deep_agent(
 
     if file_backend_config:
         if "skills_dir" in file_backend_config and file_backend_config["skills_dir"]:
-            cmd_opt.extend(
-                ["--file-backend-config.skills-dir", file_backend_config["skills_dir"]]
-            )
+            cmd_opt.extend(["--skills-dir", file_backend_config["skills_dir"]])
         if (
             "rt_skills_dir" in file_backend_config
             and file_backend_config["rt_skills_dir"]
         ):
-            cmd_opt.extend(
-                [
-                    "--file-backend-config.rt-skills-dir",
-                    file_backend_config["rt_skills_dir"],
-                ]
-            )
+            cmd_opt.extend(["--rt-skills-dir", file_backend_config["rt_skills_dir"]])
         if (
             "workspace_dir" in file_backend_config
             and file_backend_config["workspace_dir"]
         ):
-            cmd_opt.extend(
-                [
-                    "--file-backend-config.workspace-dir",
-                    file_backend_config["workspace_dir"],
-                ]
-            )
+            cmd_opt.extend(["--workspace-dir", file_backend_config["workspace_dir"]])
         if "api_key" in file_backend_config and file_backend_config["api_key"]:
-            cmd_opt.extend(
-                ["--file-backend-config.api-key", file_backend_config["api_key"]]
-            )
+            cmd_opt.extend(["--api-key", file_backend_config["api_key"]])
 
     return _build_and_load_pipeline_config(pipeline_id, pipeline_config_dir, cmd_opt)
 
