@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Optional
 import os
 import os.path as osp
 import subprocess
@@ -98,15 +98,15 @@ def build_route(
 
     cmd_opt.extend(
         [
-        "tool_node",  # ------------
-        "--llm-name",
-        llm_name,
-        "--api-key",
-        api_key,
-        "--pipeline-id",
-        pipeline_id,
-        "--prompt-set-id",
-        prompt_set,
+            "tool_node",  # ------------
+            "--llm-name",
+            llm_name,
+            "--api-key",
+            api_key,
+            "--pipeline-id",
+            pipeline_id,
+            "--prompt-set-id",
+            prompt_set,
         ]
     )
 
@@ -158,6 +158,7 @@ def build_deep_agent(
         "daytona_sandbox",
         "daytonasandbox",
     ] = "state_bk",
+    file_backend_config: Optional[Dict[str, Any]] = None,
     **_: Any,
 ):
     backend_subcommand = _DEEP_AGENT_BACKEND_ALIASES.get(act_bkend)
@@ -185,10 +186,39 @@ def build_deep_agent(
         cmd_opt.extend(
             ["--tool-manager-config.client-tool-manager.tool-keys", *tool_keys]
         )
-        # Same greedy-list behavior as `build_route`; terminate before backend subcommand.
         cmd_opt.extend(["--pipeline-id", pipeline_id])
 
     cmd_opt.append(backend_subcommand)
+
+    if file_backend_config:
+        if "skills_dir" in file_backend_config and file_backend_config["skills_dir"]:
+            cmd_opt.extend(
+                ["--file-backend-config.skills-dir", file_backend_config["skills_dir"]]
+            )
+        if (
+            "rt_skills_dir" in file_backend_config
+            and file_backend_config["rt_skills_dir"]
+        ):
+            cmd_opt.extend(
+                [
+                    "--file-backend-config.rt-skills-dir",
+                    file_backend_config["rt_skills_dir"],
+                ]
+            )
+        if (
+            "workspace_dir" in file_backend_config
+            and file_backend_config["workspace_dir"]
+        ):
+            cmd_opt.extend(
+                [
+                    "--file-backend-config.workspace-dir",
+                    file_backend_config["workspace_dir"],
+                ]
+            )
+        if "api_key" in file_backend_config and file_backend_config["api_key"]:
+            cmd_opt.extend(
+                ["--file-backend-config.api-key", file_backend_config["api_key"]]
+            )
 
     return _build_and_load_pipeline_config(pipeline_id, pipeline_config_dir, cmd_opt)
 
