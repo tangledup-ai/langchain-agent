@@ -1,8 +1,10 @@
-from dataclasses import dataclass, field, is_dataclass
+import os
+from dataclasses import dataclass
 from typing import Any
-import tyro
-import os.path as osp
 from abc import ABC, abstractmethod
+from loguru import logger
+
+from lang_agent.config import InstantiateConfig
 
 
 class BaseFilesystemBackend(ABC):
@@ -26,3 +28,24 @@ class BaseFilesystemBackend(ABC):
             return {"skills" : [self.config.rt_skills_dir]}
         else:
             return {}
+
+
+@dataclass
+class FilesystemBackendConfig(InstantiateConfig):
+    """
+    Shared filesystem backend config behavior.
+    If subclasses define these fields, this hook ensures they exist:
+      - skills_dir
+      - workspace_dir
+    """
+
+    def _ensure_dir_if_present(self, attr_name: str) -> None:
+        path = getattr(self, attr_name, None)
+        if not isinstance(path, str) or not path.strip():
+            return
+        os.makedirs(path, exist_ok=True)
+        logger.info(f"Ensured {attr_name} exists: {path}")
+
+    def __post_init__(self) -> None:
+        self._ensure_dir_if_present("skills_dir")
+        self._ensure_dir_if_present("workspace_dir")

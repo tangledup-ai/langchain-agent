@@ -8,13 +8,12 @@ from loguru import logger
 from daytona import Daytona, DaytonaConfig, FileUpload
 from langchain_daytona import DaytonaSandbox
 
-from lang_agent.config import InstantiateConfig
-from lang_agent.fs_bkends import BaseFilesystemBackend
+from lang_agent.fs_bkends.base import BaseFilesystemBackend, FilesystemBackendConfig
 
 
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
-class DaytonaSandboxConfig(InstantiateConfig):
+class DaytonaSandboxConfig(FilesystemBackendConfig):
     _target: Type = field(default_factory=lambda: DaytonaSandboxBk)
 
     api_key: Optional[str] = None
@@ -27,6 +26,7 @@ class DaytonaSandboxConfig(InstantiateConfig):
     """runtime skills path inside the sandbox (auto-set from sandbox workdir)"""
 
     def __post_init__(self):
+        super().__post_init__()
         if self.api_key is None:
             self.api_key = os.environ.get("DAYTONA_API_KEY")
             if self.api_key is None:

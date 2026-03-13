@@ -1,21 +1,16 @@
-from dataclasses import dataclass, field, is_dataclass
-from typing import Type, TypedDict, Literal, Dict, List, Tuple, Optional
+from dataclasses import dataclass, field
+from typing import Type
 import tyro
-import os.path as osp
-from abc import ABC, abstractmethod
-import glob
 from loguru import logger
 
-from deepagents.backends.utils import create_file_data
 from deepagents.backends import LocalShellBackend
 
-from lang_agent.config import InstantiateConfig
-from lang_agent.fs_bkends import BaseFilesystemBackend
+from lang_agent.fs_bkends.base import BaseFilesystemBackend, FilesystemBackendConfig
 
 
 @tyro.conf.configure(tyro.conf.SuppressFixed)
 @dataclass
-class LocalShellConfig(InstantiateConfig):
+class LocalShellConfig(FilesystemBackendConfig):
     _target:Type = field(default_factory=lambda:LocalShell)
 
     workspace_dir:str = "./workspace"
