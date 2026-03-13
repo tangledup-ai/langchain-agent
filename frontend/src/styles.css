@@ -224,6 +224,7 @@ button:disabled {
 }
 
 .prompt-section,
+.file-backend-config,
 .run-info {
   border: 1px solid #dbe2ea;
   border-radius: 10px;
@@ -232,6 +233,7 @@ button:disabled {
 }
 
 .prompt-section h3,
+.file-backend-config h3,
 .run-info h3 {
   margin-top: 0;
 }

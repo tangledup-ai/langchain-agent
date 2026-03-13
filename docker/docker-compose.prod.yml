@@ -25,7 +25,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
+    restart: no #unless-stopped
 
   # Backend API server
   backend:
@@ -52,7 +52,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    restart: unless-stopped
+    restart: no #unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8500/health"]
       interval: 30s
@@ -65,6 +65,8 @@ services:
     build:
       context: ../frontend
       dockerfile: ../docker/Dockerfile.frontend
+      args:
+        VITE_FRONT_API_BASE_URL: ${VITE_FRONT_API_BASE_URL:-/}
     volumes:
       - frontend_dist:/app/dist
     networks:
@@ -86,7 +88,7 @@ services:
         condition: service_completed_successfully
       backend:
         condition: service_started
-    restart: unless-stopped
+    restart: no #unless-stopped
 
 volumes:
   postgres_data:

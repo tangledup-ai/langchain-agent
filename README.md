@@ -172,7 +172,7 @@ uvicorn fastapi_server.server_dashscope:app --reload --host 0.0.0.0 --port 8588
 uvicorn fastapi_server.combined:app --reload --host 0.0.0.0 --port 8500
 ```
 
-You can change the URL by setting `VITE_FRONT_API_BASE_URL` in `frontend/.env` (defaults to `http://127.0.0.1:8500`).
+You can change the URL by setting `VITE_FRONT_API_BASE_URL` in `frontend/.env` (defaults to `/`, i.e. same-origin).
 
 ### Start the development server
 

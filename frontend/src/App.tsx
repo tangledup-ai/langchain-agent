@@ -41,6 +41,7 @@ type EditableAgent = {
   apiKey: string;
   llmName: string;
   actBackend: DeepAgentActBackend;
+  fileBackendConfig: FileBackendConfig;
 };
 
 type AgentChatMessage = {
@@ -51,6 +52,13 @@ type AgentChatMessage = {
 
 type ActiveTab = "agents" | "discussions" | "mcp";
 type DeepAgentActBackend = "state_bk" | "local_shell" | "daytona_sandbox";
+
+type FileBackendConfig = {
+  skills_dir: string;
+  rt_skills_dir: string;
+  workspace_dir?: string;
+  api_key?: string;
+};
 type McpTransport = "streamable_http" | "sse" | "stdio";
 type McpEntry = {
   id: string;
@@ -74,7 +82,24 @@ const DEEPAGENT_BACKEND_OPTIONS: Array<{
   { value: "local_shell", label: "local_shell" },
   { value: "daytona_sandbox", label: "daytona_sandbox" },
 ];
-const LOCAL_DASHSCOPE_BASE = "http://127.0.0.1:8500/v1/apps";
+
+const DEFAULT_FILE_BACKEND_CONFIG: Record<DeepAgentActBackend, FileBackendConfig> = {
+  state_bk: {
+    skills_dir: "./assets/skills",
+    rt_skills_dir: "/skills",
+  },
+  local_shell: {
+    skills_dir: "./workspace/skills",
+    rt_skills_dir: "/skills",
+    workspace_dir: "./workspace",
+  },
+  daytona_sandbox: {
+    skills_dir: "./workspace/skills",
+    rt_skills_dir: "",
+    api_key: "",
+  },
+};
+const LOCAL_DASHSCOPE_BASE = "/v1/apps";
 const MCP_TRANSPORT_OPTIONS: McpTransport[] = ["streamable_http", "sse", "stdio"];
 const GRAPH_ARCH_IMAGE_MODULES = import.meta.glob(
   "../assets/images/graph_arch/*.{png,jpg,jpeg,webp,gif}",
@@ -442,7 +467,10 @@ function normalizeDeepAgentActBackend(value: unknown): DeepAgentActBackend {
 
 function buildGraphParams(editor: EditableAgent): Record<string, unknown> {
   if (editor.graphId === "deepagent") {
-    return { act_bkend: editor.actBackend };
+    return { 
+      act_bkend: editor.actBackend,
+      file_backend_config: editor.fileBackendConfig,
+    };
   }
   return {};
 }
@@ -465,6 +493,7 @@ function toEditable(
     apiKey: config.api_key || DEFAULT_API_KEY,
     llmName: DEFAULT_LLM_NAME,
     actBackend: DEFAULT_DEEPAGENT_ACT_BACKEND,
+    fileBackendConfig: DEFAULT_FILE_BACKEND_CONFIG[DEFAULT_DEEPAGENT_ACT_BACKEND],
   };
 }
 
@@ -757,6 +786,10 @@ export default function App() {
             graphId === "deepagent"
               ? prev.actBackend || DEFAULT_DEEPAGENT_ACT_BACKEND
               : DEFAULT_DEEPAGENT_ACT_BACKEND,
+          fileBackendConfig:
+            graphId === "deepagent"
+              ? prev.fileBackendConfig || DEFAULT_FILE_BACKEND_CONFIG[DEFAULT_DEEPAGENT_ACT_BACKEND]
+              : DEFAULT_FILE_BACKEND_CONFIG[DEFAULT_DEEPAGENT_ACT_BACKEND],
         };
         if (next.isDraft) {
           setDraftAgents((drafts) => drafts.map((draft) => (draft.id === next.id ? next : draft)));
@@ -788,6 +821,24 @@ export default function App() {
 
   function updateEditor<K extends keyof EditableAgent>(key: K, value: EditableAgent[K]): void {
     setEditorAndSyncDraft((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function updateActBackend(newBackend: DeepAgentActBackend): void {
+    setEditorAndSyncDraft((prev) => ({
+      ...prev,
+      actBackend: newBackend,
+      fileBackendConfig: DEFAULT_FILE_BACKEND_CONFIG[newBackend],
+    }));
+  }
+
+  function updateFileBackendConfig(key: keyof FileBackendConfig, value: string): void {
+    setEditorAndSyncDraft((prev) => ({
+      ...prev,
+      fileBackendConfig: {
+        ...prev.fileBackendConfig,
+        [key]: value,
+      },
+    }));
   }
 
   function updatePrompt(key: string, value: string): void {
@@ -1404,25 +1455,69 @@ export default function App() {
                 </label>
 
                 {editor.graphId === "deepagent" ? (
-                  <label>
-                    act_bkend
-                    <select
-                      value={editor.actBackend}
-                      onChange={(e) =>
-                        updateEditor(
-                          "actBackend",
-                          normalizeDeepAgentActBackend(e.target.value)
-                        )
-                      }
-                      disabled={busy}
-                    >
-                      {DEEPAGENT_BACKEND_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <>
+                    <label>
+                      act_bkend
+                      <select
+                        value={editor.actBackend}
+                        onChange={(e) =>
+                          updateActBackend(normalizeDeepAgentActBackend(e.target.value))
+                        }
+                        disabled={busy}
+                      >
+                        {DEEPAGENT_BACKEND_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <div className="file-backend-config">
+                      <h3>File Backend Config</h3>
+                      {editor.actBackend === "daytona_sandbox" ? (
+                        <label>
+                          api_key
+                          <input
+                            type="password"
+                            value={editor.fileBackendConfig.api_key || ""}
+                            onChange={(e) => updateFileBackendConfig("api_key", e.target.value)}
+                            placeholder="Daytona API key"
+                            disabled={busy}
+                          />
+                        </label>
+                      ) : null}
+                      {editor.actBackend === "local_shell" ? (
+                        <label>
+                          workspace_dir
+                          <input
+                            value={editor.fileBackendConfig.workspace_dir || ""}
+                            onChange={(e) => updateFileBackendConfig("workspace_dir", e.target.value)}
+                            placeholder="./workspace"
+                            disabled={busy}
+                          />
+                        </label>
+                      ) : null}
+                      <label>
+                        skills_dir
+                        <input
+                          value={editor.fileBackendConfig.skills_dir || ""}
+                          onChange={(e) => updateFileBackendConfig("skills_dir", e.target.value)}
+                          placeholder="./assets/skills"
+                          disabled={busy}
+                        />
+                      </label>
+                      <label>
+                        rt_skills_dir
+                        <input
+                          value={editor.fileBackendConfig.rt_skills_dir || ""}
+                          onChange={(e) => updateFileBackendConfig("rt_skills_dir", e.target.value)}
+                          placeholder="/skills"
+                          disabled={busy}
+                        />
+                      </label>
+                    </div>
+                  </>
                 ) : null}
 
                 <div className="prompt-section">

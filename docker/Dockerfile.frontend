@@ -4,10 +4,16 @@ WORKDIR /app
 
 RUN npm config set registry https://registry.npmmirror.com
 
+# Build-time API base for Vite (must be set before npm run build).
+ARG VITE_FRONT_API_BASE_URL=/
+ENV VITE_FRONT_API_BASE_URL=${VITE_FRONT_API_BASE_URL}
+
 COPY package*.json ./
 RUN npm install
 
 COPY . .
-RUN npm run build
+RUN npm run build && \
+    mkdir -p /opt/frontend_dist && \
+    cp -r dist/. /opt/frontend_dist/
 
-CMD ["ls", "dist"]
+CMD ["sh", "-c", "rm -rf /app/dist/* && cp -r /opt/frontend_dist/. /app/dist && ls /app/dist"]
