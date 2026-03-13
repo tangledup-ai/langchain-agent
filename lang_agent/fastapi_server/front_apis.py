@@ -20,6 +20,7 @@ from lang_agent.config.constants import (
     MCP_CONFIG_DEFAULT_CONTENT,
     PIPELINE_REGISTRY_PATH,
 )
+from lang_agent.config.core_config import load_tyro_conf
 from lang_agent.front_api.build_server_utils import (
     GRAPH_BUILD_FNCS,
     update_pipeline_registry,
@@ -55,6 +56,7 @@ class GraphConfigReadResponse(BaseModel):
     tool_keys: List[str]
     prompt_dict: Dict[str, str]
     api_key: str = Field(default="")
+    graph_params: Dict[str, Any] = Field(default_factory=dict)
 
 
 class GraphConfigListItem(BaseModel):
@@ -325,6 +327,81 @@ def _normalize_pipeline_spec(pipeline_id: str, spec: Dict[str, Any]) -> Pipeline
     )
 
 
+def _resolve_config_path(config_file: str) -> str:
+    if osp.isabs(config_file):
+        return config_file
+    return osp.join(_PROJECT_ROOT, config_file)
+
+
+def _normalize_deepagent_backend_name(file_backend_config: Any) -> Optional[str]:
+    if file_backend_config is None:
+        return None
+
+    type_names = {
+        type(file_backend_config).__name__.lower(),
+        getattr(getattr(file_backend_config, "_target", None), "__name__", "").lower(),
+    }
+    if any("statebk" in name for name in type_names):
+        return "state_bk"
+    if any("localshell" in name for name in type_names):
+        return "local_shell"
+    if any("daytona" in name for name in type_names):
+        return "daytona_sandbox"
+    return None
+
+
+def _extract_graph_params_from_config(graph_id: Optional[str], loaded_cfg: Any) -> Dict[str, Any]:
+    if graph_id != "deepagent":
+        return {}
+
+    graph_config = getattr(loaded_cfg, "graph_config", None)
+    file_backend_config = getattr(graph_config, "file_backend_config", None)
+    if file_backend_config is None:
+        return {}
+
+    graph_params: Dict[str, Any] = {}
+    act_bkend = _normalize_deepagent_backend_name(file_backend_config)
+    if act_bkend:
+        graph_params["act_bkend"] = act_bkend
+
+    serialized_backend_config: Dict[str, Any] = {}
+    for key in ("skills_dir", "rt_skills_dir", "workspace_dir", "api_key"):
+        value = getattr(file_backend_config, key, None)
+        if value is not None:
+            serialized_backend_config[key] = value
+
+    if serialized_backend_config:
+        graph_params["file_backend_config"] = serialized_backend_config
+
+    return graph_params
+
+
+def _load_graph_params_for_pipeline(
+    pipeline_id: str, graph_id: Optional[str]
+) -> Dict[str, Any]:
+    try:
+        registry = _read_pipeline_registry()
+        pipeline_spec = registry.get("pipelines", {}).get(pipeline_id, {})
+        config_file = ""
+        if isinstance(pipeline_spec, dict):
+            config_file = str(pipeline_spec.get("config_file") or "").strip()
+        if not config_file:
+            fallback = osp.join(_PROJECT_ROOT, "configs", "pipelines", f"{pipeline_id}.yaml")
+            if osp.exists(fallback):
+                config_file = fallback
+        if not config_file:
+            return {}
+
+        config_path = _resolve_config_path(config_file)
+        if not osp.exists(config_path):
+            return {}
+
+        loaded_cfg = load_tyro_conf(config_path)
+        return _extract_graph_params_from_config(graph_id, loaded_cfg)
+    except Exception:
+        return {}
+
+
 def _normalize_api_key_policy(api_key: str, policy: Dict[str, Any]) -> ApiKeyPolicyItem:
     if not isinstance(policy, dict):
         raise ValueError(f"api key policy for '{api_key}' must be an object")
@@ -428,6 +505,9 @@ async def get_default_graph_config(pipeline_id: str):
         tool_keys=tool_keys,
         prompt_dict=prompt_dict,
         api_key=(active.get("api_key") or ""),
+        graph_params=_load_graph_params_for_pipeline(
+            pipeline_id, active.get("graph_id")
+        ),
     )
 
 
@@ -466,6 +546,9 @@ async def get_graph_config(pipeline_id: str, prompt_set_id: str):
         tool_keys=tool_keys,
         prompt_dict=prompt_dict,
         api_key=(meta.get("api_key") or ""),
+        graph_params=_load_graph_params_for_pipeline(
+            pipeline_id, meta.get("graph_id")
+        ),
     )
 
 

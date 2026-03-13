@@ -465,6 +465,62 @@ function normalizeDeepAgentActBackend(value: unknown): DeepAgentActBackend {
   return DEFAULT_DEEPAGENT_ACT_BACKEND;
 }
 
+function getDefaultFileBackendConfig(
+  backend: DeepAgentActBackend
+): FileBackendConfig {
+  return { ...DEFAULT_FILE_BACKEND_CONFIG[backend] };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function readOptionalString(
+  record: Record<string, unknown>,
+  key: keyof FileBackendConfig
+): string | undefined {
+  const value = record[key];
+  return typeof value === "string" ? value : undefined;
+}
+
+function getDeepAgentEditorState(config: GraphConfigReadResponse): {
+  actBackend: DeepAgentActBackend;
+  fileBackendConfig: FileBackendConfig;
+} {
+  const graphParams = isRecord(config.graph_params) ? config.graph_params : {};
+  const actBackend = normalizeDeepAgentActBackend(graphParams.act_bkend);
+  const defaults = getDefaultFileBackendConfig(actBackend);
+  const rawFileBackendConfig = isRecord(graphParams.file_backend_config)
+    ? graphParams.file_backend_config
+    : null;
+
+  if (!rawFileBackendConfig) {
+    return {
+      actBackend,
+      fileBackendConfig: defaults,
+    };
+  }
+
+  return {
+    actBackend,
+    fileBackendConfig: {
+      ...defaults,
+      ...(readOptionalString(rawFileBackendConfig, "skills_dir") !== undefined
+        ? { skills_dir: readOptionalString(rawFileBackendConfig, "skills_dir") as string }
+        : {}),
+      ...(readOptionalString(rawFileBackendConfig, "rt_skills_dir") !== undefined
+        ? { rt_skills_dir: readOptionalString(rawFileBackendConfig, "rt_skills_dir") as string }
+        : {}),
+      ...(readOptionalString(rawFileBackendConfig, "workspace_dir") !== undefined
+        ? { workspace_dir: readOptionalString(rawFileBackendConfig, "workspace_dir") as string }
+        : {}),
+      ...(readOptionalString(rawFileBackendConfig, "api_key") !== undefined
+        ? { api_key: readOptionalString(rawFileBackendConfig, "api_key") as string }
+        : {}),
+    },
+  };
+}
+
 function buildGraphParams(editor: EditableAgent): Record<string, unknown> {
   if (editor.graphId === "deepagent") {
     return { 
@@ -479,6 +535,7 @@ function toEditable(
   config: GraphConfigReadResponse,
   draft: boolean
 ): EditableAgent {
+  const deepAgentState = getDeepAgentEditorState(config);
   return {
     id: draft
       ? `draft-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
@@ -492,8 +549,8 @@ function toEditable(
     prompts: config.prompt_dict || {},
     apiKey: config.api_key || DEFAULT_API_KEY,
     llmName: DEFAULT_LLM_NAME,
-    actBackend: DEFAULT_DEEPAGENT_ACT_BACKEND,
-    fileBackendConfig: DEFAULT_FILE_BACKEND_CONFIG[DEFAULT_DEEPAGENT_ACT_BACKEND],
+    actBackend: deepAgentState.actBackend,
+    fileBackendConfig: deepAgentState.fileBackendConfig,
   };
 }
 
@@ -788,8 +845,8 @@ export default function App() {
               : DEFAULT_DEEPAGENT_ACT_BACKEND,
           fileBackendConfig:
             graphId === "deepagent"
-              ? prev.fileBackendConfig || DEFAULT_FILE_BACKEND_CONFIG[DEFAULT_DEEPAGENT_ACT_BACKEND]
-              : DEFAULT_FILE_BACKEND_CONFIG[DEFAULT_DEEPAGENT_ACT_BACKEND],
+              ? prev.fileBackendConfig || getDefaultFileBackendConfig(DEFAULT_DEEPAGENT_ACT_BACKEND)
+              : getDefaultFileBackendConfig(DEFAULT_DEEPAGENT_ACT_BACKEND),
         };
         if (next.isDraft) {
           setDraftAgents((drafts) => drafts.map((draft) => (draft.id === next.id ? next : draft)));
@@ -827,7 +884,7 @@ export default function App() {
     setEditorAndSyncDraft((prev) => ({
       ...prev,
       actBackend: newBackend,
-      fileBackendConfig: DEFAULT_FILE_BACKEND_CONFIG[newBackend],
+    fileBackendConfig: getDefaultFileBackendConfig(newBackend),
     }));
   }
 
