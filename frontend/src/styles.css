@@ -611,6 +611,10 @@ button:disabled {
   border-left: 3px solid #26a269;
 }
 
+.chat-modal-message.tool {
+  border-left: 3px solid #8e6bd8;
+}
+
 .chat-modal-message p {
   margin: 6px 0 0 0;
   white-space: pre-wrap;

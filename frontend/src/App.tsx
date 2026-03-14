@@ -46,7 +46,7 @@ type EditableAgent = {
 
 type AgentChatMessage = {
   id: string;
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "tool";
   content: string;
 };
 
@@ -450,6 +450,28 @@ function buildAgentChatUrlBase(): string {
 
 function createConversationId(): string {
   return `conv-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function mapConversationMessageToAgentChatMessage(
+  message: ConversationMessageItem
+): AgentChatMessage | null {
+  const type = (message.message_type || "").toLowerCase();
+  let role: AgentChatMessage["role"] | null = null;
+  if (type === "human" || type === "user") {
+    role = "user";
+  } else if (type === "ai" || type === "assistant") {
+    role = "assistant";
+  } else if (type === "tool") {
+    role = "tool";
+  }
+  if (!role) {
+    return null;
+  }
+  return {
+    id: `${message.sequence_number}-${message.created_at}-${role}`,
+    role,
+    content: message.content || "",
+  };
 }
 
 function normalizeDeepAgentActBackend(value: unknown): DeepAgentActBackend {
@@ -1227,6 +1249,7 @@ export default function App() {
 
   async function sendAgentChatMessage(): Promise<void> {
     const pipelineId = (chatPipelineId || "").trim();
+    const conversationId = chatConversationId;
     const message = chatInput.trim();
     if (!pipelineId || !message || chatSending) {
       return;
@@ -1256,7 +1279,7 @@ export default function App() {
     try {
       await streamAgentChatResponse({
         appId: pipelineId,
-        sessionId: chatConversationId,
+        sessionId: conversationId,
         apiKey: authKey,
         message,
         signal: controller.signal,
@@ -1273,6 +1296,34 @@ export default function App() {
           );
         },
       });
+      // Some runtimes namespace thread ids as "<pipeline_id>:<session_id>" when persisting.
+      // Try both IDs and fail soft so a successful streamed reply never turns into a UI error.
+      const candidateConversationIds = [
+        conversationId,
+        `${pipelineId}:${conversationId}`,
+      ];
+      let reloaded = false;
+      for (const candidateId of candidateConversationIds) {
+        try {
+          const storedMessages = await getPipelineConversationMessages(
+            pipelineId,
+            candidateId
+          );
+          const normalizedMessages = storedMessages
+            .map(mapConversationMessageToAgentChatMessage)
+            .filter((item): item is AgentChatMessage => item !== null);
+          if (normalizedMessages.length > 0) {
+            setChatMessages(normalizedMessages);
+            reloaded = true;
+            break;
+          }
+        } catch {
+          // Ignore refresh failures; keep streamed content visible.
+        }
+      }
+      if (!reloaded) {
+        // Keep existing streamed messages without surfacing a false error state.
+      }
     } catch (error) {
       if ((error as Error).message === "Request cancelled") {
         setChatMessages((prev) =>
@@ -1907,9 +1958,15 @@ export default function App() {
                 chatMessages.map((message) => (
                   <article
                     key={message.id}
-                    className={`chat-modal-message ${message.role === "assistant" ? "assistant" : "user"}`}
+                    className={`chat-modal-message ${message.role}`}
                   >
-                    <strong>{message.role === "assistant" ? "Agent" : "You"}</strong>
+                    <strong>
+                      {message.role === "assistant"
+                        ? "Agent"
+                        : message.role === "tool"
+                          ? "Tool"
+                          : "You"}
+                    </strong>
                     <div className="chat-message-content">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                         {message.content || (chatSending && message.role === "assistant" ? "..." : "")}
