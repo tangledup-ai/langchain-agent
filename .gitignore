@@ -1,5 +1,6 @@
 /assets/
 .vscode/
+.marscode
 logs/
 *.egg-info/ 
 workspace/
