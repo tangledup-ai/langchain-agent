@@ -15,11 +15,19 @@ import tyro
 # Ensure we can import from project root
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from lang_agent.components.runtime_services import runtime_services_lifespan
 from lang_agent.pipeline import Pipeline, PipelineConfig
 from lang_agent.config.constants import API_KEY_HEADER, VALID_API_KEYS
 
-# Initialize Pipeline once
-pipeline_config = tyro.cli(PipelineConfig)
+
+def _build_default_pipeline_config() -> PipelineConfig:
+    """Build import-time defaults without parsing CLI args."""
+    cfg = PipelineConfig()
+    logger.info(f"starting OpenAI-compatible server with default config: \n{cfg}")
+    return cfg
+
+
+pipeline_config = _build_default_pipeline_config()
 pipeline: Pipeline = pipeline_config.setup()
 
 
@@ -49,6 +57,7 @@ class OpenAIChatCompletionRequest(BaseModel):
 app = FastAPI(
     title="OpenAI-Compatible Chat API",
     description="OpenAI Chat Completions API compatible endpoint backed by pipeline.chat",
+    lifespan=runtime_services_lifespan,
 )
 
 app.add_middleware(
@@ -221,9 +230,14 @@ async def delete_memory(_: str = Depends(verify_api_key)):
 
 
 if __name__ == "__main__":
+    cli_pipeline_config = tyro.cli(PipelineConfig)
+    logger.info(
+        f"starting OpenAI-compatible server with CLI config: \n{cli_pipeline_config}"
+    )
+    pipeline = cli_pipeline_config.setup()
     uvicorn.run(
         "server_openai:app",
-        host="0.0.0.0",
-        port=8588,
-        reload=True,
+        host=cli_pipeline_config.host,
+        port=cli_pipeline_config.port,
+        reload=False,
     )
