@@ -27,6 +27,35 @@ services:
       retries: 5
     restart: no #unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    container_name: langchain-agent-redis
+    networks:
+      - app-network
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: no #unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: langchain-agent-rabbitmq
+    networks:
+      - app-network
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: no #unless-stopped
+
   # Backend API server
   backend:
     build:
@@ -37,6 +66,13 @@ services:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
       - CONN_STR=postgresql://${POSTGRES_USER:-myapp_user}:${POSTGRES_PASSWORD:-secure_password_123}@postgres:5432/${POSTGRES_DB:-ai_conversations}
+      - REDIS_URL=redis://redis:6379/0
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - DB_POOL_MIN_SIZE=${DB_POOL_MIN_SIZE:-1}
+      - DB_POOL_MAX_SIZE=${DB_POOL_MAX_SIZE:-10}
+      - DB_POOL_TIMEOUT=${DB_POOL_TIMEOUT:-30}
+      - DB_POOL_MAX_IDLE=${DB_POOL_MAX_IDLE:-300}
+      - DB_POOL_OPEN_ON_STARTUP=${DB_POOL_OPEN_ON_STARTUP:-true}
       - POSTGRES_USER=${POSTGRES_USER:-myapp_user}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-secure_password_123}
       - POSTGRES_DB=${POSTGRES_DB:-ai_conversations}
@@ -51,6 +87,10 @@ services:
       - app-network
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     restart: no #unless-stopped
     healthcheck:
