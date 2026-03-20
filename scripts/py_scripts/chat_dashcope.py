@@ -18,8 +18,9 @@ from typing import Optional
 # Configuration from pipeline_registry.json
 API_KEY = "sk-6c7091e6a95f404efb2ec30e8f51b897626d670375cdf822d78262f24ab12367"
 PIPELINE_ID = "blueberry"
-BASE_URL = "http://localhost:8500"
-SESSION_ID = "chat-session-1"
+# BASE_URL = "http://localhost:8500"
+BASE_URL = "http://121.40.192.128:8500"
+SESSION_ID = "chat-sess-8976"
 
 
 def send_message(
