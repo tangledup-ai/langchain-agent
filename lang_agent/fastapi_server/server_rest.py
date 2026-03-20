@@ -16,23 +16,43 @@ import tyro
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from langgraph.checkpoint.memory import MemorySaver
+from lang_agent.components.runtime_services import runtime_services_lifespan
 from lang_agent.pipeline import Pipeline, PipelineConfig
-from lang_agent.config.constants import API_KEY_HEADER, VALID_API_KEYS
+from lang_agent.config.constants import API_KEY_HEADER_NO_ERROR
 
-# Initialize Pipeline once (matches existing server_* pattern)
-pipeline_config = tyro.cli(PipelineConfig)
-logger.info(f"starting agent with pipeline: \n{pipeline_config}")
+# Keep both import paths pointing at the same module so tests patching either
+# `fastapi_server.server_rest` or `lang_agent.fastapi_server.server_rest`
+# affect the same globals.
+sys.modules.setdefault("fastapi_server.server_rest", sys.modules[__name__])
+sys.modules.setdefault("lang_agent.fastapi_server.server_rest", sys.modules[__name__])
+
+
+def _build_default_pipeline_config() -> PipelineConfig:
+    """
+    Build import-time defaults without parsing CLI args.
+
+    This keeps module import safe for tests and combined apps.
+    """
+    cfg = PipelineConfig()
+    logger.info(f"starting agent with default pipeline config: \n{cfg}")
+    return cfg
+
+
+pipeline_config = _build_default_pipeline_config()
 pipeline: Pipeline = pipeline_config.setup()
 
 # API Key Authentication
 
-async def verify_api_key(api_key: Optional[str] = Security(API_KEY_HEADER)):
+async def verify_api_key(api_key: Optional[str] = Security(API_KEY_HEADER_NO_ERROR)):
     """Verify the API key from Authorization header (Bearer token format)."""
     if not api_key:
         # Tests expect 401 (not FastAPI's default 403) when auth header is missing.
         raise HTTPException(status_code=401, detail="Missing API key")
     key = api_key[7:] if api_key.startswith("Bearer ") else api_key
-    if VALID_API_KEYS and key not in VALID_API_KEYS:
+    valid_api_keys = set(
+        filter(None, os.environ.get("FAST_AUTH_KEYS", "").split(","))
+    )
+    if valid_api_keys and key not in valid_api_keys:
         raise HTTPException(status_code=401, detail="Invalid API key")
     return key
 
@@ -112,6 +132,7 @@ class ChatResponse(BaseModel):
 app = FastAPI(
     title="REST Agent API",
     description="Resource-oriented REST API backed by Pipeline.achat (no RAG/eval/tools exposure).",
+    lifespan=runtime_services_lifespan,
 )
 
 app.add_middleware(
@@ -282,9 +303,12 @@ async def delete_conversation_memory(
 
 
 if __name__ == "__main__":
+    cli_pipeline_config = tyro.cli(PipelineConfig)
+    logger.info(f"starting agent with CLI pipeline config: \n{cli_pipeline_config}")
+    pipeline = cli_pipeline_config.setup()
     uvicorn.run(
         "server_rest:app",
-        host="0.0.0.0",
-        port=8589,
-        reload=True,
+        host=cli_pipeline_config.host,
+        port=cli_pipeline_config.port,
+        reload=False,
     )
