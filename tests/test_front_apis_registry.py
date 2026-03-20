@@ -3,6 +3,8 @@ import os
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
 import importlib
+from contextlib import contextmanager
+from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
@@ -131,6 +133,36 @@ class _FakeConnection:
 
     def cursor(self, row_factory=None):
         return _FakeCursor(self._rows)
+
+
+@contextmanager
+def _fake_db_connection(rows):
+    yield _FakeConnection(rows)
+
+
+def _fake_services():
+    cache_data = {}
+
+    class _Cache:
+        def get_json(self, key):
+            return cache_data.get(key)
+
+        def set_json(self, key, value, ttl_seconds=None):
+            cache_data[key] = value
+
+        def delete(self, key):
+            cache_data.pop(key, None)
+
+        def conversation_list_key(self, pipeline_id, limit):
+            return f"conversation-list:{pipeline_id}:{limit}"
+
+        def conversation_messages_key(self, pipeline_id, conversation_id):
+            return f"conversation-messages:{pipeline_id}:{conversation_id}"
+
+    return SimpleNamespace(
+        cache=_Cache(),
+        message_bus=SimpleNamespace(publish=lambda *_args, **_kwargs: False),
+    )
 
 
 def test_registry_route_lifecycle(monkeypatch, tmp_path):
@@ -274,10 +306,11 @@ def test_pipeline_conversation_routes(monkeypatch):
     ]
 
     monkeypatch.setenv("CONN_STR", "postgresql://dummy:dummy@localhost/dummy")
+    monkeypatch.setattr(front_apis, "get_runtime_services", _fake_services)
     monkeypatch.setattr(
-        front_apis.psycopg,
-        "connect",
-        lambda _conn_str: _FakeConnection(rows),
+        front_apis,
+        "db_connection",
+        lambda: _fake_db_connection(rows),
     )
 
     client = TestClient(front_apis.app)
@@ -315,10 +348,11 @@ def test_pipeline_conversation_messages_404(monkeypatch):
         },
     ]
     monkeypatch.setenv("CONN_STR", "postgresql://dummy:dummy@localhost/dummy")
+    monkeypatch.setattr(front_apis, "get_runtime_services", _fake_services)
     monkeypatch.setattr(
-        front_apis.psycopg,
-        "connect",
-        lambda _conn_str: _FakeConnection(rows),
+        front_apis,
+        "db_connection",
+        lambda: _fake_db_connection(rows),
     )
 
     client = TestClient(front_apis.app)
