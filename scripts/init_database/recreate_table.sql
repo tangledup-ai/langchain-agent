@@ -20,6 +20,10 @@ CREATE TABLE messages (
 -- Recreate the index for fast retrieval of all messages in a conversation (in order)
 CREATE INDEX idx_messages_conversation ON messages (conversation_id, sequence_number);
 
+-- Prevent duplicate sequence numbers within the same conversation.
+CREATE UNIQUE INDEX idx_messages_conversation_sequence_unique
+    ON messages (conversation_id, sequence_number);
+
 -- Index for fast lookup by pipeline_id
 CREATE INDEX idx_messages_pipeline ON messages (pipeline_id);
 

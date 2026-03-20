@@ -13,6 +13,10 @@ CREATE TABLE IF NOT EXISTS messages (
 -- Index for fast retrieval of all messages in a conversation (in order)
 CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages (conversation_id, sequence_number);
 
+-- Prevent duplicate sequence numbers within the same conversation.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_messages_conversation_sequence_unique
+    ON messages (conversation_id, sequence_number);
+
 -- Index for fast lookup by pipeline_id
 CREATE INDEX IF NOT EXISTS idx_messages_pipeline ON messages (pipeline_id);
 
