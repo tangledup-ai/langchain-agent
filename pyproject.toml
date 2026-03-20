@@ -25,6 +25,9 @@ dependencies = [
     "pandas",
     "asgiref",
     "psycopg[binary]",
+    "psycopg-pool",
+    "redis",
+    "pika",
     "deepagents",
     "daytona",
     "langchain_daytona"
