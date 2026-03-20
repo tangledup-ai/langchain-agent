@@ -201,11 +201,9 @@ class Pipeline:
         """
         returns a id to remove if a new conversation has starte
         """
-        parts = thread_id.split("_")
+        parts = thread_id.rsplit("_", 1)
         if len(parts) < 2:
             return None
-
-        assert len(parts) == 2, "should have exactly two parts"
 
         thread_id, device_id = parts
         c_th_id = self.thread_id_cache.get(device_id)
