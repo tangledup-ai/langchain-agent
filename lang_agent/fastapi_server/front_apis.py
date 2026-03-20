@@ -4,11 +4,12 @@ import os
 import os.path as osp
 import sys
 import json
-import psycopg
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from psycopg.rows import dict_row
+from starlette.concurrency import run_in_threadpool
 
 # Ensure we can import from project root.
 sys.path.append(osp.dirname(osp.dirname(osp.abspath(__file__))))
@@ -28,6 +29,11 @@ from lang_agent.front_api.build_server_utils import (
 from lang_agent.components.client_tool_manager import (
     ClientToolManager,
     ClientToolManagerConfig,
+)
+from lang_agent.components.db_pool import db_connection
+from lang_agent.components.runtime_services import (
+    get_runtime_services,
+    runtime_services_lifespan,
 )
 
 
@@ -203,6 +209,7 @@ class McpAvailableToolsResponse(BaseModel):
 app = FastAPI(
     title="Front APIs",
     description="Manage graph configs and launch graph pipelines.",
+    lifespan=runtime_services_lifespan,
 )
 
 app.add_middleware(
@@ -213,7 +220,140 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-_db = DBConfigManager()
+_db: Optional[DBConfigManager] = None
+
+
+def get_db_manager() -> DBConfigManager:
+    global _db
+    if _db is None:
+        _db = DBConfigManager()
+    return _db
+
+
+def _publish_registry_changed() -> None:
+    services = get_runtime_services()
+    services.cache.delete("pipeline-registry")
+    services.message_bus.publish("pipeline_registry.changed", {"source": "front_apis"})
+
+
+def _conversation_list_cache_key(pipeline_id: str, limit: int) -> str:
+    return get_runtime_services().cache.conversation_list_key(pipeline_id, limit)
+
+
+def _conversation_messages_cache_key(pipeline_id: str, conversation_id: str) -> str:
+    return get_runtime_services().cache.conversation_messages_key(
+        pipeline_id, conversation_id
+    )
+
+
+def _list_pipeline_conversations_sync(
+    pipeline_id: str, limit: int
+) -> PipelineConversationListResponse:
+    services = get_runtime_services()
+    cache_key = _conversation_list_cache_key(pipeline_id, limit)
+    cached = services.cache.get_json(cache_key)
+    if cached is not None:
+        return PipelineConversationListResponse(**cached)
+
+    with db_connection() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                """
+                SELECT
+                    conversation_id,
+                    pipeline_id,
+                    COUNT(*) AS message_count,
+                    MAX(created_at) AS last_updated
+                FROM messages
+                WHERE pipeline_id = %s
+                GROUP BY conversation_id, pipeline_id
+                ORDER BY last_updated DESC
+                LIMIT %s
+                """,
+                (pipeline_id, limit),
+            )
+            rows = cur.fetchall()
+
+    items = [
+        ConversationListItem(
+            conversation_id=str(row["conversation_id"]),
+            pipeline_id=str(row["pipeline_id"]),
+            message_count=int(row["message_count"]),
+            last_updated=(
+                row["last_updated"].isoformat() if row.get("last_updated") else None
+            ),
+        )
+        for row in rows
+    ]
+    response = PipelineConversationListResponse(
+        pipeline_id=pipeline_id, items=items, count=len(items)
+    )
+    services.cache.set_json(cache_key, response.model_dump(), ttl_seconds=30)
+    return response
+
+
+def _get_pipeline_conversation_messages_sync(
+    pipeline_id: str, conversation_id: str
+) -> PipelineConversationMessagesResponse:
+    services = get_runtime_services()
+    cache_key = _conversation_messages_cache_key(pipeline_id, conversation_id)
+    cached = services.cache.get_json(cache_key)
+    if cached is not None:
+        return PipelineConversationMessagesResponse(**cached)
+
+    with db_connection() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                """
+                SELECT 1
+                FROM messages
+                WHERE pipeline_id = %s AND conversation_id = %s
+                LIMIT 1
+                """,
+                (pipeline_id, conversation_id),
+            )
+            exists = cur.fetchone()
+            if exists is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail=(
+                        f"conversation_id '{conversation_id}' not found for "
+                        f"pipeline '{pipeline_id}'"
+                    ),
+                )
+
+            cur.execute(
+                """
+                SELECT
+                    message_type,
+                    content,
+                    sequence_number,
+                    created_at
+                FROM messages
+                WHERE pipeline_id = %s AND conversation_id = %s
+                ORDER BY sequence_number ASC
+                """,
+                (pipeline_id, conversation_id),
+            )
+            rows = cur.fetchall()
+
+    items = [
+        ConversationMessageItem(
+            message_type=str(row["message_type"]),
+            content=str(row["content"]),
+            sequence_number=int(row["sequence_number"]),
+            created_at=row["created_at"].isoformat() if row.get("created_at") else "",
+        )
+        for row in rows
+    ]
+    response = PipelineConversationMessagesResponse(
+        pipeline_id=pipeline_id,
+        conversation_id=conversation_id,
+        items=items,
+        count=len(items),
+    )
+    services.cache.set_json(cache_key, response.model_dump(), ttl_seconds=30)
+    return response
 
 
 @app.get("/health")
@@ -435,13 +575,14 @@ def _normalize_api_key_policy(api_key: str, policy: Dict[str, Any]) -> ApiKeyPol
 @app.post("/v1/graph-configs", response_model=GraphConfigUpsertResponse)
 async def upsert_graph_config(body: GraphConfigUpsertRequest):
     try:
-        resolved_prompt_set_id = _db.set_config(
-            graph_id=body.graph_id,
-            pipeline_id=body.pipeline_id,
-            prompt_set_id=body.prompt_set_id,
-            tool_list=body.tool_keys,
-            prompt_dict=body.prompt_dict,
-            api_key=body.api_key,
+        resolved_prompt_set_id = await run_in_threadpool(
+            get_db_manager().set_config,
+            body.pipeline_id,
+            body.graph_id,
+            body.prompt_set_id,
+            body.tool_keys,
+            body.prompt_dict,
+            body.api_key,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -463,7 +604,9 @@ async def list_graph_configs(
     pipeline_id: Optional[str] = None, graph_id: Optional[str] = None
 ):
     try:
-        rows = _db.list_prompt_sets(pipeline_id=pipeline_id, graph_id=graph_id)
+        rows = await run_in_threadpool(
+            get_db_manager().list_prompt_sets, pipeline_id, graph_id
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -476,8 +619,8 @@ async def list_graph_configs(
 )
 async def get_default_graph_config(pipeline_id: str):
     try:
-        prompt_dict, tool_keys = _db.get_config(
-            pipeline_id=pipeline_id, prompt_set_id=None
+        prompt_dict, tool_keys = await run_in_threadpool(
+            get_db_manager().get_config, pipeline_id, None
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -490,7 +633,7 @@ async def get_default_graph_config(pipeline_id: str):
             detail=f"No active prompt set found for pipeline '{pipeline_id}'",
         )
 
-    rows = _db.list_prompt_sets(pipeline_id=pipeline_id)
+    rows = await run_in_threadpool(get_db_manager().list_prompt_sets, pipeline_id, None)
     active = next((row for row in rows if row["is_active"]), None)
     if active is None:
         raise HTTPException(
@@ -522,15 +665,18 @@ async def get_graph_default_config_by_graph(graph_id: str):
 )
 async def get_graph_config(pipeline_id: str, prompt_set_id: str):
     try:
-        meta = _db.get_prompt_set(pipeline_id=pipeline_id, prompt_set_id=prompt_set_id)
+        meta = await run_in_threadpool(
+            get_db_manager().get_prompt_set, pipeline_id, prompt_set_id
+        )
         if meta is None:
             raise HTTPException(
                 status_code=404,
                 detail=f"prompt_set_id '{prompt_set_id}' not found for pipeline '{pipeline_id}'",
             )
-        prompt_dict, tool_keys = _db.get_config(
-            pipeline_id=pipeline_id,
-            prompt_set_id=prompt_set_id,
+        prompt_dict, tool_keys = await run_in_threadpool(
+            get_db_manager().get_config,
+            pipeline_id,
+            prompt_set_id,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -555,7 +701,9 @@ async def get_graph_config(pipeline_id: str, prompt_set_id: str):
 @app.delete("/v1/graph-configs/{pipeline_id}/{prompt_set_id}")
 async def delete_graph_config(pipeline_id: str, prompt_set_id: str):
     try:
-        _db.remove_config(pipeline_id=pipeline_id, prompt_set_id=prompt_set_id)
+        await run_in_threadpool(
+            get_db_manager().remove_config, pipeline_id, prompt_set_id
+        )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -674,7 +822,9 @@ async def create_pipeline(body: PipelineCreateRequest):
 
     resolved_api_key = (body.api_key or "").strip()
     if not resolved_api_key:
-        meta = _db.get_prompt_set(pipeline_id=pipeline_id, prompt_set_id=prompt_set_id)
+        meta = await run_in_threadpool(
+            get_db_manager().get_prompt_set, pipeline_id, prompt_set_id
+        )
         if meta is None:
             raise HTTPException(
                 status_code=400,
@@ -714,6 +864,7 @@ async def create_pipeline(body: PipelineCreateRequest):
             enabled=body.enabled,
             registry_f=PIPELINE_REGISTRY_PATH,
         )
+        _publish_registry_changed()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to register pipeline: {e}")
 
@@ -755,6 +906,7 @@ async def stop_pipeline(pipeline_id: str):
             )
         spec["enabled"] = False
         _write_pipeline_registry(registry)
+        _publish_registry_changed()
     except HTTPException:
         raise
     except ValueError as e:
@@ -783,46 +935,12 @@ async def list_pipeline_conversations(pipeline_id: str, limit: int = 100):
     if limit < 1 or limit > 500:
         raise HTTPException(status_code=400, detail="limit must be between 1 and 500")
 
-    conn_str = os.environ.get("CONN_STR")
-    if not conn_str:
-        raise HTTPException(status_code=500, detail="CONN_STR not set")
-
     try:
-        with psycopg.connect(conn_str) as conn:
-            with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
-                cur.execute(
-                    """
-                    SELECT
-                        conversation_id,
-                        pipeline_id,
-                        COUNT(*) AS message_count,
-                        MAX(created_at) AS last_updated
-                    FROM messages
-                    WHERE pipeline_id = %s
-                    GROUP BY conversation_id, pipeline_id
-                    ORDER BY last_updated DESC
-                    LIMIT %s
-                    """,
-                    (pipeline_id, limit),
-                )
-                rows = cur.fetchall()
+        return await run_in_threadpool(
+            _list_pipeline_conversations_sync, pipeline_id, limit
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-    items = [
-        ConversationListItem(
-            conversation_id=str(row["conversation_id"]),
-            pipeline_id=str(row["pipeline_id"]),
-            message_count=int(row["message_count"]),
-            last_updated=(
-                row["last_updated"].isoformat() if row.get("last_updated") else None
-            ),
-        )
-        for row in rows
-    ]
-    return PipelineConversationListResponse(
-        pipeline_id=pipeline_id, items=items, count=len(items)
-    )
 
 
 @app.get(
@@ -830,66 +948,14 @@ async def list_pipeline_conversations(pipeline_id: str, limit: int = 100):
     response_model=PipelineConversationMessagesResponse,
 )
 async def get_pipeline_conversation_messages(pipeline_id: str, conversation_id: str):
-    conn_str = os.environ.get("CONN_STR")
-    if not conn_str:
-        raise HTTPException(status_code=500, detail="CONN_STR not set")
-
     try:
-        with psycopg.connect(conn_str) as conn:
-            with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
-                cur.execute(
-                    """
-                    SELECT 1
-                    FROM messages
-                    WHERE pipeline_id = %s AND conversation_id = %s
-                    LIMIT 1
-                    """,
-                    (pipeline_id, conversation_id),
-                )
-                exists = cur.fetchone()
-                if exists is None:
-                    raise HTTPException(
-                        status_code=404,
-                        detail=(
-                            f"conversation_id '{conversation_id}' not found for "
-                            f"pipeline '{pipeline_id}'"
-                        ),
-                    )
-
-                cur.execute(
-                    """
-                    SELECT
-                        message_type,
-                        content,
-                        sequence_number,
-                        created_at
-                    FROM messages
-                    WHERE pipeline_id = %s AND conversation_id = %s
-                    ORDER BY sequence_number ASC
-                    """,
-                    (pipeline_id, conversation_id),
-                )
-                rows = cur.fetchall()
+        return await run_in_threadpool(
+            _get_pipeline_conversation_messages_sync, pipeline_id, conversation_id
+        )
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-    items = [
-        ConversationMessageItem(
-            message_type=str(row["message_type"]),
-            content=str(row["content"]),
-            sequence_number=int(row["sequence_number"]),
-            created_at=row["created_at"].isoformat() if row.get("created_at") else "",
-        )
-        for row in rows
-    ]
-    return PipelineConversationMessagesResponse(
-        pipeline_id=pipeline_id,
-        conversation_id=conversation_id,
-        items=items,
-        count=len(items),
-    )
 
 
 @app.get("/v1/pipelines/api-keys", response_model=ApiKeyPolicyListResponse)
@@ -955,6 +1021,7 @@ async def upsert_pipeline_api_key_policy(api_key: str, body: ApiKeyPolicyUpsertR
 
         registry.setdefault("api_keys", {})[normalized_key] = policy
         _write_pipeline_registry(registry)
+        _publish_registry_changed()
         return _normalize_api_key_policy(normalized_key, policy)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -983,6 +1050,7 @@ async def delete_pipeline_api_key_policy(api_key: str):
             )
         del api_keys[normalized_key]
         _write_pipeline_registry(registry)
+        _publish_registry_changed()
     except HTTPException:
         raise
     except ValueError as e:
