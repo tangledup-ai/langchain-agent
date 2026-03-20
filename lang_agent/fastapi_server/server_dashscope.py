@@ -15,6 +15,7 @@ import tyro
 # Ensure we can import from project root
 sys.path.append(osp.dirname(osp.dirname(osp.abspath(__file__))))
 
+from lang_agent.components.runtime_services import runtime_services_lifespan
 from lang_agent.pipeline import PipelineConfig
 from lang_agent.components.server_pipeline_manager import ServerPipelineManager
 from lang_agent.config.constants import PIPELINE_REGISTRY_PATH, API_KEY_HEADER, VALID_API_KEYS
@@ -331,6 +332,7 @@ def create_dashscope_app(
     dashscope_app = FastAPI(
         title="DashScope-Compatible Application API",
         description="DashScope Application.call compatible endpoint backed by pipeline.chat",
+        lifespan=runtime_services_lifespan,
     )
     dashscope_app.add_middleware(
         CORSMiddleware,
