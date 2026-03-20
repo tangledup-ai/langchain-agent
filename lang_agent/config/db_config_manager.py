@@ -1,21 +1,25 @@
-import os
 from typing import Dict, List, Mapping, Optional, Sequence, Tuple
 
 import psycopg
 from psycopg.rows import dict_row
 
+from lang_agent.components.db_pool import db_connection
+from lang_agent.components.runtime_services import get_runtime_services
+
 
 class DBConfigManager:
     def __init__(self):
-        self.conn_str = os.environ.get("CONN_STR")
-        if self.conn_str is None:
-            raise ValueError("CONN_STR is not set")
-    
-    def remove_config(self, pipeline_id: str, prompt_set_id:str):
-        with psycopg.connect(self.conn_str) as conn:
+        pass
+
+    def remove_config(self, pipeline_id: str, prompt_set_id: str):
+        with db_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("DELETE FROM prompt_sets WHERE pipeline_id = %s AND id = %s", (pipeline_id, prompt_set_id))
+                cur.execute(
+                    "DELETE FROM prompt_sets WHERE pipeline_id = %s AND id = %s",
+                    (pipeline_id, prompt_set_id),
+                )
                 conn.commit()
+        self._invalidate_prompt_cache(pipeline_id=pipeline_id, prompt_set_id=prompt_set_id)
 
     def list_prompt_sets(
         self, pipeline_id: Optional[str] = None, graph_id: Optional[str] = None
@@ -23,7 +27,7 @@ class DBConfigManager:
         """
         List prompt_set metadata for UI listing.
         """
-        with psycopg.connect(self.conn_str) as conn:
+        with db_connection() as conn:
             with conn.cursor(row_factory=dict_row) as cur:
                 if pipeline_id and graph_id:
                     cur.execute(
@@ -81,11 +85,13 @@ class DBConfigManager:
             for row in rows
         ]
 
-    def get_prompt_set(self, pipeline_id: str, prompt_set_id: str) -> Optional[Dict[str, object]]:
+    def get_prompt_set(
+        self, pipeline_id: str, prompt_set_id: str
+    ) -> Optional[Dict[str, object]]:
         """
         Return prompt_set metadata by id within a pipeline.
         """
-        with psycopg.connect(self.conn_str) as conn:
+        with db_connection() as conn:
             with conn.cursor(row_factory=dict_row) as cur:
                 cur.execute(
                     """
@@ -130,7 +136,7 @@ class DBConfigManager:
         if not pipeline_id:
             raise ValueError("pipeline_id is required")
 
-        with psycopg.connect(self.conn_str) as conn:
+        with db_connection() as conn:
             resolved_set_id, tool_csv = self._resolve_prompt_set(
                 conn,
                 pipeline_id=pipeline_id,
@@ -187,7 +193,7 @@ class DBConfigManager:
         tool_csv = self._join_tool_list(tool_list)
         normalized_api_key = self._normalize_api_key(api_key)
 
-        with psycopg.connect(self.conn_str) as conn:
+        with db_connection() as conn:
             resolved_set_id, _ = self._resolve_prompt_set(
                 conn,
                 pipeline_id=pipeline_id,
@@ -249,6 +255,10 @@ class DBConfigManager:
                     )
 
             conn.commit()
+            self._invalidate_prompt_cache(
+                pipeline_id=pipeline_id,
+                prompt_set_id=str(resolved_set_id),
+            )
             return str(resolved_set_id)
 
     def _resolve_prompt_set(
@@ -353,3 +363,17 @@ class DBConfigManager:
         if api_key is None:
             return None
         return str(api_key).strip()
+
+    def _invalidate_prompt_cache(
+        self, pipeline_id: str, prompt_set_id: Optional[str]
+    ) -> None:
+        services = get_runtime_services()
+        services.cache.invalidate_prompt_cache(pipeline_id, prompt_set_id)
+        services.cache.invalidate_prompt_cache(pipeline_id, None)
+        services.message_bus.publish(
+            "prompt_set.updated",
+            {
+                "pipeline_id": pipeline_id,
+                "prompt_set_id": prompt_set_id,
+            },
+        )
