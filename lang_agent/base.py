@@ -195,7 +195,7 @@ class GraphBase(ABC):
     
     def clear_all_memory(self):
         # NOTE: self.memory = MemorySaver
-        for thread_id in self.memory.storage:
+        for thread_id in list(self.memory.storage):
             self.memory.delete_thread(thread_id)
     
     def clear_memory_device_id(self, device_id:str):
@@ -218,7 +218,7 @@ class GraphBase(ABC):
             if isinstance(self.memory, MemorySaver):
                 if device_id is None:
                     # Clear all memory
-                    for thread_id in self.memory.storage:
+                    for thread_id in list(self.memory.storage):
                         await self.memory.adelete_thread(thread_id)
                 else:
                     # Clear memory for specific device_id
