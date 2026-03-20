@@ -158,12 +158,14 @@ class ServerPipelineManager:
             if hasattr(loaded_cfg, "setup"):
                 cfg = loaded_cfg
             else:
-                raise ValueError(
-                    "config_file for pipeline "
-                    f"`{pipeline_id}` did not deserialize to a config object. "
-                    "Rebuild the pipeline via /v1/pipelines to regenerate a "
-                    "valid serialized PipelineConfig file."
+                logger.warning(
+                    "config_file for pipeline `{}` did not deserialize to a config object; "
+                    "falling back to default pipeline config",
+                    pipeline_id,
                 )
+                cfg = copy.deepcopy(self.default_config)
+                if registry_llm_name is not None and hasattr(cfg, "llm_name"):
+                    setattr(cfg, "llm_name", registry_llm_name)
         else:
             cfg = copy.deepcopy(self.default_config)
             if registry_llm_name is not None and hasattr(cfg, "llm_name"):
