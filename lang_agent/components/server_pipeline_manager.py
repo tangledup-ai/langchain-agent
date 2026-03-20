@@ -76,11 +76,23 @@ class ServerPipelineManager:
                 for pipeline_id in (set(old_specs.keys()) & set(parsed_specs.keys()))
                 if old_specs[pipeline_id] != parsed_specs[pipeline_id]
             }
-            changed = bool(added or removed or modified or old_policy != api_key_policy)
+            policy_changed = old_policy != api_key_policy
+            registry_rewritten = old_mtime is not None and old_mtime != mtime_ns
+            changed = bool(added or removed or modified or policy_changed)
 
             # Drop stale cache entries for deleted/changed pipelines so future requests
             # lazily rebuild from the refreshed registry spec.
-            for pipeline_id in (removed | modified):
+            #
+            # When the registry file mtime changes but the parsed specs do not, the
+            # associated pipeline YAML may still have been rewritten (for example
+            # after editing prompt content while keeping pipeline_id/config_file/model
+            # stable). In that case, conservatively drop all cached pipelines so the
+            # next request reloads the updated config from disk.
+            invalidated = set(removed | modified)
+            if registry_rewritten and not changed:
+                invalidated = set(old_specs.keys()) | set(parsed_specs.keys())
+
+            for pipeline_id in invalidated:
                 self._pipelines.pop(pipeline_id, None)
                 self._pipeline_llm.pop(pipeline_id, None)
 
