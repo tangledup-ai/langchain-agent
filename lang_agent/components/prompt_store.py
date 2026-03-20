@@ -4,8 +4,10 @@ import os
 import os.path as osp
 import glob
 import commentjson
-import psycopg
 from loguru import logger
+
+from lang_agent.components.db_pool import db_connection
+from lang_agent.components.redis_client import get_cache_client
 
 
 class PromptStoreBase(ABC):
@@ -98,22 +100,33 @@ class DBPromptStore(PromptStoreBase):
         self,
         pipeline_id: str,
         prompt_set_id: str = None,
-        conn_str: str = None,
     ):
         self.pipeline_id = pipeline_id
         self.prompt_set_id = prompt_set_id
-        self.conn_str = conn_str or os.environ.get("CONN_STR")
-        if not self.conn_str:
+        if not os.environ.get("CONN_STR"):
             raise ValueError("CONN_STR not set for DBPromptStore")
         self._cache: Optional[Dict[str, str]] = None  # lazy loaded
+        self._cache_version: Optional[int] = None
 
     def _load(self):
         """Load all prompts for the active (or specified) prompt set from DB."""
-        if self._cache is not None:
+        cache_client = get_cache_client()
+        current_version = cache_client.get_prompt_version(
+            self.pipeline_id, self.prompt_set_id
+        )
+        if self._cache is not None and self._cache_version == current_version:
             return
+
+        cache_key = cache_client.prompt_cache_key(self.pipeline_id, self.prompt_set_id)
+        cached = cache_client.get_json(cache_key)
+        if isinstance(cached, dict):
+            self._cache = {str(k): str(v) for k, v in cached.items()}
+            self._cache_version = current_version
+            return
+
         self._cache = {}
         try:
-            with psycopg.connect(self.conn_str) as conn:
+            with db_connection() as conn:
                 with conn.cursor() as cur:
                     if self.prompt_set_id:
                         # Load from a specific prompt set
@@ -133,6 +146,8 @@ class DBPromptStore(PromptStoreBase):
                         )
                     for row in cur.fetchall():
                         self._cache[row[0]] = row[1]
+            cache_client.set_json(cache_key, self._cache, ttl_seconds=300)
+            self._cache_version = current_version
             source = f"set '{self.prompt_set_id}'" if self.prompt_set_id else "active set"
             logger.info(
                 f"DBPromptStore loaded {len(self._cache)} prompts for pipeline "
@@ -144,7 +159,9 @@ class DBPromptStore(PromptStoreBase):
 
     def invalidate_cache(self):
         """Force reload on next access (call after prompt update via API)."""
+        get_cache_client().invalidate_prompt_cache(self.pipeline_id, self.prompt_set_id)
         self._cache = None
+        self._cache_version = None
 
     def get(self, key: str) -> str:
         self._load()
@@ -224,7 +241,7 @@ def build_prompt_store(
     """
     stores = []
 
-    if prompt_set_id:
+    if pipeline_id:
         try:
             stores.append(DBPromptStore(pipeline_id, prompt_set_id=prompt_set_id))
         except ValueError:
