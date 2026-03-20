@@ -151,6 +151,49 @@ def test_refresh_registry_applies_disabled_state_immediately(tmp_path):
     assert exc_info.value.status_code == 403
 
 
+def test_refresh_registry_invalidates_cache_when_file_rewritten_without_spec_change(
+    tmp_path,
+):
+    registry_path = tmp_path / "pipeline_registry.json"
+    _write_registry(
+        registry_path,
+        pipelines={
+            "blueberry": {
+                "enabled": True,
+                "config_file": None,
+                "llm_name": "qwen-plus",
+            }
+        },
+    )
+    manager = ServerPipelineManager(
+        default_pipeline_id="blueberry",
+        default_config=_DummyConfig(),
+    )
+    manager.load_registry(str(registry_path))
+
+    first_pipeline, first_model = manager.get_pipeline("blueberry")
+    assert first_model == "qwen-plus"
+
+    # Simulate a config rewrite that also touches the registry file, but keeps the
+    # parsed registry spec identical.
+    _write_registry(
+        registry_path,
+        pipelines={
+            "blueberry": {
+                "enabled": True,
+                "config_file": None,
+                "llm_name": "qwen-plus",
+            }
+        },
+    )
+    changed = manager.refresh_registry_if_needed()
+    assert changed is False
+
+    second_pipeline, second_model = manager.get_pipeline("blueberry")
+    assert second_model == "qwen-plus"
+    assert second_pipeline is not first_pipeline
+
+
 
 
 
