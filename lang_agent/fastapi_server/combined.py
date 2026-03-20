@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
+from lang_agent.components.runtime_services import runtime_services_lifespan
 from lang_agent.fastapi_server.front_apis import app as front_app
 from lang_agent.fastapi_server.server_dashscope import create_dashscope_router
 
@@ -12,6 +13,7 @@ app = FastAPI(
         "Single-process app exposing front_apis control endpoints and "
         "DashScope-compatible chat endpoints."
     ),
+    lifespan=runtime_services_lifespan,
 )
 
 app.add_middleware(
