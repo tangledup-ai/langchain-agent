@@ -27,7 +27,7 @@ os.environ["FAST_AUTH_KEYS"] = "test-key-1,test-key-2,test-key-3"
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from fastapi_server.server_rest import app
+from lang_agent.fastapi_server.server_rest import app
 
 
 @pytest.fixture

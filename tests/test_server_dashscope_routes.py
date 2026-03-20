@@ -52,7 +52,7 @@ def dashscope_server():
         "python",
         "-m",
         "uvicorn",
-        "fastapi_server.server_dashscope:app",
+        "lang_agent.fastapi_server.server_dashscope:app",
         "--host",
         "127.0.0.1",
         "--port",
