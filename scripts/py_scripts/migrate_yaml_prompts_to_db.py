@@ -18,6 +18,7 @@ PROJECT_ROOT = osp.dirname(osp.dirname(osp.dirname(osp.abspath(__file__))))
 if PROJECT_ROOT not in sys.path:
     sys.path.append(PROJECT_ROOT)
 
+from lang_agent.components.db_pool import db_connection  # noqa: E402
 from lang_agent.config import load_tyro_conf  # noqa: E402
 from lang_agent.config.db_config_manager import DBConfigManager  # noqa: E402
 
@@ -253,7 +254,7 @@ def _run_migration(
             continue
 
         manager = DBConfigManager()
-        with psycopg.connect(manager.conn_str) as conn:
+        with db_connection() as conn:
             prompt_set_id = _ensure_prompt_set(
                 conn=conn,
                 pipeline_id=payload.pipeline_id,
