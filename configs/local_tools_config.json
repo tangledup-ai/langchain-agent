@@ -1,0 +1,9 @@
+{
+    "hybrid_rag_search": {
+        "enabled": true,
+        "module_path": "lang_agent.components.hybrid_retriever_node.HybridRetrieverNodeConfig",
+        "params": {
+            "score_threshold": 0.8
+        }
+    }
+}
