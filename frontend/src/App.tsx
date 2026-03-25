@@ -588,6 +588,7 @@ export default function App() {
   const [mcpConfigPath, setMcpConfigPath] = useState<string>("");
   const [mcpEntries, setMcpEntries] = useState<McpEntry[]>([]);
   const [mcpToolKeys, setMcpToolKeys] = useState<string[]>([]);
+  const [mcpAvailableToolNames, setMcpAvailableToolNames] = useState<string[]>([]);
   const [mcpToolsByServer, setMcpToolsByServer] = useState<Record<string, string[]>>({});
   const [mcpErrorsByServer, setMcpErrorsByServer] = useState<Record<string, string>>({});
   const [runtimeFastApiKey, setRuntimeFastApiKey] = useState<string>("");
@@ -704,14 +705,9 @@ export default function App() {
   }, [selectedId, configKeySet]);
 
   useEffect(() => {
-    if (activeTab !== "mcp") {
-      return;
-    }
-    if (mcpEntries.length > 0) {
-      return;
-    }
+    // 无论是 MCP 还是 Agents 面板，我们都需要加载工具列表，以供展示
     reloadMcpConfig().catch(() => undefined);
-  }, [activeTab, mcpEntries.length]);
+  }, []);
 
   async function loadPipelineDiscussions(
     pipelineId: string,
@@ -1026,10 +1022,12 @@ export default function App() {
       }
       setMcpToolsByServer(nextTools);
       setMcpErrorsByServer(nextErrors);
+      setMcpAvailableToolNames(resp.available_tools || []);
     } catch (error) {
       const message = (error as Error).message || "Unknown error";
       setMcpToolsByServer({});
       setMcpErrorsByServer({ _global: message });
+      setMcpAvailableToolNames([]);
     }
   }
 
@@ -1538,6 +1536,9 @@ export default function App() {
                     disabled={busy}
                   />
                 </label>
+                <div className="available-tools-hint">
+                  <small>Available tools: {mcpAvailableToolNames.length > 0 ? mcpAvailableToolNames.join(", ") : "(none)"}</small>
+                </div>
 
                 <label>
                   api_key

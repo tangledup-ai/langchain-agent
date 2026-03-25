@@ -250,5 +250,4 @@ GRAPH_BUILD_FNCS = {
     "routing": build_route,
     "react": build_react,
     "deepagent": build_deep_agent,
-    "hybrid_rag": build_hybrid_rag,
 }

@@ -771,6 +771,23 @@ async def list_mcp_available_tools():
                 for tool_name in server_info.get("tools", [])
             }
         )
+        
+        # --- 注入本地动态加载的工具 (如 hybrid_rag_search) ---
+        from lang_agent.components.local_tool_manager import LocalToolManager
+        local_tool_manager = LocalToolManager()
+        # 这里只是为了获取名字，不需要传入真实的 tool_manager 实例
+        local_tools = local_tool_manager.get_enabled_tools(tool_manager=None)
+        local_tool_names = [t.name for t in local_tools if hasattr(t, "name")]
+        
+        if local_tool_names:
+            available_tools = sorted(set(available_tools + local_tool_names))
+            # 为了前端展示，可以在 servers 列表里虚拟一个 Local 节点
+            servers["local_plugins"] = {
+                "tools": local_tool_names,
+                "error": None
+            }
+        # ----------------------------------------------------
+        
         errors = [
             f"{server_name}: {server_info.get('error')}"
             for server_name, server_info in servers.items()
