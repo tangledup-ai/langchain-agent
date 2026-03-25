@@ -22,6 +22,9 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph, START, END
 
 
+from lang_agent.components.hybrid_retriever_node import HybridRetrieverNodeConfig
+from lang_agent.components.local_tool_manager import LocalToolManager
+
 @dataclass
 class ToolNodeConfig(LLMNodeConfig):
     _target: Type = field(default_factory=lambda: ToolNode)
@@ -44,7 +47,17 @@ class ToolNode(ToolNodeBase):
                             api_key=self.config.api_key,
                             tags=["tool_llm"])
 
-        self.tool_agent = create_agent(self.llm, self.tool_manager.get_langchain_tools(), checkpointer=self.mem)
+        # 1. Get MCP Tools
+        mcp_tools = self.tool_manager.get_langchain_tools()
+        
+        # 2. Dynamically load Local Tools from config
+        local_tool_manager = LocalToolManager()
+        local_tools = local_tool_manager.get_enabled_tools(tool_manager=self.tool_manager)
+        
+        # 3. Combine and create agent
+        all_tools = mcp_tools + local_tools
+
+        self.tool_agent = create_agent(self.llm, all_tools, checkpointer=self.mem)
         self.prompt_store = build_prompt_store(
             pipeline_id=self.config.pipeline_id,
             prompt_set_id=self.config.prompt_set_id,
