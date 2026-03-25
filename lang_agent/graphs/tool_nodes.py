@@ -22,11 +22,15 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph, START, END
 
 
+from lang_agent.components.hybrid_retriever_node import HybridRetrieverNodeConfig
+
 @dataclass
 class ToolNodeConfig(LLMNodeConfig):
     _target: Type = field(default_factory=lambda: ToolNode)
 
     tool_prompt_f:str = osp.join(osp.dirname(osp.dirname(osp.dirname(__file__))), "configs", "route_sys_prompts", "tool_prompt.txt")
+    
+    hybrid_rag_config: HybridRetrieverNodeConfig = field(default_factory=HybridRetrieverNodeConfig)
 
 
 class ToolNode(ToolNodeBase):
@@ -44,7 +48,15 @@ class ToolNode(ToolNodeBase):
                             api_key=self.config.api_key,
                             tags=["tool_llm"])
 
-        self.tool_agent = create_agent(self.llm, self.tool_manager.get_langchain_tools(), checkpointer=self.mem)
+        mcp_tools = self.tool_manager.get_langchain_tools()
+        
+        # Explicitly inject Hybrid RAG tool here, passing the existing tool_manager
+        hybrid_node = self.config.hybrid_rag_config.setup(tool_manager=self.tool_manager)
+        local_tools = [hybrid_node.as_tool()]
+        
+        all_tools = mcp_tools + local_tools
+
+        self.tool_agent = create_agent(self.llm, all_tools, checkpointer=self.mem)
         self.prompt_store = build_prompt_store(
             pipeline_id=self.config.pipeline_id,
             prompt_set_id=self.config.prompt_set_id,

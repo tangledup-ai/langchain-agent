@@ -56,17 +56,17 @@ class FilePromptStore(PromptStoreBase):
             sys_fs = sorted([e for e in sys_fs if "optional" not in e])
             for sys_f in sys_fs:
                 key = osp.basename(sys_f).split(".")[0]
-                with open(sys_f, "r") as f:
+                with open(sys_f, "r", encoding="utf-8") as f:
                     self._prompts[key] = f.read()
 
         elif path.endswith(".json"):
             # JSON file — same as RoutingGraph._load_sys_prompts()
-            with open(path, "r") as f:
+            with open(path, "r", encoding="utf-8") as f:
                 self._prompts = commentjson.load(f)
 
         elif path.endswith(".txt"):
             # Single text file — same as ReactGraph / ToolNode
-            with open(path, "r") as f:
+            with open(path, "r", encoding="utf-8") as f:
                 self._prompts[default_key] = f.read()
         else:
             raise ValueError(f"Unsupported prompt path format: {path}")

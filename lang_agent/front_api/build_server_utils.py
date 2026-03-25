@@ -215,9 +215,40 @@ def build_deep_agent(
     return _build_and_load_pipeline_config(pipeline_id, pipeline_config_dir, cmd_opt)
 
 
+def build_hybrid_rag(
+    pipeline_id: str,
+    prompt_set: str,
+    tool_keys: List[str],
+    api_key: str,
+    llm_name: str = "qwen-plus",
+    pipeline_config_dir: str = "configs/pipelines",
+    **_: Any,
+):
+    cmd_opt = [
+        "--pipeline.pipeline-id",
+        pipeline_id,
+        "--pipeline.llm-name", 
+        llm_name,
+        "hybrid_rag",  # ------------
+        "--llm-name",
+        llm_name,
+        "--api-key",
+        api_key,
+        "--pipeline-id",
+        pipeline_id,
+    ]
+    if tool_keys:
+        cmd_opt.extend(
+            ["--tool-manager-config.client-tool-manager.tool-keys", *tool_keys]
+        )
+
+    return _build_and_load_pipeline_config(pipeline_id, pipeline_config_dir, cmd_opt)
+
+
 # {pipeline_id: build_function}
 GRAPH_BUILD_FNCS = {
     "routing": build_route,
     "react": build_react,
     "deepagent": build_deep_agent,
+    "hybrid_rag": build_hybrid_rag,
 }
