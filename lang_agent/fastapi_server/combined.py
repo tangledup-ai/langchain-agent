@@ -32,4 +32,9 @@ app.include_router(front_app.router)
 app.include_router(create_dashscope_router(include_meta_routes=False))
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8500)
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=int, default=8500)
+    args = parser.parse_args()
+    
+    uvicorn.run(app, host="0.0.0.0", port=args.port)
