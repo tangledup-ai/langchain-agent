@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
-from typing import Type, Optional
+from typing import Type
+from langchain_openai import ChatOpenAI
 import tyro
 import os.path as osp
 from loguru import logger
@@ -45,11 +46,18 @@ class ReactGraph(GraphBase):
         self.streamable_tags = [["main_llm"]]
 
     def populate_modules(self):
-        self.llm = init_chat_model(model=self.config.llm_name,
-                                   model_provider=self.config.llm_provider,
-                                   api_key=self.config.api_key,
-                                   base_url=self.config.base_url,
-                                   tags=["main_llm"])
+        # self.llm = init_chat_model(model=self.config.llm_name,
+        #                            model_provider=self.config.llm_provider,
+        #                            api_key=self.config.api_key,
+        #                            base_url=self.config.base_url,
+        #                            tags=["main_llm"])
+        self.llm = ChatOpenAI(
+                model=self.config.llm_name,
+                api_key=self.config.api_key,
+                base_url=self.config.base_url,
+                extra_body={"enable_thinking": False},
+                tags=["main_llm"]
+            )
         
 
         self.tool_manager:ToolManager = self.config.tool_manager_config.setup()
