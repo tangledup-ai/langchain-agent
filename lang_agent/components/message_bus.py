@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, Optional
 
 from loguru import logger
@@ -10,6 +11,36 @@ except ImportError:  # pragma: no cover - exercised when dependency is absent.
     pika = None
 
 
+def _is_running_in_docker() -> bool:
+    return Path("/.dockerenv").exists()
+
+
+def _resolve_rabbitmq_url() -> Optional[str]:
+    """Return an explicit RABBITMQ_URL or auto-detect based on runtime."""
+    if explicit := os.environ.get("RABBITMQ_URL"):
+        return explicit
+    host = "rabbitmq" if _is_running_in_docker() else "localhost"
+    user = os.environ.get("RABBITMQ_USER", "guest")
+    password = os.environ.get("RABBITMQ_PASSWORD", "guest")
+    port = os.environ.get("RABBITMQ_PORT", "5672")
+    return f"amqp://{user}:{password}@{host}:{port}/"
+
+
+def _check_rabbitmq_alive(url: str, timeout: float = 2.0) -> bool:
+    """Quick probe to see if RabbitMQ is reachable."""
+    if pika is None:
+        return False
+    try:
+        params = pika.URLParameters(url)
+        params.socket_timeout = timeout
+        params.connection_attempts = 1
+        conn = pika.BlockingConnection(params)
+        conn.close()
+        return True
+    except Exception:
+        return False
+
+
 class MessageBus:
     """RabbitMQ publisher/consumer wrapper with a no-op fallback."""
 
@@ -18,9 +49,11 @@ class MessageBus:
         url: Optional[str] = None,
         exchange: Optional[str] = None,
     ):
-        self.url = url or os.environ.get("RABBITMQ_URL")
-        self.exchange = exchange or os.environ.get("RABBITMQ_EXCHANGE", "lang-agent.events")
-        self._enabled = bool(self.url and pika is not None)
+        self.url = url or _resolve_rabbitmq_url()
+        self.exchange = exchange or os.environ.get(
+            "RABBITMQ_EXCHANGE", "lang-agent.events"
+        )
+        self._enabled = bool(self.url and _check_rabbitmq_alive(self.url))
 
     @property
     def enabled(self) -> bool:
@@ -33,7 +66,9 @@ class MessageBus:
         params = pika.URLParameters(self.url)
         connection = pika.BlockingConnection(params)
         channel = connection.channel()
-        channel.exchange_declare(exchange=self.exchange, exchange_type="topic", durable=True)
+        channel.exchange_declare(
+            exchange=self.exchange, exchange_type="topic", durable=True
+        )
         return connection, channel
 
     def publish(
@@ -43,7 +78,9 @@ class MessageBus:
         routing_key: Optional[str] = None,
     ) -> bool:
         if not self.enabled:
-            logger.debug("Skipping message bus publish because RabbitMQ is not configured")
+            logger.debug(
+                "Skipping message bus publish because RabbitMQ is not configured"
+            )
             return False
 
         body = json.dumps({"event_type": event_type, "payload": payload})
@@ -71,7 +108,9 @@ class MessageBus:
         prefetch_count: int = 10,
     ) -> None:
         if not self.enabled:
-            logger.info("Message bus consumer not started because RabbitMQ is not configured")
+            logger.info(
+                "Message bus consumer not started because RabbitMQ is not configured"
+            )
             return
 
         connection, channel = self._open_channel()
@@ -90,7 +129,9 @@ class MessageBus:
                 try:
                     handler(payload)
                 except Exception as exc:
-                    logger.exception("Message handler failed for {}: {}", method.routing_key, exc)
+                    logger.exception(
+                        "Message handler failed for {}: {}", method.routing_key, exc
+                    )
                     ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
                     return
                 ch.basic_ack(delivery_tag=method.delivery_tag)

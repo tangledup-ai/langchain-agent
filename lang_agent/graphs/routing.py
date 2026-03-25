@@ -20,6 +20,7 @@ from langchain.chat_models import init_chat_model
 from langchain_core.messages import SystemMessage, HumanMessage, BaseMessage
 from langchain_core.messages.base import BaseMessageChunk
 from langchain.agents import create_agent
+from langchain_openai import ChatOpenAI
 
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import MemorySaver
@@ -57,18 +58,21 @@ class RoutingGraph(GraphBase):
         self.textreleaser_delay_keys = self.tool_node.get_delay_keys()
     
     def _build_modules(self):
-        self.chat_llm = init_chat_model(model=self.config.llm_name,
-                                     model_provider=self.config.llm_provider,
-                                     api_key=self.config.api_key,
-                                     base_url=self.config.base_url,
-                                     temperature=0,
-                                     tags=["route_chat_llm"])
-        self.fast_llm = init_chat_model(model='qwen3.5-flash',
-                                        model_provider='openai',
-                                        api_key=self.config.api_key,
-                                        base_url=self.config.base_url,
-                                        temperature=0,
-                                        tags=["route_fast"])
+    
+        self.chat_llm = ChatOpenAI(
+            model=self.config.llm_name,
+            api_key=self.config.api_key,
+            base_url=self.config.base_url,
+            extra_body={"enable_thinking": False},
+            tags=["route_chat_llm"]
+        )
+    
+        self.fast_llm = ChatOpenAI(model='qwen3.5-flash',
+                                   api_key=self.config.api_key,
+                                   base_url=self.config.base_url,
+                                   temperature=0,
+                                   extra_body={"enable_thinking": False},
+                                   tags=["route_fast"])
 
         self.memory = MemorySaver()  # shared memory between the two branch
         self.router = self.fast_llm.with_structured_output(Route)

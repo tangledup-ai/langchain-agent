@@ -35,40 +35,41 @@ def send_message(
         "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json",
     }
-    
+
     payload = {
-        "messages": [
-            {"role": "user", "content": message}
-        ],
+        "messages": [{"role": "user", "content": message}],
         "stream": stream,
     }
-    
+
     try:
         if stream:
             # Handle streaming response
             response = requests.post(url, headers=headers, json=payload, stream=True)
             response.raise_for_status()
-            
+
             accumulated_text = ""
+            printed_len = 0
+            print("Assistant: ", end="", flush=True)
             for line in response.iter_lines():
                 if line:
-                    line_str = line.decode('utf-8')
-                    if line_str.startswith('data: '):
+                    line_str = line.decode("utf-8")
+                    if line_str.startswith("data: "):
                         data_str = line_str[6:]  # Remove 'data: ' prefix
                         try:
                             data = json.loads(data_str)
                             output = data.get("output", {})
                             text = output.get("text", "")
-                            if text:
+                            if text and len(text) > printed_len:
+                                delta = text[printed_len:]
+                                print(delta, end="", flush=True)
+                                printed_len = len(text)
                                 accumulated_text = text
-                                # Print incremental updates (you can modify this behavior)
-                                print(f"\rAssistant: {accumulated_text}", end="", flush=True)
-                            
                             if data.get("is_end", False):
-                                print()  # New line after streaming completes
+                                print()
                                 return accumulated_text
                         except json.JSONDecodeError:
                             continue
+            print()
             return accumulated_text
         else:
             # Handle non-streaming response
@@ -77,10 +78,10 @@ def send_message(
             data = response.json()
             output = data.get("output", {})
             return output.get("text", "")
-            
+
     except requests.exceptions.RequestException as e:
         print(f"Error sending message: {e}", file=sys.stderr)
-        if hasattr(e, 'response') and e.response is not None:
+        if hasattr(e, "response") and e.response is not None:
             try:
                 error_detail = e.response.json()
                 print(f"Error details: {error_detail}", file=sys.stderr)
@@ -100,36 +101,35 @@ def main():
     print("Type your messages (or 'quit'/'exit' to end, 'stream' to toggle streaming)")
     print("Streaming mode is ON by default")
     print()
-    
+
     stream_mode = True
-    
+
     while True:
         try:
             user_input = input("You: ").strip()
-            
+
             if not user_input:
                 continue
-                
-            if user_input.lower() in ['quit', 'exit', 'q']:
+
+            if user_input.lower() in ["quit", "exit", "q"]:
                 print("Goodbye!")
                 break
-                
-            if user_input.lower() == 'stream':
+
+            if user_input.lower() == "stream":
                 stream_mode = not stream_mode
                 print(f"Streaming mode: {'ON' if stream_mode else 'OFF'}")
                 continue
-            
-            print("Assistant: ", end="", flush=True)
+
             response = send_message(user_input, stream=stream_mode)
-            
+
             if response is None:
-                print("(No response received)")
+                print("Assistant: (No response received)")
             elif not stream_mode:
-                print(response)
+                print(f"Assistant: {response}")
             # For streaming, the response is already printed incrementally
-            
+
             print()  # Empty line for readability
-            
+
         except KeyboardInterrupt:
             print("\n\nGoodbye!")
             break
@@ -139,4 +139,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
