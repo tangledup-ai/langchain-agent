@@ -41,9 +41,10 @@ def handle_event(event: Dict[str, Any], services=None) -> None:
             )
             for limit in (50, 100, 500):
                 services.cache.delete(
-                    services.cache.conversation_list_key(pipeline_id=pipeline_id, limit=limit)
+                    services.cache.conversation_list_key(
+                        pipeline_id=pipeline_id, limit=limit
+                    )
                 )
-        services.cache.delete("viewer:conversation-list")
         return
 
     logger.debug("Ignoring unsupported event type: {}", event_type)

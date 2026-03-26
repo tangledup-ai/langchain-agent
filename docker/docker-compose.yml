@@ -12,7 +12,6 @@ x-common-config: &common-config
     - ./configs:/app/configs
     - ./scripts:/app/scripts
     - ./assets:/app/assets
-    - ./static:/app/static
   healthcheck:
     test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://0.0.0.0:8588/health')"]
     interval: 30s
@@ -36,16 +35,3 @@ services:
               "--tool-manager-config.client-tool-manager.tool-keys"]
     ports:
       - "8589:8588"
-
-  viewer:
-    <<: *common-config
-    container_name: viewer
-    command: ["python", "fastapi_server/server_viewer.py"]
-    ports:
-      - "8590:8590"
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://0.0.0.0:8590/health')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s

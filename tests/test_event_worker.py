@@ -50,7 +50,6 @@ def test_handle_conversation_updated_invalidates_conversation_cache():
     assert ("delete", "conversation-list:agent-a:50") in events
     assert ("delete", "conversation-list:agent-a:100") in events
     assert ("delete", "conversation-list:agent-a:500") in events
-    assert ("delete", "viewer:conversation-list") in events
 
 
 def test_handle_unknown_event_is_noop():
