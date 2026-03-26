@@ -32,7 +32,6 @@ def _build_and_load_pipeline_config(
     save_config_f = osp.join(pipeline_config_dir, f"{pipeline_id}.yaml")
     opt_to_config(save_config_f, *cmd)
 
-    # TODO: think if returning the built pipeline is better or just the config obj for front_api
     return load_tyro_conf(save_config_f)
 
 
