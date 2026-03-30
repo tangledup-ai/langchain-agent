@@ -54,6 +54,10 @@ class AgentBayBackend(BaseSandbox):
             try:
                 self._session.file_system.write_file(path, content.decode("utf-8"))
                 responses.append(FileUploadResponse(path=path, error=None))
+            except UnicodeDecodeError:
+                responses.append(
+                    FileUploadResponse(path=path, error="binary_not_supported")
+                )
             except Exception as e:
                 responses.append(FileUploadResponse(path=path, error=str(e)))
         return responses
