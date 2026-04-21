@@ -40,6 +40,7 @@ type EditableAgent = {
   prompts: Record<string, string>;
   apiKey: string;
   llmName: string;
+  baseUrl: string;
   actBackend: DeepAgentActBackend;
   fileBackendConfig: FileBackendConfig;
 };
@@ -73,6 +74,7 @@ type McpEntry = {
 
 const DEFAULT_LLM_NAME = "qwen-plus";
 const DEFAULT_API_KEY = "";
+const DEFAULT_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1";
 const DEFAULT_DEEPAGENT_ACT_BACKEND: DeepAgentActBackend = "state_bk";
 const DEEPAGENT_BACKEND_OPTIONS: Array<{
   value: DeepAgentActBackend;
@@ -544,13 +546,15 @@ function getDeepAgentEditorState(config: GraphConfigReadResponse): {
 }
 
 function buildGraphParams(editor: EditableAgent): Record<string, unknown> {
-  if (editor.graphId === "deepagent") {
-    return { 
-      act_bkend: editor.actBackend,
-      file_backend_config: editor.fileBackendConfig,
-    };
+  const graphParams: Record<string, unknown> = {};
+  if (editor.baseUrl.trim()) {
+    graphParams.base_url = editor.baseUrl.trim();
   }
-  return {};
+  if (editor.graphId === "deepagent") {
+    graphParams.act_bkend = editor.actBackend;
+    graphParams.file_backend_config = editor.fileBackendConfig;
+  }
+  return graphParams;
 }
 
 function toEditable(
@@ -570,7 +574,11 @@ function toEditable(
     toolKeysInput: (config.tool_keys || []).join(", "),
     prompts: config.prompt_dict || {},
     apiKey: config.api_key || DEFAULT_API_KEY,
-    llmName: DEFAULT_LLM_NAME,
+    llmName: config.llm_name || DEFAULT_LLM_NAME,
+    baseUrl:
+      typeof config.graph_params?.base_url === "string" && config.graph_params.base_url.trim()
+        ? config.graph_params.base_url.trim()
+        : DEFAULT_BASE_URL,
     actBackend: deepAgentState.actBackend,
     fileBackendConfig: deepAgentState.fileBackendConfig,
   };
@@ -804,7 +812,6 @@ export default function App() {
       }
       const editable = toEditable(detail, false);
       editable.id = id;
-      editable.llmName = editor?.pipelineId === editable.pipelineId ? editor.llmName : DEFAULT_LLM_NAME;
       // apiKey is loaded from backend (persisted in DB) — don't override with default
       setEditor(editable);
       setStatusMessage("");
@@ -941,6 +948,7 @@ export default function App() {
         tool_keys: [],
         prompt_dict: fallbackPrompts,
         api_key: "",
+        llm_name: DEFAULT_LLM_NAME,
       };
     }
   }
@@ -1563,6 +1571,16 @@ export default function App() {
                   />
                 </label>
 
+                <label>
+                  base_url
+                  <input
+                    value={editor.baseUrl}
+                    onChange={(e) => updateEditor("baseUrl", e.target.value)}
+                    placeholder={DEFAULT_BASE_URL}
+                    disabled={busy}
+                  />
+                </label>
+
                 {editor.graphId === "deepagent" ? (
                   <>
                     <label>
@@ -2023,4 +2041,3 @@ export default function App() {
     </div>
   );
 }
-
