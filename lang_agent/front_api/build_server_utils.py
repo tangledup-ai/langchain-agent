@@ -71,23 +71,36 @@ def build_route(
     api_key: str,
     llm_name: str = "qwen-plus",
     pipeline_config_dir: str = "configs/pipelines",
+    base_url: Optional[str] = None,
     **_: Any,
 ):
     cmd_opt = [
         "--pipeline.pipeline-id",
         pipeline_id,
-        "--pipeline.llm-name", 
+        "--pipeline.llm-name",
         llm_name,
-        "route",  # ------------
-        "--llm-name",
-        llm_name,
-        "--api-key",
-        api_key,
-        "--pipeline-id",
-        pipeline_id,
-        "--prompt-set-id",
-        prompt_set,
     ]
+    if base_url:
+        cmd_opt.extend(["--pipeline.base-url", base_url])
+    cmd_opt.extend(
+        [
+            "route",  # ------------
+            "--llm-name",
+            llm_name,
+            "--api-key",
+            api_key,
+        ]
+    )
+    if base_url:
+        cmd_opt.extend(["--base-url", base_url])
+    cmd_opt.extend(
+        [
+            "--pipeline-id",
+            pipeline_id,
+            "--prompt-set-id",
+            prompt_set,
+        ]
+    )
 
     if tool_keys:
         cmd_opt.extend(
@@ -104,6 +117,12 @@ def build_route(
             llm_name,
             "--api-key",
             api_key,
+        ]
+    )
+    if base_url:
+        cmd_opt.extend(["--base-url", base_url])
+    cmd_opt.extend(
+        [
             "--pipeline-id",
             pipeline_id,
             "--prompt-set-id",
@@ -121,23 +140,36 @@ def build_react(
     api_key: str,
     llm_name: str = "qwen-plus",
     pipeline_config_dir: str = "configs/pipelines",
+    base_url: Optional[str] = None,
     **_: Any,
 ):
     cmd_opt = [
         "--pipeline.pipeline-id",
         pipeline_id,
-        "--pipeline.llm-name", 
+        "--pipeline.llm-name",
         llm_name,
-        "react",  # ------------
-        "--llm-name",
-        llm_name,
-        "--api-key",
-        api_key,
-        "--pipeline-id",
-        pipeline_id,
-        "--prompt-set-id",
-        prompt_set,
     ]
+    if base_url:
+        cmd_opt.extend(["--pipeline.base-url", base_url])
+    cmd_opt.extend(
+        [
+            "react",  # ------------
+            "--llm-name",
+            llm_name,
+            "--api-key",
+            api_key,
+        ]
+    )
+    if base_url:
+        cmd_opt.extend(["--base-url", base_url])
+    cmd_opt.extend(
+        [
+            "--pipeline-id",
+            pipeline_id,
+            "--prompt-set-id",
+            prompt_set,
+        ]
+    )
     if tool_keys:
         cmd_opt.extend(
             ["--tool-manager-config.client-tool-manager.tool-keys", *tool_keys]
@@ -153,6 +185,7 @@ def build_deep_agent(
     api_key: str,
     llm_name: str = "qwen-plus",
     pipeline_config_dir: str = "configs/pipelines",
+    base_url: Optional[str] = None,
     act_bkend: Literal[
         "local_shell",
         "localshell",
@@ -174,18 +207,30 @@ def build_deep_agent(
     cmd_opt = [
         "--pipeline.pipeline-id",
         pipeline_id,
-        "--pipeline.llm-name", 
+        "--pipeline.llm-name",
         llm_name,
-        "deepagent",
-        "--llm-name",
-        llm_name,
-        "--api-key",
-        api_key,
-        "--pipeline-id",
-        pipeline_id,
-        "--prompt-set-id",
-        prompt_set,
     ]
+    if base_url:
+        cmd_opt.extend(["--pipeline.base-url", base_url])
+    cmd_opt.extend(
+        [
+            "deepagent",
+            "--llm-name",
+            llm_name,
+            "--api-key",
+            api_key,
+        ]
+    )
+    if base_url:
+        cmd_opt.extend(["--base-url", base_url])
+    cmd_opt.extend(
+        [
+            "--pipeline-id",
+            pipeline_id,
+            "--prompt-set-id",
+            prompt_set,
+        ]
+    )
 
     if tool_keys:
         cmd_opt.extend(
@@ -221,21 +266,29 @@ def build_hybrid_rag(
     api_key: str,
     llm_name: str = "qwen-plus",
     pipeline_config_dir: str = "configs/pipelines",
+    base_url: Optional[str] = None,
     **_: Any,
 ):
     cmd_opt = [
         "--pipeline.pipeline-id",
         pipeline_id,
-        "--pipeline.llm-name", 
+        "--pipeline.llm-name",
         llm_name,
-        "hybrid_rag",  # ------------
-        "--llm-name",
-        llm_name,
-        "--api-key",
-        api_key,
-        "--pipeline-id",
-        pipeline_id,
     ]
+    if base_url:
+        cmd_opt.extend(["--pipeline.base-url", base_url])
+    cmd_opt.extend(
+        [
+            "hybrid_rag",  # ------------
+            "--llm-name",
+            llm_name,
+            "--api-key",
+            api_key,
+        ]
+    )
+    if base_url:
+        cmd_opt.extend(["--base-url", base_url])
+    cmd_opt.extend(["--pipeline-id", pipeline_id])
     if tool_keys:
         cmd_opt.extend(
             ["--tool-manager-config.client-tool-manager.tool-keys", *tool_keys]
