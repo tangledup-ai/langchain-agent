@@ -1,0 +1,145 @@
+# Docker-only installation - works on Windows, Mac, Linux
+# No shell scripts required on the host
+# Usage:
+#   cd docker
+#   docker compose -f docker-compose.docker-only.yml up -d
+
+version: '3.8'
+
+services:
+  # PostgreSQL database
+  postgres:
+    image: postgres:16-alpine
+    container_name: langchain-agent-db
+    networks:
+      - app-network
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_ROOT_PASSWORD:-postgres_root_password}
+      APP_DB_NAME: ${POSTGRES_DB:-ai_conversations}
+      APP_DB_USER: ${POSTGRES_USER:-myapp_user}
+      APP_DB_PASSWORD: ${POSTGRES_PASSWORD:-secure_password_123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../scripts/init_database:/docker-entrypoint-initdb.d
+    ports:
+      - "${POSTGRES_PORT:-5434}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: langchain-agent-redis
+    networks:
+      - app-network
+    ports:
+      - "${REDIS_PORT:-6380}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: langchain-agent-rabbitmq
+    networks:
+      - app-network
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Backend API server with built-in initialization
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.docker-only
+    container_name: langchain-agent-backend
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - CONN_STR=postgresql://${POSTGRES_USER:-myapp_user}:${POSTGRES_PASSWORD:-secure_password_123}@postgres:5432/${POSTGRES_DB:-ai_conversations}
+      - REDIS_URL=redis://redis:6379/0
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - DB_POOL_MIN_SIZE=${DB_POOL_MIN_SIZE:-1}
+      - DB_POOL_MAX_SIZE=${DB_POOL_MAX_SIZE:-10}
+      - DB_POOL_TIMEOUT=${DB_POOL_TIMEOUT:-30}
+      - DB_POOL_MAX_IDLE=${DB_POOL_MAX_IDLE:-300}
+      - DB_POOL_OPEN_ON_STARTUP=${DB_POOL_OPEN_ON_STARTUP:-true}
+      - POSTGRES_USER=${POSTGRES_USER:-myapp_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-secure_password_123}
+      - POSTGRES_DB=${POSTGRES_DB:-ai_conversations}
+    ports:
+      - "${BACKEND_PORT:-8500}:8500"
+    volumes:
+      # Mount configs so pipeline YAMLs can be edited on host
+      - ../configs:/app/configs
+      - ../scripts:/app/scripts
+      - ../assets:/app/assets
+      - ../static:/app/static
+    networks:
+      - app-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8500/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend build service
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: ../docker/Dockerfile.frontend
+      args:
+        VITE_FRONT_API_BASE_URL: ${VITE_FRONT_API_BASE_URL:-/}
+    volumes:
+      - frontend_dist:/app/dist
+    networks:
+      - app-network
+
+  # Nginx for serving frontend
+  nginx:
+    image: nginx:alpine
+    container_name: langchain-agent-nginx
+    networks:
+      - app-network
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    volumes:
+      - ../nginx.conf:/etc/nginx/nginx.conf:ro
+      - frontend_dist:/usr/share/nginx/html:ro
+    depends_on:
+      frontend:
+        condition: service_completed_successfully
+      backend:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  frontend_dist:
+
+networks:
+  app-network:
+    driver: bridge
