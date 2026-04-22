@@ -184,8 +184,12 @@ class Pipeline:
         if len(spl_ls) == 2:
             _, device_id = spl_ls
 
+        msgs = [HumanMessage(inp)]
+        if device_id != "0":
+            msgs.insert(0, SystemMessage(f"[Context] device_id: {device_id}"))
+
         inp = (
-            {"messages": [HumanMessage(inp)]},
+            {"messages": msgs},
             {"configurable": {"thread_id": thread_id, "device_id": device_id}},
         )
 
@@ -271,8 +275,12 @@ class Pipeline:
                 f"\033[32m====================DEVICE ID: {device_id}=============================\033[0m"
             )
 
+        msgs = [SystemMessage(u), HumanMessage(inp)]
+        if device_id != "0":
+            msgs.insert(0, SystemMessage(f"[Context] device_id: {device_id}"))
+
         inp_data = (
-            {"messages": [SystemMessage(u), HumanMessage(inp)]},
+            {"messages": msgs},
             {"configurable": {"thread_id": thread_id, "device_id": device_id}},
         )
 
