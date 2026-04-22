@@ -34,11 +34,8 @@ COPY lang_agent/ ./lang_agent/
 COPY configs/ ./configs/
 COPY scripts/ ./scripts/
 
-# Ensure assets and static directories exist, then copy contents
-# (directories created first so COPY won't fail if source is empty/missing)
+# Ensure assets and static directories exist in container
 RUN mkdir -p assets static
-COPY assets/ ./assets/
-COPY static/ ./static/
 
 # Copy built frontend from stage 1
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
