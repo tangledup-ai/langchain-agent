@@ -5,7 +5,13 @@ import os
 import tyro
 from loguru import logger
 
-from agentbay import AgentBay, CreateSessionParams
+# Lazy import agentbay to avoid import errors during startup
+try:
+    from agentbay import AgentBay
+    from agentbay import CreateSessionParams
+except ImportError:
+    AgentBay = None
+    CreateSessionParams = None
 from deepagents.backends.sandbox import BaseSandbox
 from deepagents.backends.protocol import (
     ExecuteResponse,
@@ -128,7 +134,11 @@ class AgentBaySandboxBk(BaseFilesystemBackend):
         self._build_backend()
 
     def _build_backend(self):
+        if AgentBay is None:
+            raise RuntimeError("AgentBay is not installed. Please install it with: pip install agentbay")
         self.agent_bay = AgentBay(api_key=self.config.api_key)
+        if CreateSessionParams is None:
+            raise RuntimeError("CreateSessionParams is not available in agentbay. Please check your agentbay version.")
         params = CreateSessionParams(image_id=self.config.image_id)
         result = self.agent_bay.create(params)
         if not result.success:

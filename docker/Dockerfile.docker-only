@@ -21,6 +21,10 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy application code
 COPY configs/ ./configs/
 COPY scripts/ ./scripts/
+
+# Ensure assets and static directories exist, then copy contents
+# (directories created first so COPY won't fail if source is empty/missing)
+RUN mkdir -p assets static
 COPY assets/ ./assets/
 RUN mkdir -p ./static ./frontend/dist
 
