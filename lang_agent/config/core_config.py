@@ -120,6 +120,15 @@ class LLMKeyConfig(InstantiateConfig):
         elif original_api_key in (None, "", "wrong-key"):
             logger.info("LLM API key loaded from environment")
 
+        original_base_url = self.base_url
+        if self.base_url == "https://dashscope.aliyuncs.com/compatible-mode/v1":
+            env_base_url = os.environ.get("ALI_BASE_URL")
+            if env_base_url:
+                self.base_url = env_base_url
+                logger.info("LLM base_url loaded from environment")
+            else:
+                self.base_url = original_base_url
+
 
 @dataclass
 class LLMNodeConfig(LLMKeyConfig):
