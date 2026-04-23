@@ -129,6 +129,11 @@ class LLMKeyConfig(InstantiateConfig):
             else:
                 self.base_url = original_base_url
 
+        env_llm_name = os.environ.get("LLM_NAME")
+        if env_llm_name:
+            self.llm_name = env_llm_name
+            logger.info("LLM llm_name loaded from environment")
+
 
 @dataclass
 class LLMNodeConfig(LLMKeyConfig):
