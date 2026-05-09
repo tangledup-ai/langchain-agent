@@ -12,6 +12,7 @@ from lang_agent.base import LangToolBase
 from lang_agent.components.client_tool_manager import ClientToolManagerConfig
 
 from lang_agent.rag.simple import SimpleRagConfig
+from lang_agent.components.hybrid_retriever_node import HybridRetrieverNodeConfig
 from lang_agent.dummy.calculator import CalculatorConfig
 from langchain_core.tools.structured import StructuredTool
 from lang_agent.components.client_tool_manager import ClientToolManager
@@ -26,7 +27,6 @@ class ToolManagerConfig(InstantiateConfig):
 
     # tool configs here; MUST HAVE 'config' in name and must be dataclass
     # rag_config: SimpleRagConfig = field(default_factory=SimpleRagConfig)
-
     # calc_config: CalculatorConfig = field(default_factory=CalculatorConfig)
 
 
@@ -79,7 +79,7 @@ class ToolManager:
         
         return tool_confs
     
-    def _get_tool_fnc(self, tool_obj:LangToolBase)->List:
+    def _get_tool_fnc(self, tool_obj:Any)->List:
         fnc_list = []
         for fnc in tool_obj.get_tool_fnc():
             if isinstance(fnc, Tool):

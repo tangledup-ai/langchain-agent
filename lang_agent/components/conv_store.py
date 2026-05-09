@@ -96,9 +96,7 @@ class ConversationStore(BaseConvStore):
                 )
                 return cur.fetchall()
 
-    def _serialize_messages(
-        self, inp: List[BaseMessage]
-    ) -> List[Dict[str, object]]:
+    def _serialize_messages(self, inp: List[BaseMessage]) -> List[Dict[str, object]]:
         serialized: List[Dict[str, object]] = []
         for msg in inp:
             content = msg.content
@@ -173,7 +171,6 @@ class ConversationStore(BaseConvStore):
         message_count: int,
     ) -> None:
         services = get_runtime_services()
-        services.cache.delete("viewer:conversation-list")
         services.cache.delete(
             services.cache.conversation_messages_key(
                 pipeline_id or "default", conversation_id
@@ -239,6 +236,7 @@ class _ConversationStoreProxy(BaseConvStore):
 _CONV_STORE_OVERRIDE: Optional[BaseConvStore] = None
 _CONV_STORE_SINGLETON: Optional[ConversationStore] = None
 CONV_STORE = _ConversationStoreProxy()
+# _CONV_STORE_OVERRIDE = ConversationPrinter()
 
 
 def use_printer():

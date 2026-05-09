@@ -109,9 +109,17 @@ def main(
     pipeline: Pipeline = conf.setup()
     thread_id = str(uuid.uuid4())
     while True:
-        user_input = input("请讲：")
-        if user_input.lower() == "exit":
+        try:
+            user_input = input("请讲：")
+        except EOFError:
             break
+            
+        if user_input.lower() in ["exit", "quit"]:
+            break
+            
+        # 防止空输入导致大模型死循环或无效调用
+        if not user_input.strip():
+            continue
         
         if stream:
             # Streaming mode: print chunks as they arrive

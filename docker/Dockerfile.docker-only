@@ -1,0 +1,47 @@
+# Dockerfile for Docker-only deployment (cross-platform)
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        postgresql-client \
+        curl; \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy package metadata and source before installation.
+# The editable install needs the package directory present.
+COPY pyproject.toml ./
+COPY lang_agent/ ./lang_agent/
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -e .
+
+# Copy application code
+COPY configs/ ./configs/
+COPY scripts/ ./scripts/
+
+# Ensure assets and static directories exist in container
+RUN mkdir -p assets static
+
+# Copy the Docker-only entrypoint script
+COPY docker/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+
+# Expose port
+EXPOSE 8500
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8500/health || exit 1
+
+# Use the Docker-only entrypoint
+ENTRYPOINT ["/docker-entrypoint.sh"]
+
+# Run the combined server
+CMD ["python", "-m", "uvicorn", "lang_agent.fastapi_server.combined:app", "--host", "0.0.0.0", "--port", "8500"]

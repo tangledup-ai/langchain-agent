@@ -23,6 +23,7 @@ export type GraphConfigReadResponse = {
   tool_keys: string[];
   prompt_dict: Record<string, string>;
   api_key: string;
+  llm_name: string;
   graph_params?: Record<string, unknown>;
 };
 
@@ -160,4 +161,3 @@ export type McpAvailableToolsResponse = {
     }
   >;
 };
-

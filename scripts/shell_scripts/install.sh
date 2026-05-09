@@ -61,6 +61,31 @@ EOF
     fi
 }
 
+# Register pipelines from configs/pipelines/
+register_pipelines() {
+    echo -e "${YELLOW}Registering pipeline configurations...${NC}"
+    cd "$PROJECT_ROOT"
+    
+    # Check if we're in a conda/virtualenv environment
+    if command -v python3 &> /dev/null; then
+        PYTHON_CMD="python3"
+    elif command -v python &> /dev/null; then
+        PYTHON_CMD="python"
+    else
+        echo -e "${YELLOW}⚠ Python not found, skipping pipeline registration${NC}"
+        echo -e "${YELLOW}  Make sure to run: python scripts/py_scripts/register_pipelines.py${NC}\n"
+        return
+    fi
+    
+    # Run registration script
+    if $PYTHON_CMD scripts/py_scripts/register_pipelines.py; then
+        echo -e "${GREEN}✓ Pipelines registered successfully${NC}\n"
+    else
+        echo -e "${YELLOW}⚠ Pipeline registration may have issues${NC}"
+        echo -e "${YELLOW}  You can manually run: python scripts/py_scripts/register_pipelines.py${NC}\n"
+    fi
+}
+
 # Build Docker images
 build_images() {
     echo -e "${YELLOW}Building Docker images (including frontend)...${NC}"
@@ -137,6 +162,7 @@ show_status() {
 main() {
     check_requirements
     create_env_file
+    register_pipelines
     build_images
     start_services
     init_database

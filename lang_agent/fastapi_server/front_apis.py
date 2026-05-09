@@ -62,6 +62,7 @@ class GraphConfigReadResponse(BaseModel):
     tool_keys: List[str]
     prompt_dict: Dict[str, str]
     api_key: str = Field(default="")
+    llm_name: str = Field(default="qwen-plus")
     graph_params: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -502,15 +503,23 @@ def _normalize_deepagent_backend_name(file_backend_config: Any) -> Optional[str]
 
 
 def _extract_graph_params_from_config(graph_id: Optional[str], loaded_cfg: Any) -> Dict[str, Any]:
+    graph_params: Dict[str, Any] = {}
+
+    base_url = getattr(loaded_cfg, "base_url", None)
+    if base_url is None:
+        graph_config = getattr(loaded_cfg, "graph_config", None)
+        base_url = getattr(graph_config, "base_url", None)
+    if isinstance(base_url, str) and base_url.strip():
+        graph_params["base_url"] = base_url.strip()
+
     if graph_id != "deepagent":
-        return {}
+        return graph_params
 
     graph_config = getattr(loaded_cfg, "graph_config", None)
     file_backend_config = getattr(graph_config, "file_backend_config", None)
     if file_backend_config is None:
-        return {}
+        return graph_params
 
-    graph_params: Dict[str, Any] = {}
     act_bkend = _normalize_deepagent_backend_name(file_backend_config)
     if act_bkend:
         graph_params["act_bkend"] = act_bkend
@@ -551,6 +560,33 @@ def _load_graph_params_for_pipeline(
         return _extract_graph_params_from_config(graph_id, loaded_cfg)
     except Exception:
         return {}
+
+
+def _load_llm_name_for_pipeline(pipeline_id: str) -> str:
+    try:
+        registry = _read_pipeline_registry()
+        pipeline_spec = registry.get("pipelines", {}).get(pipeline_id, {})
+        if isinstance(pipeline_spec, dict):
+            llm_name = str(pipeline_spec.get("llm_name") or "").strip()
+            if llm_name:
+                return llm_name
+
+            config_file = str(pipeline_spec.get("config_file") or "").strip()
+            if config_file:
+                config_path = _resolve_config_path(config_file)
+                if osp.exists(config_path):
+                    loaded_cfg = load_tyro_conf(config_path)
+                    loaded_name = str(getattr(loaded_cfg, "llm_name", "") or "").strip()
+                    if loaded_name:
+                        return loaded_name
+                    graph_config = getattr(loaded_cfg, "graph_config", None)
+                    graph_loaded_name = str(getattr(graph_config, "llm_name", "") or "").strip()
+                    if graph_loaded_name:
+                        return graph_loaded_name
+    except Exception:
+        pass
+
+    return "qwen-plus"
 
 
 def _normalize_api_key_policy(api_key: str, policy: Dict[str, Any]) -> ApiKeyPolicyItem:
@@ -659,6 +695,7 @@ async def get_default_graph_config(pipeline_id: str):
         tool_keys=tool_keys,
         prompt_dict=prompt_dict,
         api_key=(active.get("api_key") or ""),
+        llm_name=_load_llm_name_for_pipeline(pipeline_id),
         graph_params=_load_graph_params_for_pipeline(
             pipeline_id, active.get("graph_id")
         ),
@@ -703,6 +740,7 @@ async def get_graph_config(pipeline_id: str, prompt_set_id: str):
         tool_keys=tool_keys,
         prompt_dict=prompt_dict,
         api_key=(meta.get("api_key") or ""),
+        llm_name=_load_llm_name_for_pipeline(pipeline_id),
         graph_params=_load_graph_params_for_pipeline(
             pipeline_id, meta.get("graph_id")
         ),
@@ -782,6 +820,23 @@ async def list_mcp_available_tools():
                 for tool_name in server_info.get("tools", [])
             }
         )
+        
+        # --- 注入本地动态加载的工具 (如 hybrid_rag_search) ---
+        from lang_agent.components.local_tool_manager import LocalToolManager
+        local_tool_manager = LocalToolManager()
+        # 这里只是为了获取名字，不需要传入真实的 tool_manager 实例
+        local_tools = local_tool_manager.get_enabled_tools(tool_manager=None)
+        local_tool_names = [t.name for t in local_tools if hasattr(t, "name")]
+        
+        if local_tool_names:
+            available_tools = sorted(set(available_tools + local_tool_names))
+            # 为了前端展示，可以在 servers 列表里虚拟一个 Local 节点
+            servers["local_plugins"] = {
+                "tools": local_tool_names,
+                "error": None
+            }
+        # ----------------------------------------------------
+        
         errors = [
             f"{server_name}: {server_info.get('error')}"
             for server_name, server_info in servers.items()

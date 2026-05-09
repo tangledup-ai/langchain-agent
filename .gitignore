@@ -4,6 +4,7 @@
 logs/
 *.egg-info/ 
 workspace/
+agentbay-env
 
 *.pyc
 *.zip
