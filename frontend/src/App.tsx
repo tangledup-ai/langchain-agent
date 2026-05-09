@@ -19,6 +19,7 @@ import {
   streamAgentChatResponse,
   updateMcpToolConfig,
   upsertGraphConfig,
+  validateApiKey,
 } from "./api/frontApis";
 import { chooseActiveConfigItem, chooseDisplayItemsByPipeline } from "./activeConfigSelection";
 import type {
@@ -1047,6 +1048,27 @@ export default function App() {
     );
   }
 
+  async function testApiKey(): Promise<void> {
+    if (!editor || !editor.apiKey.trim()) {
+      setStatusMessage("Enter an API key first.");
+      return;
+    }
+    setBusy(true);
+    setStatusMessage("Testing API key...");
+    try {
+      const resp = await validateApiKey({ api_key: editor.apiKey.trim() });
+      if (resp.valid) {
+        setStatusMessage(`API key is valid (provider: ${resp.provider || "unknown"}).`);
+      } else {
+        setStatusMessage(`API key failed: ${resp.message}`);
+      }
+    } catch (error) {
+      setStatusMessage(`API key check error: ${(error as Error).message}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function saveConfig(): Promise<void> {
     if (!editor) {
       return;
@@ -1551,6 +1573,15 @@ export default function App() {
                   {editor.apiKey ? (
                     <small className="empty">Preview: {maskSecretPreview(editor.apiKey)}</small>
                   ) : null}
+                  <button
+                    type="button"
+                    disabled={busy || !editor.apiKey.trim()}
+                    onClick={() => { void testApiKey(); }}
+                    className="verify-api-key-btn"
+                    title="Test API key against the provider"
+                  >
+                    Test Key
+                  </button>
                 </label>
 
                 <label>

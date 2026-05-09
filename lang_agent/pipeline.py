@@ -96,6 +96,13 @@ class Pipeline:
             logger.info(f"setting llm_provider to default")
             self.config.llm_name = "qwen-turbo"
             self.config.llm_provider = "openai"
+            pipeline_api_key = resolve_llm_api_key(self.config.api_key)
+            graph_api_key = resolve_llm_api_key(
+                getattr(self.config.graph_config, "api_key", None)
+            )
+            resolved_api_key = graph_api_key or pipeline_api_key
+            self.config.api_key = resolved_api_key
+            self.config.graph_config.api_key = resolved_api_key
         else:
             self.config.graph_config.llm_name = self.config.llm_name
             self.config.graph_config.llm_provider = self.config.llm_provider
@@ -108,9 +115,14 @@ class Pipeline:
             graph_api_key = resolve_llm_api_key(
                 getattr(self.config.graph_config, "api_key", None)
             )
-            resolved_api_key = pipeline_api_key or graph_api_key
+            resolved_api_key = graph_api_key or pipeline_api_key
             self.config.api_key = resolved_api_key
             self.config.graph_config.api_key = resolved_api_key
+            tool_node = getattr(self.config.graph_config, "tool_node_config", None)
+            if tool_node is not None:
+                tool_node_key = resolve_llm_api_key(getattr(tool_node, "api_key", None))
+                if tool_node_key is None:
+                    tool_node.api_key = resolved_api_key
 
         self.graph: GraphBase = self.config.graph_config.setup()
 

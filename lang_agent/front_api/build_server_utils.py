@@ -77,8 +77,10 @@ def build_route(
     cmd_opt = [
         "--pipeline.pipeline-id",
         pipeline_id,
-        "--pipeline.llm-name", 
+        "--pipeline.llm-name",
         llm_name,
+        "--pipeline.api-key",
+        api_key,
         "route",  # ------------
         "--llm-name",
         llm_name,
@@ -127,8 +129,10 @@ def build_react(
     cmd_opt = [
         "--pipeline.pipeline-id",
         pipeline_id,
-        "--pipeline.llm-name", 
+        "--pipeline.llm-name",
         llm_name,
+        "--pipeline.api-key",
+        api_key,
         "react",  # ------------
         "--llm-name",
         llm_name,
@@ -175,8 +179,10 @@ def build_deep_agent(
     cmd_opt = [
         "--pipeline.pipeline-id",
         pipeline_id,
-        "--pipeline.llm-name", 
+        "--pipeline.llm-name",
         llm_name,
+        "--pipeline.api-key",
+        api_key,
         "deepagent",
         "--llm-name",
         llm_name,

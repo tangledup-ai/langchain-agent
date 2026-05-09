@@ -160,6 +160,17 @@ class RuntimeAuthInfoResponse(BaseModel):
     source: str
 
 
+class ApiKeyValidateRequest(BaseModel):
+    api_key: str
+    base_url: Optional[str] = Field(default="https://dashscope.aliyuncs.com/compatible-mode/v1")
+
+
+class ApiKeyValidateResponse(BaseModel):
+    valid: bool
+    message: str
+    provider: Optional[str] = Field(default=None)
+
+
 class ApiKeyPolicyItem(BaseModel):
     api_key: str
     default_pipeline_id: Optional[str] = Field(default=None)
@@ -925,6 +936,52 @@ async def stop_pipeline(pipeline_id: str):
 @app.get("/v1/runtime-auth", response_model=RuntimeAuthInfoResponse)
 async def get_runtime_auth_info():
     return _resolve_runtime_fast_api_key()
+
+
+@app.post("/v1/api-key/validate", response_model=ApiKeyValidateResponse)
+async def validate_api_key(body: ApiKeyValidateRequest):
+    import urllib.request
+    import urllib.error
+    import ssl
+
+    api_key = body.api_key.strip()
+    if not api_key:
+        return ApiKeyValidateResponse(valid=False, message="API key is empty")
+
+    base_url = (body.base_url or "").strip()
+    if not base_url:
+        base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+
+    base_url = base_url.rstrip("/")
+    test_url = f"{base_url}/models"
+
+    ssl_context = ssl.create_default_context()
+
+    try:
+        req = urllib.request.Request(
+            test_url,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "User-Agent": "lang-agent/1.0",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=10, context=ssl_context) as resp:
+            if resp.status == 200:
+                provider = (
+                    "dashscope" if "dashscope" in base_url else
+                    "openai" if "openai" in base_url else
+                    "openai-compatible"
+                )
+                return ApiKeyValidateResponse(valid=True, message="API key is valid", provider=provider)
+            else:
+                return ApiKeyValidateResponse(valid=False, message=f"Unexpected response status: {resp.status}")
+
+    except urllib.error.HTTPError as e:
+        if e.code == 401 or e.code == 403:
+            return ApiKeyValidateResponse(valid=False, message="API key is invalid or unauthorized")
+        return ApiKeyValidateResponse(valid=False, message=f"HTTP error {e.code}: {e.reason}")
+    except Exception as e:
+        return ApiKeyValidateResponse(valid=False, message=f"Request failed: {str(e)}")
 
 
 @app.get(

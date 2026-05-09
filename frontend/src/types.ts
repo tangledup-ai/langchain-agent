@@ -122,6 +122,17 @@ export type RuntimeAuthInfoResponse = {
   source: string;
 };
 
+export type ApiKeyValidateRequest = {
+  api_key: string;
+  base_url?: string;
+};
+
+export type ApiKeyValidateResponse = {
+  valid: boolean;
+  message: string;
+  provider?: string;
+};
+
 export type McpToolConfigResponse = {
   path: string;
   raw_content: string;

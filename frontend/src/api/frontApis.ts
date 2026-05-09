@@ -1,4 +1,6 @@
 import type {
+  ApiKeyValidateRequest,
+  ApiKeyValidateResponse,
   AvailableGraphsResponse,
   ConversationListItem,
   ConversationMessageItem,
@@ -174,6 +176,15 @@ export function stopPipeline(pipelineId: string): Promise<PipelineStopResponse> 
 
 export function getRuntimeAuthInfo(): Promise<RuntimeAuthInfoResponse> {
   return fetchJson("/v1/runtime-auth");
+}
+
+export function validateApiKey(
+  payload: ApiKeyValidateRequest
+): Promise<ApiKeyValidateResponse> {
+  return fetchJson("/v1/api-key/validate", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function listPipelineConversations(
